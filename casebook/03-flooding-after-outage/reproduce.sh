@@ -44,5 +44,5 @@ for _ in $(seq 1 120); do
   sleep 1
 done
 echo "$N new deliveries done in $((SECONDS - started)) s"
-say "Receiver log after the fix"
-awk '{print $2}' receiver.log | sort | uniq -c
+say "Attempts for the new events after the fix"
+relay_sql -c "SELECT coalesce(a.status_code::text, a.error_kind) AS outcome, count(*) FROM attempts a JOIN deliveries d ON d.id = a.delivery_id JOIN events ev ON ev.id = d.event_id WHERE d.endpoint_id = '$endpoint_id' AND (ev.payload ->> 'order_id')::int > 1000 GROUP BY 1;"
