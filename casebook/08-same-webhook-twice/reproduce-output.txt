@@ -1,0 +1,37 @@
+
+== Setup: an endpoint whose receiver ships the order, then answers after 8 s
+
+== An order.paid event; Relay's worker is killed while the receiver is still working
+worker killed while the receiver was still working
+worker restarted
+delivery e57eb2ce-c6eb-4ff0-88e7-ccc9dd5905a8  status=succeeded  attempts=1  endpoint=http://host.docker.internal:9918/hook
+  last_error: None
+  #1 12:44:22   8023 ms  status=200  error=None  {"ok": true}
+
+== Receiver log
+18:13:21 b52f1379-067c-4ed4-bd18-6310368b4946 order=7001 SHIPPED
+18:14:22 b52f1379-067c-4ed4-bd18-6310368b4946 order=7001 SHIPPED (again!)
+
+== Relay's worker log: the expired lease was recovered
+{'timestamp': '2026-11-14T12:44:22.115530Z', 'event': 'worker.recovered_expired_leases', 'count': 1}
+
+== SQL (queries.sql)
+             delivery_id              |              webhook_id              |  status   | attempts |          created_at           |          updated_at           
+--------------------------------------+--------------------------------------+-----------+----------+-------------------------------+-------------------------------
+ e57eb2ce-c6eb-4ff0-88e7-ccc9dd5905a8 | b52f1379-067c-4ed4-bd18-6310368b4946 | succeeded |        1 | 2026-11-14 12:43:21.099667+00 | 2026-11-14 12:44:30.207404+00
+(1 row)
+
+ attempt_number |          started_at           | duration_ms | status_code |           webhook_id_sent            | seconds_after_event 
+----------------+-------------------------------+-------------+-------------+--------------------------------------+---------------------
+              1 | 2026-11-14 12:44:22.175874+00 |        8023 |         200 | b52f1379-067c-4ed4-bd18-6310368b4946 |                  61
+(1 row)
+
+
+== Fix: the receiver deduplicates on webhook-id; the same crash again
+worker killed while the receiver was still working
+worker restarted
+delivery f02f20d8-1e60-4e20-9c43-97f38f794e03  status=succeeded  attempts=1  endpoint=http://host.docker.internal:9918/hook
+  last_error: None
+  #1 12:45:34     17 ms  status=200  error=None  {"ok": true}
+18:14:33 bf424c49-5623-4f51-ae34-57767ca53d78 order=7002 SHIPPED
+18:15:34 bf424c49-5623-4f51-ae34-57767ca53d78 order=7002 DUPLICATE, acknowledged without shipping
