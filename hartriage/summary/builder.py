@@ -148,7 +148,9 @@ def build_summary(
         first_failure = f"Request #{first.entry}: {ev.get('method')} {ev.get('url')} → {outcome}"
     elif stats.get("failed"):
         # R001 was left out (for example `--rules R005`): don't claim nothing failed.
-        first_failure = f"Not checked: {stats['failed']} request(s) failed, but rule R001 was not run."
+        first_failure = (
+            f"Not checked: {stats['failed']} request(s) failed, but rule R001 was not run."
+        )
     else:
         first_failure = "None: every request in the file succeeded."
 
