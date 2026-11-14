@@ -217,7 +217,9 @@ def test_truncated_upload_keeps_its_note(client: Any, admin: Any) -> None:
 
 def test_empty_recording_says_so(client: Any, admin: Any) -> None:
     empty = b'{"log": {"version": "1.2", "entries": []}}'
-    summary = admin.get(f"/v1/analyses/{admin.upload(empty).json()['analysis_id']}").json()["summary"]
+    summary = admin.get(f"/v1/analyses/{admin.upload(empty).json()['analysis_id']}").json()[
+        "summary"
+    ]
     assert summary["first_failure"] == "None: the recording contains no requests."
     assert "empty" in summary["likely_cause"]
 

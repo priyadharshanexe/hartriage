@@ -23,6 +23,7 @@ import html
 import itertools
 import json
 import os
+import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -34,7 +35,8 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 
 app = FastAPI(title="Fake helpdesk")
-_ids = itertools.count(1001)
+# Start ids from the clock, so a restarted fake never reuses an id HAR Triage has seen.
+_ids = itertools.count(int(time.time()) % 10_000_000 * 10)
 SAMPLES = Path(__file__).resolve().parents[1] / "fixtures" / "samples"
 
 

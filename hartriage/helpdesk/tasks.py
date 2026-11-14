@@ -150,7 +150,10 @@ def ingest_ticket(self: Task, receipt_id: str) -> None:
         receipt.outcome = (
             "analysed" if new else ("no_har_attachment" if not hars else "already_analysed")
         )
-        if not hars:
+        if not new:
+            # Nothing to post (no HAR file, or every one was analysed before): still
+            # take the trigger tag off, so the agent sees the request was handled.
+            # When there are new analyses, the note task swaps the tag after posting.
             with suppress(HelpdeskError):
                 client.swap_tags(ticket, settings.trigger_tag, settings.done_tag)
         client.close()

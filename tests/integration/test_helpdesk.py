@@ -313,3 +313,16 @@ def test_our_own_redacted_copy_is_never_analysed(client: Any, admin: Any) -> Non
     notes = private_notes("zendesk", tid)
     assert len(notes) == 1
     assert [a.filename for a in notes[0].attachments] == ["checkout.redacted.har"]
+
+
+def test_tag_is_cleared_when_there_is_nothing_new(client: Any, admin: Any) -> None:
+    """Found in browser testing: re-tagging an already analysed ticket left the
+    trigger tag on, with no sign the request was handled."""
+    conn = connect_zendesk(admin)
+    tid = ticket("zendesk")
+    zendesk_hook(client, conn, tid)
+    t = fake.TICKETS[("zendesk", "acme", tid)]
+    t.tags = ["har_analyze"]
+    zendesk_hook(client, conn, tid, invocation="inv-retag")
+    assert t.tags == ["har_analyzed"]
+    assert len(private_notes("zendesk", tid)) == 1
