@@ -1,1 +1,3 @@
 receiver.log
+# Contains a live (local, throwaway) API key; reproduce.sh regenerates it.
+05-api-returns-413/customer-console.har

@@ -1,0 +1,47 @@
+
+== The customer's admin page sends two orders through the events API (recorded as a HAR)
+statuses: [201, 413]
+
+== HAR Triage on the HAR the customer attached
+Redacted copy written to casebook\05-api-returns-413\customer-console.redacted.har
+### HAR Triage summary
+
+**What the customer was doing**
+- Pages: Relay
+- Main hosts: localhost (7)
+- 7 requests over 0 s, starting 2026-11-14 09:35:21 UTC, recorded in chromium 159.0.8154.6
+
+**First failure:** Request #7: POST http://localhost:8181/v1/events → 413 Request Entity Too Large
+
+**Likely cause:** localhost refused the request body as too large (332 KB sent).
+
+**Evidence**
+- Requests #7
+- Status 413
+- Request body: 340,121 bytes
+
+**Suggested next step:** Reduce the payload (fewer items per request, compress, or upload files separately), or ask whether the limit can be raised for this account.
+
+**KB article:** [R008: 413 Payload Too Large](https://github.com/priyadharshanexe/hartriage/blob/main/kb/R008-payload.md)
+
+**Other findings**
+- [high] First failure: #7 POST http://localhost:8181/v1/events → 413 Request Entity Too Large
+- [medium] API error not_authenticated (401): “Log in to continue.” × 1
+- [medium] API error invalid_session (401): “Your session has ended. Please log in again.” × 1
+- [info] Sign-in check before signing in: 2 requests to localhost (#4, #6)
+
+_Redaction: Removed 1 token (2 places in 5 requests). Dropped 3 response bodies. Engine 1.0.0._
+
+== The API key in the original HAR, and in the redacted copy
+"Bearer rly_test_8mW… (live key)
+"Bearer [REDACTED:99aac434]
+
+== The request id from the HAR, looked up in Relay's API log
+{'timestamp': '2026-11-14T09:35:21.611973Z', 'method': 'POST', 'path': '/v1/events', 'status': 413, 'duration_ms': 5.2, 'request_id': '27adf4e83da64589bf1ce62a26663313'}
+
+== Measure the body against the limit
+201     2,841 bytes  (1% of the 262,144-byte limit)
+413   340,121 bytes  (130% of the 262,144-byte limit)
+
+== Verification: the same order sent as a thin event (ids, not line items)
+HTTP 201, 131 bytes

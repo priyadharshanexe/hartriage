@@ -22,10 +22,13 @@ relay_post() { curl -sS -b "$JAR" -c "$JAR" -H 'Content-Type: application/json' 
 relay_get() { curl -sS -b "$JAR" -c "$JAR" "$RELAY_URL$1"; }
 relay_patch() { curl -sS -b "$JAR" -c "$JAR" -H 'Content-Type: application/json' -X PATCH "$RELAY_URL$1" -d "$2"; }
 
-# A fresh organisation, signed in, with an API key in $API_KEY.
+# One organisation per case, signed in, with a new API key in $API_KEY. The account is
+# reused on re-runs: Relay limits sign-ups to 10 an hour per address.
 relay_setup() {
-  local email="casebook-$1-$RANDOM$RANDOM@example.com"
-  relay_post /v1/auth/register "{\"email\":\"$email\",\"password\":\"casebook password 1\",\"organization_name\":\"Casebook $1\"}" >/dev/null
+  local email="casebook-$1@example.com" password="casebook password 1"
+  if ! curl -sSf -b "$JAR" -c "$JAR" -H 'Content-Type: application/json' -X POST "$RELAY_URL/v1/auth/login"       -d "{\"email\":\"$email\",\"password\":\"$password\"}" >/dev/null 2>&1; then
+    relay_post /v1/auth/register "{\"email\":\"$email\",\"password\":\"$password\",\"organization_name\":\"Casebook $1\"}" >/dev/null
+  fi
   API_KEY="$(relay_post /v1/api-keys '{"name":"casebook"}' | json '["key"]')"
   export API_KEY
 }

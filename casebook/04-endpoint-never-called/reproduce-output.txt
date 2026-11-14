@@ -1,0 +1,40 @@
+
+== The customer registers their endpoint by name
+http://169.254.169.254.nip.io/webhooks/relay
+
+== Registering the address itself is refused at once, with the reason
+{"code": "invalid_endpoint_url", "message": "169.254.169.254 is blocked: link-local address (includes cloud metadata)", "details": null, "request_id": "cad2a7edc74141e19c629628f372ba85"}
+
+== An event is sent
+delivery 9796ba14-4d12-469a-88e8-7f3912a20ace  status=retrying  attempts=2  endpoint=http://169.254.169.254.nip.io/webhooks/relay
+  last_error: ssrf_blocked: 169.254.169.254 is blocked: link-local address (includes cloud metadata)
+  #1 09:30:26      0 ms  status=None  error=ssrf_blocked  
+  #2 09:30:31      0 ms  status=None  error=ssrf_blocked  
+
+== What the name resolves to, asked from inside Relay's worker container
+169.254.169.254.nip.io -> ['169.254.169.254']
+
+== SQL (queries.sql)
+                     url                      |  status  | attempts |                                       last_error                                       
+----------------------------------------------+----------+----------+----------------------------------------------------------------------------------------
+ http://169.254.169.254.nip.io/webhooks/relay | retrying |        2 | ssrf_blocked: 169.254.169.254 is blocked: link-local address (includes cloud metadata)
+ http://169.254.169.254.nip.io/webhooks/relay | retrying |        2 | ssrf_blocked: 169.254.169.254 is blocked: link-local address (includes cloud metadata)
+ http://169.254.169.254.nip.io/webhooks/relay | retrying |        3 | ssrf_blocked: 169.254.169.254 is blocked: link-local address (includes cloud metadata)
+ http://169.254.169.254.nip.io/webhooks/relay | retrying |        4 | ssrf_blocked: 169.254.169.254 is blocked: link-local address (includes cloud metadata)
+(4 rows)
+
+                  id                  |                     url                      |          created_at           | blocked_attempts 
+--------------------------------------+----------------------------------------------+-------------------------------+------------------
+ d55cde18-bece-43c8-ad13-fce376a9d2ea | http://169.254.169.254.nip.io/webhooks/relay | 2026-11-14 09:30:25.166109+00 |                2
+ 6ae9d328-1077-4cc5-bdde-e023e6f8af86 | http://169.254.169.254.nip.io/webhooks/relay | 2026-11-14 09:30:05.351209+00 |                5
+ 7f0c7c91-e034-4b1c-b5c2-c616bc98047b | http://169.254.169.254.nip.io/webhooks/relay | 2026-11-14 09:29:20.168558+00 |                4
+(3 rows)
+
+
+== Verification: the customer moves the endpoint to a public HTTPS address; the waiting delivery goes through
+https://httpbin.org/post
+delivery 9796ba14-4d12-469a-88e8-7f3912a20ace  status=succeeded  attempts=3  endpoint=https://httpbin.org/post
+  last_error: None
+  #1 09:30:26      0 ms  status=None  error=ssrf_blocked  
+  #2 09:30:31      0 ms  status=None  error=ssrf_blocked  
+  #3 09:30:43   1178 ms  status=200  error=None  { "args": {}, "headers": { "Accept": "*/*", "Accept-Encoding": "gzip, deflate", "Content-Length": "1
