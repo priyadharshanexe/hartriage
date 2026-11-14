@@ -1,0 +1,72 @@
+
+== Set up an endpoint on the customer's receiver (two nodes behind a load balancer)
+
+== Send six events
+delivery 6d571351-5971-4cfb-baef-cca411be21d1  status=succeeded  attempts=1  endpoint=http://host.docker.internal:9912/hook
+  last_error: None
+  #1 09:18:05      9 ms  status=200  error=None  {"node": "web-1", "ok": true}
+delivery dee0d3a8-2948-480d-a3a4-fbdac28c1552  status=retrying  attempts=1  endpoint=http://host.docker.internal:9912/hook
+  last_error: http_status: the receiver answered HTTP 401
+  #1 09:18:05     11 ms  status=401  error=http_status  {"node": "web-2", "error": "timestamp too new (420 s in the future; tolerance 300 s)"}
+delivery 68ef67d2-b0dc-44c5-860d-5894474dd730  status=retrying  attempts=1  endpoint=http://host.docker.internal:9912/hook
+  last_error: http_status: the receiver answered HTTP 401
+  #1 09:18:05     11 ms  status=401  error=http_status  {"node": "web-2", "error": "timestamp too new (420 s in the future; tolerance 300 s)"}
+delivery 14df1ed6-40ba-43ad-86f4-dc463ea4f979  status=succeeded  attempts=1  endpoint=http://host.docker.internal:9912/hook
+  last_error: None
+  #1 09:18:05      8 ms  status=200  error=None  {"node": "web-1", "ok": true}
+delivery 8a0e061d-3b7f-4fe5-af0f-6c92838de6de  status=retrying  attempts=1  endpoint=http://host.docker.internal:9912/hook
+  last_error: http_status: the receiver answered HTTP 401
+  #1 09:18:06      9 ms  status=401  error=http_status  {"node": "web-2", "error": "timestamp too new (420 s in the future; tolerance 300 s)"}
+delivery 9a6d34c7-47e6-496f-91fc-2048a64b6467  status=succeeded  attempts=1  endpoint=http://host.docker.internal:9912/hook
+  last_error: None
+  #1 09:18:06     11 ms  status=200  error=None  {"node": "web-1", "ok": true}
+
+== Receiver log (what the customer sees)
+web-1 200 463b322c-6169-4205-812a-25d1c6660079 ok
+web-2 401 5e0d42fb-ab3b-4c82-9eac-60c2d5a5ee4e timestamp too new (420 s in the future; tolerance 300 s)
+web-1 200 cf8f88a8-9887-4407-9506-cd744eb6cbf2 ok
+web-2 401 7228bfe2-77d2-4768-b8e9-8fbd7ee230d2 timestamp too new (420 s in the future; tolerance 300 s)
+web-1 200 3d4510de-646a-4445-8ab0-db295187f4c3 ok
+web-2 401 ec22705b-5c6a-432b-a118-45408bf72ee6 timestamp too new (420 s in the future; tolerance 300 s)
+
+== SQL (queries.sql)
+ node  | ok | rejected 
+-------+----+----------
+ web-1 |  4 |        0
+ web-2 |  0 |        3
+(2 rows)
+
+ node  |            sent_at            |       node_clock       | skew_seconds | status_code |                                     response                                     
+-------+-------------------------------+------------------------+--------------+-------------+----------------------------------------------------------------------------------
+ web-1 | 2026-11-14 09:18:05.086006+00 | 2026-11-14 09:18:05+00 |            0 |         200 | {"node": "web-1", "ok": true}
+ web-1 | 2026-11-14 09:18:05.086374+00 | 2026-11-14 09:18:05+00 |            0 |         200 | {"node": "web-1", "ok": true}
+ web-2 | 2026-11-14 09:18:05.086596+00 | 2026-11-14 09:11:05+00 |         -420 |         401 | {"node": "web-2", "error": "timestamp too new (420 s in the future; tolerance 30
+ web-2 | 2026-11-14 09:18:05.086875+00 | 2026-11-14 09:11:05+00 |         -420 |         401 | {"node": "web-2", "error": "timestamp too new (420 s in the future; tolerance 30
+ web-1 | 2026-11-14 09:18:06.155261+00 | 2026-11-14 09:18:06+00 |            0 |         200 | {"node": "web-1", "ok": true}
+ web-2 | 2026-11-14 09:18:06.155794+00 | 2026-11-14 09:11:06+00 |         -420 |         401 | {"node": "web-2", "error": "timestamp too new (420 s in the future; tolerance 30
+ web-1 | 2026-11-14 09:18:10.214698+00 | 2026-11-14 09:18:10+00 |            0 |         200 | {"node": "web-1", "ok": true}
+(7 rows)
+
+
+== Verification: web-2's clock is fixed (NTP restarted); the waiting deliveries retry on their own
+delivery 6d571351-5971-4cfb-baef-cca411be21d1  status=succeeded  attempts=1  endpoint=http://host.docker.internal:9912/hook
+  last_error: None
+  #1 09:18:05      9 ms  status=200  error=None  {"node": "web-1", "ok": true}
+delivery dee0d3a8-2948-480d-a3a4-fbdac28c1552  status=succeeded  attempts=2  endpoint=http://host.docker.internal:9912/hook
+  last_error: None
+  #1 09:18:05     11 ms  status=401  error=http_status  {"node": "web-2", "error": "timestamp too new (420 s in the future; tolerance 300 s)"}
+  #2 09:18:11      5 ms  status=200  error=None  {"node": "web-1", "ok": true}
+delivery 68ef67d2-b0dc-44c5-860d-5894474dd730  status=succeeded  attempts=2  endpoint=http://host.docker.internal:9912/hook
+  last_error: None
+  #1 09:18:05     11 ms  status=401  error=http_status  {"node": "web-2", "error": "timestamp too new (420 s in the future; tolerance 300 s)"}
+  #2 09:18:10      8 ms  status=200  error=None  {"node": "web-1", "ok": true}
+delivery 14df1ed6-40ba-43ad-86f4-dc463ea4f979  status=succeeded  attempts=1  endpoint=http://host.docker.internal:9912/hook
+  last_error: None
+  #1 09:18:05      8 ms  status=200  error=None  {"node": "web-1", "ok": true}
+delivery 8a0e061d-3b7f-4fe5-af0f-6c92838de6de  status=succeeded  attempts=2  endpoint=http://host.docker.internal:9912/hook
+  last_error: None
+  #1 09:18:06      9 ms  status=401  error=http_status  {"node": "web-2", "error": "timestamp too new (420 s in the future; tolerance 300 s)"}
+  #2 09:18:12     14 ms  status=200  error=None  {"node": "web-2", "ok": true}
+delivery 9a6d34c7-47e6-496f-91fc-2048a64b6467  status=succeeded  attempts=1  endpoint=http://host.docker.internal:9912/hook
+  last_error: None
+  #1 09:18:06     11 ms  status=200  error=None  {"node": "web-1", "ok": true}
