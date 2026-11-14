@@ -131,7 +131,7 @@ def build_summary(
     span = stats.get("duration_seconds")
     when = stats.get("first_started")
     activity.append(
-        f"{stats.get('entries', 0)} requests"
+        f"{stats.get('entries', 0)} request{'' if stats.get('entries') == 1 else 's'}"
         + (f" over {span:.0f} s" if isinstance(span, int | float) else "")
         + (f", starting {when[:19].replace('T', ' ')} UTC" if when else "")
         + (f", recorded in {browser}" if browser else "")
@@ -146,6 +146,9 @@ def build_summary(
             else ev.get("error") or "no response"
         )
         first_failure = f"Request #{first.entry}: {ev.get('method')} {ev.get('url')} → {outcome}"
+    elif stats.get("failed"):
+        # R001 was left out (for example `--rules R005`): don't claim nothing failed.
+        first_failure = f"Not checked: {stats['failed']} request(s) failed, but rule R001 was not run."
     else:
         first_failure = "None: every request in the file succeeded."
 

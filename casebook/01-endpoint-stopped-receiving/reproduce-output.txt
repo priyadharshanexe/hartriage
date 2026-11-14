@@ -1,0 +1,47 @@
+
+== Set up an organisation and an endpoint whose certificate has expired
+https://expired.badssl.com/
+
+== Send an order.paid event
+delivery 3d71cedf-9e43-44e8-932b-bd4437dc9eb5  status=retrying  attempts=2  endpoint=https://expired.badssl.com/
+  last_error: tls: TLS handshake failed: 
+  #1 09:15:35   1641 ms  status=None  error=tls  
+  #2 09:15:42   1454 ms  status=None  error=tls  
+
+== What the database says (queries.sql)
+             url             | attempt_number |          started_at           | duration_ms | status_code | error_kind | error 
+-----------------------------+----------------+-------------------------------+-------------+-------------+------------+-------
+ https://expired.badssl.com/ |              2 | 2026-11-14 09:15:42.337416+00 |        1454 |             | tls        | 
+ https://expired.badssl.com/ |              1 | 2026-11-14 09:15:35.418891+00 |        1641 |             | tls        | 
+ https://expired.badssl.com/ |              5 | 2026-11-14 09:14:51.48435+00  |        5009 |             | timeout    | 
+ https://expired.badssl.com/ |              4 | 2026-11-14 09:13:37.212876+00 |        4229 |             | tls        | 
+ https://expired.badssl.com/ |              3 | 2026-11-14 09:13:05.661913+00 |        5013 |             | timeout    | 
+ https://expired.badssl.com/ |              2 | 2026-11-14 09:12:45.709691+00 |        1531 |             | tls        | 
+ https://expired.badssl.com/ |              1 | 2026-11-14 09:12:34.228927+00 |        4935 |             | tls        | 
+(7 rows)
+
+  status  | attempts |        next_attempt_at        |                  last_error                   
+----------+----------+-------------------------------+-----------------------------------------------
+ retrying |        2 | 2026-11-14 09:15:58.99044+00  | tls: TLS handshake failed: 
+ dead     |        5 | 2026-11-14 09:14:50.589752+00 | timeout: the receiver did not respond in time
+(2 rows)
+
+             url             | last_success |       first_tls_failure       | tls_failures 
+-----------------------------+--------------+-------------------------------+--------------
+ https://expired.badssl.com/ |              | 2026-11-14 09:12:34.228927+00 |            5
+(1 row)
+
+             url             | tls_failures 
+-----------------------------+--------------
+ https://expired.badssl.com/ |            5
+ https://httpbin.org/post    |            4
+(2 rows)
+
+
+== Verification: the customer renews the certificate (simulated by pointing the endpoint at a host with a valid one), then the stuck delivery is replayed
+https://httpbin.org/post
+delivery 3d71cedf-9e43-44e8-932b-bd4437dc9eb5  status=succeeded  attempts=3  endpoint=https://httpbin.org/post
+  last_error: None
+  #1 09:15:35   1641 ms  status=None  error=tls  
+  #2 09:15:42   1454 ms  status=None  error=tls  
+  #3 09:15:59   1119 ms  status=200  error=None  { "args": {}, "headers": { "Accept": "*/*", "Accept-Encoding": "gzip, deflate", "Content-Length": "1

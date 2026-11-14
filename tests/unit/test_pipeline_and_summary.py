@@ -105,3 +105,8 @@ def test_cli_analyze_and_redact(tmp_path) -> None:  # type: ignore[no-untyped-de
     failed = runner.invoke(app, ["analyze", str(bad)])
     assert failed.exit_code == 2 and "not JSON" in failed.output
     assert "R011" in runner.invoke(app, ["rules"]).stdout
+
+
+def test_summary_does_not_claim_success_when_r001_was_skipped() -> None:
+    result = process(as_stream(har(entry(status=500))), rules=["R011"])
+    assert summarise(result).first_failure.startswith("Not checked: 1 request(s) failed")

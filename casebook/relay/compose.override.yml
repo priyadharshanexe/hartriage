@@ -1,0 +1,36 @@
+# A separate copy of Relay (Project 1) for reproducing the casebook, next to any
+# Relay stack you already run. Start it with ./up.sh from this folder.
+#
+#   Relay API        http://localhost:8101
+#   Relay dashboard  http://localhost:8181
+#   Postgres         localhost:5444  (user/password/db: relay)
+#   Prometheus       http://localhost:9099
+#
+# The retry schedule is shortened so a case reproduces in a minute, not a day.
+
+x-casebook-env: &casebook-env
+  RELAY_RETRY_SCHEDULE_SECONDS: "[0, 5, 15, 30, 60]"
+  RELAY_SECRET_ROTATION_OVERLAP_HOURS: "1"
+  RELAY_ALLOWED_ORIGINS: '["http://localhost:8181"]'
+
+services:
+  postgres:
+    ports: !override ["5444:5432"]
+  redis:
+    ports: !override ["6390:6379"]
+  migrate:
+    environment: *casebook-env
+  api:
+    ports: !override ["8101:8000"]
+    environment: *casebook-env
+  worker:
+    environment: *casebook-env
+    extra_hosts: ["host.docker.internal:host-gateway"]
+  web:
+    ports: !override ["8181:80"]
+  jaeger:
+    ports: !override ["127.0.0.1:16696:16686"]
+  prometheus:
+    ports: !override ["127.0.0.1:9099:9090"]
+  grafana:
+    ports: !override ["127.0.0.1:3010:3000"]
