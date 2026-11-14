@@ -72,9 +72,15 @@ select = [
   "PT",       # pytest style
   "RUF",      # ruff-specific
 ]
+ignore = [
+  "E501",    # the formatter wraps code; long user-facing sentences stay readable as one string
+  "RUF001",  # arrows, multiplication signs and curly quotes are intended in findings
+  "N818",    # InputTooLarge reads better than InputTooLargeError
+  "B008",    # frozen dataclass defaults such as Limits() are immutable
+]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "S105", "S106", "S311"]  # asserts, fake secrets, non-crypto randomness
+"tests/**" = ["S101", "S105", "S106", "S311", "PT018", "RUF043"]  # asserts, fake secrets, non-crypto randomness
 "tools/**" = ["S101", "S105", "S106", "S311", "S104"]
 "hartriage/db/migrations/versions/*" = ["E501"]
 
