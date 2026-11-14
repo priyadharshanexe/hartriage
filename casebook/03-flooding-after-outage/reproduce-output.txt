@@ -1,0 +1,9 @@
+
+== The customer's endpoint is down (nothing listens on :9913); 30 events arrive meanwhile
+  status  | count |  error  
+----------+-------+---------
+ retrying |    18 | connect
+(1 row)
+
+
+== The outage ends: the receiver is back, limited to 2 requests/s with Retry-After: 30

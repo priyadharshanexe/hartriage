@@ -27,10 +27,10 @@ Full run: [reproduce-output.txt](reproduce-output.txt).
 **1. The attempts never leave Relay.** Every attempt took 0 ms and has no status code:
 
 ```
-delivery 9796ba14…  status=retrying  attempts=2
+delivery 5589e754…  status=retrying  attempts=2
   last_error: ssrf_blocked: 169.254.169.254 is blocked: link-local address (includes cloud metadata)
-  #1 09:30:26   0 ms  status=None  error=ssrf_blocked
-  #2 09:30:31   0 ms  status=None  error=ssrf_blocked
+  #1 09:45:22   0 ms  status=None  error=ssrf_blocked
+  #2 09:45:28   0 ms  status=None  error=ssrf_blocked
 ```
 
 0 ms is the giveaway: no connection was attempted, so the customer's firewall and logs genuinely saw nothing. Their firewall team was right.
@@ -66,10 +66,10 @@ What we must **not** do is add an exception for this customer: the protection on
 After moving the endpoint to a public HTTPS address (here `https://httpbin.org/post`), the same waiting delivery succeeded on its next attempt, with no replay needed:
 
 ```
-delivery 9796ba14…  status=succeeded  attempts=3
-  #1 09:30:26     0 ms  error=ssrf_blocked
-  #2 09:30:31     0 ms  error=ssrf_blocked
-  #3 09:30:43  1178 ms  status=200
+delivery 5589e754…  status=succeeded  attempts=3
+  #1 09:45:22     0 ms  error=ssrf_blocked
+  #2 09:45:28     0 ms  error=ssrf_blocked
+  #3 09:45:43   999 ms  status=200
 ```
 
 ## Reply to the customer

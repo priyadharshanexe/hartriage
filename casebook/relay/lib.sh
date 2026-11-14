@@ -31,6 +31,10 @@ relay_setup() {
   fi
   API_KEY="$(relay_post /v1/api-keys '{"name":"casebook"}' | json '["key"]')"
   export API_KEY
+  # Endpoints left by an earlier run would receive this run's events too.
+  for old in $(relay_get /v1/endpoints | "$PY" -c "import json,sys; d=json.load(sys.stdin); print(' '.join(e['id'] for e in (d['items'] if isinstance(d, dict) else d)))"); do
+    curl -sS -b "$JAR" -c "$JAR" -X DELETE "$RELAY_URL/v1/endpoints/$old" >/dev/null
+  done
 }
 
 # send_event TYPE PAYLOAD_JSON  → prints the API response
@@ -42,10 +46,10 @@ send_event() {
 # psql against the casebook's Relay database
 relay_sql() { docker exec -i "$RELAY_DB_CONTAINER" psql -U relay -d relay -v ON_ERROR_STOP=1 "$@"; }
 
-# delivery_for EVENT_ID  → the id of the event's (first) delivery
+# delivery_for EVENT_ID [ENDPOINT_ID]  → the id of the event's delivery (to that endpoint)
 delivery_for() {
   for _ in $(seq 1 30); do
-    id="$(relay_get "/v1/deliveries?limit=50" | "$PY" -c "import json,sys; print(next((d['id'] for d in json.load(sys.stdin)['items'] if d['event_id']=='$1'), ''))")"
+    id="$(relay_get "/v1/deliveries?limit=50" | "$PY" -c "import json,sys; print(next((d['id'] for d in json.load(sys.stdin)['items'] if d['event_id']=='$1' and '${2:-}' in ('', d['endpoint_id'])), ''))")"
     [ -n "$id" ] && { echo "$id"; return 0; }
     sleep 1
   done
