@@ -97,7 +97,8 @@ services:
 
   worker:
     <<: *app
-    command: ["celery", "-A", "hartriage.worker.celery_app", "worker", "--loglevel=INFO", "--concurrency=2"]
+    # The metrics directory is shared by the worker processes and emptied on each start.
+    command: ["sh", "-c", "rm -rf /tmp/metrics && mkdir -p /tmp/metrics && exec celery -A hartriage.worker.celery_app worker --loglevel=INFO --concurrency=2"]
     environment:
       <<: *env
       PROMETHEUS_MULTIPROC_DIR: /tmp/metrics
