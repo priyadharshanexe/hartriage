@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+build/
+dist/
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+coverage.xml
+htmlcov/
+
+# Node (frontend)
+node_modules/
+frontend/dist/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Playwright
+test-results/
+playwright-report/
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Local object storage and generated test data
+.data/
+tests/property/.generated/
+*.har.tmp
+
+# HAR files outside the committed fixture folders are never committed:
+# they can carry live session tokens.
+*.har
+*.har.gz
+!tests/golden/hars/**/*.har
+!tools/fixtures/samples/*.har
+!casebook/**/*.har
