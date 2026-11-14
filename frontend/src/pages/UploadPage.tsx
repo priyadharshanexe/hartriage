@@ -8,6 +8,7 @@ import { bytes } from "../lib/format";
 import type { Analysis } from "../lib/types";
 
 const ACCEPT = ".har,.json,.gz,.zip";
+const MAX_BYTES = 100 * 1024 * 1024;
 
 export function UploadPage() {
   const { canEdit } = useAuth();
@@ -33,6 +34,11 @@ export function UploadPage() {
   async function start(chosen: File) {
     setFile(chosen);
     setError(null);
+    if (chosen.size > MAX_BYTES) {
+      // Checked here first: there is no point uploading 100 MB only to be refused.
+      setError(new Error(`${chosen.name} is ${bytes(chosen.size)}; the limit is 100 MB. Ask the customer to record a shorter session, or use the CLI.`));
+      return;
+    }
     setProgress(0);
     try {
       const result = await uploadFile(chosen, setProgress);

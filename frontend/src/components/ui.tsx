@@ -218,3 +218,27 @@ export function CopyButton({ getText, label = "Copy", copiedLabel = "Copied", va
     </Button>
   );
 }
+
+/** A destructive action that asks inline ("Remove? Yes / Cancel") instead of a
+ *  browser confirm() dialog, which blocks the page and can't be styled. */
+export function ConfirmButton({ label, confirmLabel = "Yes, do it", question, onConfirm, busy = false, size = "sm" }: { label: string; confirmLabel?: string; question: string; onConfirm: () => void; busy?: boolean; size?: "sm" | "md" }) {
+  const [asking, setAsking] = useState(false);
+  if (!asking) {
+    return (
+      <Button size={size} variant="ghost" className="text-red-700 hover:bg-red-50" onClick={() => setAsking(true)}>
+        {label}
+      </Button>
+    );
+  }
+  return (
+    <span role="group" aria-label={question} className="inline-flex items-center gap-2 rounded-md bg-red-50 px-2 py-1 text-xs text-red-800">
+      {question}
+      <Button size="sm" variant="danger" busy={busy} onClick={() => { onConfirm(); setAsking(false); }}>
+        {confirmLabel}
+      </Button>
+      <Button size="sm" variant="ghost" onClick={() => setAsking(false)}>
+        Cancel
+      </Button>
+    </span>
+  );
+}

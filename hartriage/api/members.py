@@ -13,7 +13,7 @@ from sqlalchemy import func, select
 from hartriage.api.deps import AdminDep, DbDep, SettingsDep
 from hartriage.core.errors import AppError, NotFound
 from hartriage.core.security import new_token, sha256_hex
-from hartriage.db.models import Invitation, Membership, User
+from hartriage.db.models import Invitation, Membership, Organization, User
 from hartriage.services import audit
 
 router = APIRouter(tags=["members"])
@@ -71,6 +71,27 @@ def list_members(principal: AdminDep, db: DbDep) -> dict[str, Any]:
             }
             for i in invites
         ],
+    }
+
+
+@router.get("/invitations/lookup")
+def lookup_invitation(token: str, db: DbDep) -> dict[str, Any]:
+    """Public: what an invitation link is for, so the join page can say so."""
+    invite = db.scalar(select(Invitation).where(Invitation.token_hash == sha256_hex(token[:200])))
+    if invite is None or invite.accepted_at is not None or invite.expires_at <= datetime.now(UTC):
+        raise AppError(
+            "This invitation link is invalid or has expired. Ask for a new one.",
+            code="invitation_invalid",
+            status=410,
+        )
+    org = db.get(Organization, invite.org_id)
+    existing = db.scalar(select(User.id).where(User.email == invite.email)) is not None
+    return {
+        "organization": org.name if org else "",
+        "email": invite.email,
+        "role": invite.role,
+        "expires_at": invite.expires_at.isoformat(),
+        "existing_account": existing,
     }
 
 

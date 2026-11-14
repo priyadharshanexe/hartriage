@@ -13,9 +13,11 @@ from collections.abc import AsyncIterator, Callable
 from typing import Any
 
 import anyio
+import structlog
 from anyio.from_thread import run as run_from_thread
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
+from starlette.requests import ClientDisconnect
 
 from hartriage.api.deps import AgentDep, DbDep, SettingsDep, StorageDep
 from hartriage.core.errors import TooLarge
@@ -25,6 +27,7 @@ from hartriage.services.intake import intake
 from hartriage.worker.dispatch import enqueue_analysis
 
 router = APIRouter(tags=["uploads"])
+log = structlog.get_logger()
 
 
 class _BodyReader(io.RawIOBase):
@@ -115,6 +118,14 @@ async def upload(
 
     try:
         analysis = await anyio.to_thread.run_sync(work)
+    except ClientDisconnect:
+        # The browser went away mid-upload (tab closed, network lost). Nothing was
+        # stored: the multipart upload was aborted. Not an error on our side.
+        UPLOADS.labels("aborted").inc()
+        log.info("upload_aborted", filename=filename)
+        return JSONResponse(
+            {"error": {"code": "client_closed", "message": "Upload cancelled."}}, 499
+        )
     except Exception:
         UPLOADS.labels("rejected").inc()
         raise

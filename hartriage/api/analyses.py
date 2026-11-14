@@ -6,6 +6,7 @@ import json
 import uuid
 from collections.abc import Iterator
 from contextlib import closing
+from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
 
 from fastapi import APIRouter, Query, Response
@@ -14,10 +15,19 @@ from sqlalchemy import func, or_, select
 
 from hartriage.api.deps import AdminDep, AgentDep, DbDep, PrincipalDep, SettingsDep, StorageDep
 from hartriage.core.errors import AppError, NotFound
-from hartriage.db.models import Analysis, Artifact, Case, EntryIndex, FindingRow, HelpdeskConnection
+from hartriage.db.models import (
+    Analysis,
+    Artifact,
+    AuditLog,
+    Case,
+    EntryIndex,
+    FindingRow,
+    HelpdeskConnection,
+)
+from hartriage.rules.base import Finding, Severity
 from hartriage.services import audit
 from hartriage.services.retention import purge
-from hartriage.summary.builder import Summary, to_html, to_markdown, to_text
+from hartriage.summary.builder import Summary, evidence_lines, to_html, to_markdown, to_text
 from hartriage.worker.dispatch import enqueue_analysis
 
 router = APIRouter(prefix="/analyses", tags=["analyses"])
@@ -114,7 +124,17 @@ def list_analyses(
 @router.get("/{analysis_id}")
 def get_analysis(analysis_id: uuid.UUID, principal: PrincipalDep, db: DbDep) -> dict[str, Any]:
     analysis = get_owned(db, principal, analysis_id)
-    if analysis.status == "done":
+    recently_viewed = db.scalar(
+        select(AuditLog.id)
+        .where(
+            AuditLog.actor_user_id == principal.user_id,
+            AuditLog.action == "analysis.viewed",
+            AuditLog.target_id == str(analysis.id),
+            AuditLog.at > datetime.now(UTC) - timedelta(minutes=30),
+        )
+        .limit(1)
+    )
+    if analysis.status == "done" and recently_viewed is None:
         audit.record(
             db,
             org_id=principal.org_id,
@@ -149,6 +169,18 @@ def findings(analysis_id: uuid.UUID, principal: PrincipalDep, db: DbDep) -> dict
                 "entry": f.entry_index,
                 "entries": f.entries,
                 "evidence": f.evidence,
+                "evidence_lines": evidence_lines(
+                    Finding(
+                        rule_id=f.rule_id,
+                        severity=Severity(f.severity),
+                        title=f.title,
+                        cause=f.cause,
+                        next_step=f.next_step,
+                        entries=list(f.entries),
+                        evidence=dict(f.evidence),
+                        confidence=f.confidence,
+                    )
+                ),
             }
             for f in rows
         ]

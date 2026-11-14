@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
-import { Badge, Button, Card, CopyButton, ErrorState, Field, Input, LoadingState, PageHeader, Select } from "../components/ui";
+import { Badge, Button, Card, ConfirmButton, CopyButton, ErrorState, Field, Input, LoadingState, PageHeader, Select } from "../components/ui";
 import { api } from "../lib/api";
 import { relative } from "../lib/format";
 import type { Invitation, Member, Role } from "../lib/types";
@@ -83,9 +83,7 @@ export function TeamPage() {
                   <option value="agent">Agent</option>
                   <option value="viewer">Viewer</option>
                 </Select>
-                <Button size="sm" variant="ghost" onClick={() => window.confirm(`Remove ${m.email}?`) && remove.mutate(m.user_id)}>
-                  Remove
-                </Button>
+                {!m.you && <ConfirmButton label="Remove" question={`Remove ${m.email}?`} confirmLabel="Remove" onConfirm={() => remove.mutate(m.user_id)} />}
               </li>
             ))}
             {team.data.invitations.map((i) => (

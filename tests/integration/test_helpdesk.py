@@ -300,3 +300,16 @@ def test_api_credentials_are_not_sent_to_the_download_host() -> None:
     assert seen["acme.zdusercontent.com"] is None
     expected = "Basic " + base64.b64encode(b"a@b.c/token:t0ken-value").decode()
     assert seen["acme.zendesk.com"] == expected
+
+
+def test_our_own_redacted_copy_is_never_analysed(client: Any, admin: Any) -> None:
+    """Found in browser testing: with replacement on, re-tagging the ticket analysed
+    the redacted copy attached to our note, and posted a second note."""
+    conn = connect_zendesk(admin, replace_attachments=True)
+    tid = ticket("zendesk")
+    assert zendesk_hook(client, conn, tid).status_code == 202
+    fake.TICKETS[("zendesk", "acme", tid)].tags.append("har_analyze")
+    assert zendesk_hook(client, conn, tid, invocation="inv-again").status_code == 202
+    notes = private_notes("zendesk", tid)
+    assert len(notes) == 1
+    assert [a.filename for a in notes[0].attachments] == ["checkout.redacted.har"]

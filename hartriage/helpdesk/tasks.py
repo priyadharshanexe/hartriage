@@ -86,7 +86,21 @@ def ingest_ticket(self: Task, receipt_id: str) -> None:
             )
             db.add(case)
             db.flush()
-        hars = [a for a in ticket.attachments if a.is_har]
+        # Never analyse our own output: the redacted copies attached to our notes.
+        own_notes = {
+            str(c)
+            for c in db.scalars(
+                select(PostedNote.platform_comment_id).where(PostedNote.case_id == case.id)
+            )
+            if c
+        }
+        hars = [
+            a
+            for a in ticket.attachments
+            if a.is_har
+            and a.comment_id not in own_notes
+            and not a.filename.lower().endswith((".redacted.har", ".redacted.har.gz"))
+        ]
         new = 0
         for attachment in hars:
             seen = db.scalar(

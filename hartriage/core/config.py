@@ -11,6 +11,8 @@ from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _DEV_ONLY = "development-only-not-a-secret"
+# HS256 wants at least 32 bytes of key, even in development.
+_DEV_JWT = _DEV_ONLY + "-local-jwt-signing-key-0123456789"
 
 
 class Settings(BaseSettings):
@@ -25,7 +27,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6380/0"
 
     # Dashboard sessions. Production refuses to start without real values.
-    jwt_secret: str = _DEV_ONLY
+    jwt_secret: str = _DEV_JWT
     access_token_ttl_seconds: int = 900
     refresh_token_ttl_days: int = 14
     allowed_origins: list[str] = ["http://localhost:5173", "http://localhost:8280"]
@@ -74,7 +76,7 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def _production_needs_real_secrets(self) -> Settings:
         if self.environment == "production":
-            if self.jwt_secret == _DEV_ONLY or len(self.jwt_secret) < 32:
+            if self.jwt_secret in (_DEV_ONLY, _DEV_JWT) or len(self.jwt_secret) < 32:
                 raise ValueError("HARTRIAGE_JWT_SECRET must be set to 32+ random characters")
             if not self.encryption_key:
                 raise ValueError("HARTRIAGE_ENCRYPTION_KEY must be set (base64 of 32 random bytes)")

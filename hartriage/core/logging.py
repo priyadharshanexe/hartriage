@@ -4,11 +4,16 @@ from __future__ import annotations
 
 import logging
 import sys
+import time
 import uuid
 from collections.abc import Awaitable, Callable
 
 import structlog
 from fastapi import Request, Response
+
+log = structlog.get_logger()
+# Health checks and scrapes run every few seconds; logging them buries everything else.
+QUIET_PATHS = frozenset({"/healthz", "/readyz", "/metrics"})
 
 
 def configure(level: str = "INFO", json_logs: bool = False) -> None:
@@ -37,9 +42,20 @@ async def request_id_middleware(
     request_id = incoming if 8 <= len(incoming) <= 64 and incoming.isascii() else uuid.uuid4().hex
     request.state.request_id = request_id
     structlog.contextvars.bind_contextvars(request_id=request_id)
+    started = time.perf_counter()
+    status = 500
     try:
         response = await call_next(request)
+        status = response.status_code
     finally:
+        if request.url.path not in QUIET_PATHS:
+            log.info(
+                "http.request",
+                method=request.method,
+                path=request.url.path,
+                status=status,
+                duration_ms=round((time.perf_counter() - started) * 1000, 1),
+            )
         structlog.contextvars.unbind_contextvars("request_id")
     response.headers["X-Request-Id"] = request_id
     return response

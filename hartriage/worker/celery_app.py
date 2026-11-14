@@ -28,6 +28,9 @@ app.conf.update(
     task_always_eager=settings.celery_eager,
     task_eager_propagates=True,
     broker_connection_retry_on_startup=True,
+    # Our logs are already structured JSON on stdout; don't let Celery re-log every
+    # line as a WARNING.
+    worker_redirect_stdouts=False,
     broker_transport_options={"visibility_timeout": 3600},
     beat_schedule={
         "retention-sweep": {"task": "hartriage.retention_sweep", "schedule": crontab(minute=17)},

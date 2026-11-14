@@ -132,7 +132,11 @@ def build_summary(
     when = stats.get("first_started")
     activity.append(
         f"{stats.get('entries', 0)} request{'' if stats.get('entries') == 1 else 's'}"
-        + (f" over {span:.0f} s" if isinstance(span, int | float) else "")
+        + (
+            (f" over {span:.0f} s" if span >= 1 else " within 1 s")
+            if isinstance(span, int | float) and stats.get("entries")
+            else ""
+        )
         + (f", starting {when[:19].replace('T', ' ')} UTC" if when else "")
         + (f", recorded in {browser}" if browser else "")
     )
@@ -146,6 +150,8 @@ def build_summary(
             else ev.get("error") or "no response"
         )
         first_failure = f"Request #{first.entry}: {ev.get('method')} {ev.get('url')} → {outcome}"
+    elif not stats.get("entries"):
+        first_failure = "None: the recording contains no requests."
     elif stats.get("failed"):
         # R001 was left out (for example `--rules R005`): don't claim nothing failed.
         first_failure = (
@@ -155,7 +161,21 @@ def build_summary(
         first_failure = "None: every request in the file succeeded."
 
     lead = _lead(findings)
-    if lead is None:
+    if lead is None and not stats.get("entries"):
+        likely = (
+            "The HAR file is empty: recording was started after the problem happened, or the"
+            " export was saved before the page made any requests."
+        )
+        step = (
+            "Ask the customer to open DevTools first, turn on 'Preserve log', reproduce the"
+            " problem, and only then export the HAR file."
+        )
+        evidence: list[str] = ["0 requests in the file"]
+        kb_title, kb_url = (
+            "How to record a useful HAR file",
+            kb_url_template.format(slug="recording-a-har"),
+        )
+    elif lead is None:
         likely = (
             "No failed or unusually slow requests were recorded. The problem may not have"
             " been reproduced while recording, or it happens in the page's own code."
@@ -164,7 +184,7 @@ def build_summary(
             "Ask the customer to start recording before reproducing the problem, keep"
             " 'Preserve log' on, and send the browser console output as well."
         )
-        evidence: list[str] = [f"{stats.get('entries', 0)} requests, none failed"]
+        evidence = [f"{stats.get('entries', 0)} requests, none failed"]
         kb_title, kb_url = (
             "How to record a useful HAR file",
             kb_url_template.format(slug="recording-a-har"),

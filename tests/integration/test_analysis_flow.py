@@ -203,3 +203,42 @@ def test_kb_and_health(client: Any) -> None:
     assert article.status_code == 200 and article.text.startswith("# R002")
     assert client.get("/v1/kb/..%2F..%2Fpyproject").status_code == 404
     assert "hartriage_uploads_total" in client.get("/metrics").text
+
+
+# --------------------------------------------------- regressions from browser testing
+
+
+def test_truncated_upload_keeps_its_note(client: Any, admin: Any) -> None:
+    cut = checkout()[:9000]
+    analysis = admin.get(f"/v1/analyses/{admin.upload(cut).json()['analysis_id']}").json()
+    assert analysis["stats"]["truncated"] is True
+    assert any("cut off" in note for note in analysis["summary"]["notes"])
+
+
+def test_empty_recording_says_so(client: Any, admin: Any) -> None:
+    empty = b'{"log": {"version": "1.2", "entries": []}}'
+    summary = admin.get(f"/v1/analyses/{admin.upload(empty).json()['analysis_id']}").json()["summary"]
+    assert summary["first_failure"] == "None: the recording contains no requests."
+    assert "empty" in summary["likely_cause"]
+
+
+def test_viewing_is_audited_once_not_on_every_refresh(client: Any, admin: Any) -> None:
+    analysis_id = admin.upload(checkout()).json()["analysis_id"]
+    for _ in range(5):
+        admin.get(f"/v1/analyses/{analysis_id}")
+    actions = [a["action"] for a in admin.get("/v1/audit").json()["items"]]
+    assert actions.count("analysis.viewed") == 1
+
+
+def test_findings_carry_their_evidence_lines(client: Any, admin: Any) -> None:
+    analysis_id = admin.upload(checkout()).json()["analysis_id"]
+    items = admin.get(f"/v1/analyses/{analysis_id}/findings").json()["items"]
+    server_error = next(f for f in items if f["rule_id"] == "R011")
+    assert any(line.startswith("#7 x-request-id=") for line in server_error["evidence_lines"])
+
+
+def test_api_docs_offer_bearer_auth(client: Any) -> None:
+    spec = client.get("/openapi.json").json()
+    assert spec["components"]["securitySchemes"]["HTTPBearer"]["scheme"] == "bearer"
+    operation_ids = [op["operationId"] for path in spec["paths"].values() for op in path.values()]
+    assert len(operation_ids) == len(set(operation_ids))

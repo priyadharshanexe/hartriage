@@ -22,9 +22,14 @@ health = APIRouter(tags=["health"])
 router = APIRouter(tags=["kb", "audit"])
 
 
-@health.api_route("/healthz", methods=["GET", "HEAD"])
+@health.get("/healthz")
 def healthz() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@health.head("/healthz", include_in_schema=False)
+def healthz_head() -> Response:
+    return Response(status_code=200)
 
 
 @health.get("/readyz")

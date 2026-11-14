@@ -8,7 +8,8 @@ from dataclasses import dataclass
 from typing import Annotated
 
 import jwt
-from fastapi import Depends, Request
+from fastapi import Depends, Security
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from hartriage.core.config import Settings, get_settings
@@ -42,10 +43,17 @@ class Principal:
         return self.user.id
 
 
-def current_principal(request: Request, db: DbDep, settings: SettingsDep) -> Principal:
-    header = request.headers.get("authorization", "")
-    scheme, _, token = header.partition(" ")
-    if scheme.lower() != "bearer" or not token:
+# Declared as a security scheme so the API docs (/docs) offer an "Authorize" button.
+bearer = HTTPBearer(auto_error=False, description="The access_token from POST /v1/auth/login")
+
+
+def current_principal(
+    db: DbDep,
+    settings: SettingsDep,
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Security(bearer)] = None,
+) -> Principal:
+    token = credentials.credentials if credentials else ""
+    if not token:
         raise Unauthorized("Sign in to continue.")
     try:
         claims = decode_access_token(settings, token)

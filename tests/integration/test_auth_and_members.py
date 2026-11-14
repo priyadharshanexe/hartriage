@@ -109,3 +109,12 @@ def test_invitation_is_single_use(client: Any, admin: Any) -> None:
         "/v1/auth/accept-invite", json={"token": token, "password": "a long password here"}
     )
     assert again.status_code == 410
+
+
+def test_invitation_lookup_tells_the_invitee_what_they_join(client: Any, admin: Any) -> None:
+    invite = admin.post("/v1/invitations", json={"email": "Lee@Example.com", "role": "viewer"}).json()
+    token = invite["invite_url"].split("#", 1)[1]
+    info = client.get("/v1/invitations/lookup", params={"token": token}).json()
+    assert info == {**info, "organization": "Acme Support", "email": "lee@example.com",
+                    "role": "viewer", "existing_account": False}
+    assert client.get("/v1/invitations/lookup", params={"token": "nope"}).status_code == 410

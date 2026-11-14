@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
-import { Badge, Button, Card, CopyButton, EmptyState, ErrorState, Field, Input, LoadingState, PageHeader, Select } from "../components/ui";
+import { Badge, Button, Card, ConfirmButton, CopyButton, EmptyState, ErrorState, Field, Input, LoadingState, PageHeader, Select } from "../components/ui";
 import { api, fieldErrors } from "../lib/api";
 import { dateTime, relative } from "../lib/format";
 import type { Connection } from "../lib/types";
@@ -47,9 +47,7 @@ export function ConnectionsPage() {
             connection={c}
             secret={secret?.id === c.id ? secret.value : null}
             onSecret={(value) => setSecret({ id: c.id, value })}
-            onDelete={() => {
-              if (window.confirm(`Disconnect ${c.subdomain}? Its analyses and stored files are deleted too.`)) remove.mutate(c.id);
-            }}
+            onDelete={() => remove.mutate(c.id)}
           />
         ))
       )}
@@ -80,9 +78,7 @@ function ConnectionCard({ connection: c, secret, onSecret, onDelete }: { connect
           }}>
             Test
           </Button>
-          <Button size="sm" variant="danger" onClick={onDelete}>
-            Disconnect
-          </Button>
+          <ConfirmButton label="Disconnect" question="Delete this connection and its analyses?" confirmLabel="Disconnect" onConfirm={onDelete} />
         </div>
       }
     >

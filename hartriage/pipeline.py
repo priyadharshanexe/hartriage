@@ -122,7 +122,10 @@ class ProcessResult:
 
     @property
     def truncated(self) -> bool:
-        return self.log.truncated
+        # A stored redacted file is complete JSON even when the original was cut off;
+        # it carries the original's flag in log._hartriage.
+        stored = self.redacted_log_fields.get("_hartriage") or {}
+        return self.log.truncated or bool(stored.get("truncated"))
 
 
 def process(
