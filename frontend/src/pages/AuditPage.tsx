@@ -29,27 +29,37 @@ const ACTIONS: Record<string, string> = {
 export function AuditPage() {
   const log = useQuery({ queryKey: ["audit"], queryFn: () => api<{ items: AuditEntry[] }>("/v1/audit", { query: { limit: 200 } }) });
   return (
-    <div className="mx-auto max-w-4xl">
-      <PageHeader title="Audit log" description="Who viewed, exported, downloaded or changed what, and when." />
+    <div className="max-w-5xl">
+      <PageHeader eyebrow="Administration" title="Audit log" description="Who viewed, exported, downloaded or changed what, and when. Newest first." />
       {log.isPending ? (
         <LoadingState />
       ) : log.isError ? (
-        <ErrorState error={log.error} />
+        <ErrorState error={log.error} onRetry={() => void log.refetch()} />
       ) : log.data.items.length === 0 ? (
         <EmptyState title="Nothing yet" />
       ) : (
-        <ol className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white text-sm">
+        <ol className="text-sm">
           {log.data.items.map((a, i) => (
-            <li key={`${a.at}-${i}`} className="flex flex-wrap gap-x-3 px-4 py-2">
-              <span className="w-44 shrink-0 text-slate-500">{dateTime(a.at)}</span>
-              <span className="font-medium">{a.actor ?? "HAR Triage"}</span>
-              <span className="text-slate-700">{ACTIONS[a.action] ?? a.action}</span>
-              {a.target_type === "analysis" && a.target_id && (
-                <Link className="text-brand-700 underline" to={`/analyses/${a.target_id}`}>
-                  open
-                </Link>
-              )}
-              {Object.keys(a.details).length > 0 && <span className="text-xs text-slate-400">{Object.entries(a.details).map(([k, v]) => `${k}: ${String(v)}`).join(", ")}</span>}
+            <li key={`${a.at}-${i}`} className="grid gap-x-4 gap-y-0.5 border-b border-rule py-2.5 sm:grid-cols-[11rem_minmax(0,1fr)]">
+              <span className="font-mono text-xs text-ink-3 sm:pt-0.5">{dateTime(a.at)}</span>
+              <span className="min-w-0">
+                <span className="font-medium">{a.actor ?? "HAR Triage"}</span> <span className="text-ink-2">{ACTIONS[a.action] ?? a.action}</span>
+                {a.target_type === "analysis" && a.target_id && (
+                  <>
+                    {" "}
+                    <Link className="text-xs underline decoration-signal underline-offset-2 hover:text-signal" to={`/analyses/${a.target_id}`}>
+                      open
+                    </Link>
+                  </>
+                )}
+                {Object.keys(a.details).length > 0 && (
+                  <span className="block font-mono text-xs break-words text-ink-4">
+                    {Object.entries(a.details)
+                      .map(([k, v]) => `${k}: ${String(v)}`)
+                      .join(" · ")}
+                  </span>
+                )}
+              </span>
             </li>
           ))}
         </ol>

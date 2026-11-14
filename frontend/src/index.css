@@ -1,42 +1,97 @@
 @import "tailwindcss";
 
+/*
+ * HAR Triage design system
+ *
+ * A case file, not a dashboard: warm paper, near-black ink, hairline rules and
+ * square corners. Secrets appear as black redaction bars. Severity uses triage
+ * tags. Data is always set in Plex Mono.
+ */
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
-  --color-brand-50: #f0fdfa;
-  --color-brand-100: #ccfbf1;
-  --color-brand-500: #14b8a6;
-  --color-brand-600: #0f766e;
-  --color-brand-700: #115e59;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "IBM Plex Sans Condensed", "IBM Plex Sans", ui-sans-serif, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
 
-  /* Request phases, as in browser DevTools. */
-  --color-phase-blocked: #cbd5e1;
-  --color-phase-dns: #0ea5e9;
-  --color-phase-connect: #f97316;
-  --color-phase-ssl: #a855f7;
-  --color-phase-send: #64748b;
-  --color-phase-wait: #22c55e;
-  --color-phase-receive: #3b82f6;
+  --color-paper: #f2eee5;
+  --color-paper-2: #e9e3d6;
+  --color-card: #fbf9f4;
+  --color-ink: #1b1a17;
+  --color-ink-2: #3b3832;
+  --color-ink-3: #6e695d;
+  --color-ink-4: #9a9486;
+  --color-rule: #d9d2c3;
+  --color-rule-2: #c3baa6;
+  --color-signal: #c2410c;
+  --color-signal-soft: #f6dccc;
+
+  /* Triage */
+  --color-critical: #7f1d1d;
+  --color-high: #c8352a;
+  --color-medium: #d99a06;
+  --color-info: #5f7a62;
+  --color-ok: #2f6b3a;
+
+  /* Request phases, as in browser DevTools */
+  --color-phase-blocked: #c9c2b2;
+  --color-phase-dns: #0e86b7;
+  --color-phase-connect: #e0711b;
+  --color-phase-ssl: #8b4fc4;
+  --color-phase-send: #6e695d;
+  --color-phase-wait: #2f8f4e;
+  --color-phase-receive: #2f62c4;
+
+  --radius-xs: 2px;
+}
+
+html {
+  font-feature-settings: "ss02";
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-paper font-sans text-ink antialiased;
+}
+
+::selection {
+  background: var(--color-signal-soft);
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-brand-500);
+  outline: 2px solid var(--color-signal);
   outline-offset: 2px;
 }
 
-.prose-kb h1 { @apply mb-3 text-2xl font-semibold text-slate-900; }
-.prose-kb h2 { @apply mb-2 mt-6 text-lg font-semibold text-slate-900; }
-.prose-kb h3 { @apply mb-2 mt-4 font-semibold text-slate-900; }
-.prose-kb p { @apply my-3 leading-relaxed text-slate-700; }
-.prose-kb ul { @apply my-3 list-disc space-y-1 pl-6 text-slate-700; }
-.prose-kb ol { @apply my-3 list-decimal space-y-1 pl-6 text-slate-700; }
-.prose-kb code { @apply rounded bg-slate-100 px-1 py-0.5 font-mono text-[0.85em]; }
-.prose-kb blockquote { @apply my-4 border-l-4 border-brand-500 bg-brand-50 px-4 py-2 text-slate-700; }
-.prose-kb table { @apply my-4 w-full border-collapse text-sm; }
-.prose-kb th { @apply border-b border-slate-300 px-2 py-1.5 text-left font-semibold; }
-.prose-kb td { @apply border-b border-slate-100 px-2 py-1.5 align-top; }
-.prose-kb a { @apply text-brand-700 underline; }
+/* Small uppercase labels: section names, column heads, field captions. */
+.eyebrow {
+  @apply font-display text-[0.7rem] font-semibold tracking-[0.12em] text-ink-3 uppercase;
+}
+
+/* A secret that was removed: a redaction bar carrying its marker id. */
+.redaction {
+  @apply mx-px inline-flex items-center gap-1 rounded-[1px] bg-ink px-1.5 py-px align-baseline font-mono text-[0.78em] leading-tight text-[#b8b19f];
+  white-space: nowrap;
+}
+.redaction::before {
+  content: "";
+  display: inline-block;
+  width: 1.4em;
+  height: 0.55em;
+  background: #000;
+  box-shadow: inset 0 0 0 1px #3b3832;
+}
+
+/* Knowledge-base articles */
+.prose-kb { @apply text-[0.95rem] leading-relaxed text-ink-2; }
+.prose-kb h1 { @apply mb-4 font-display text-3xl font-semibold tracking-tight text-ink; }
+.prose-kb h2 { @apply mt-8 mb-3 border-t border-rule pt-5 font-display text-xl font-semibold text-ink; }
+.prose-kb h3 { @apply mt-5 mb-2 font-semibold text-ink; }
+.prose-kb p { @apply my-3; }
+.prose-kb ul { @apply my-3 list-disc space-y-1.5 pl-5 marker:text-ink-4; }
+.prose-kb ol { @apply my-3 list-decimal space-y-1.5 pl-5 marker:font-mono marker:text-ink-3; }
+.prose-kb code { @apply rounded-[2px] bg-paper-2 px-1 py-px font-mono text-[0.85em] text-ink; }
+.prose-kb blockquote { @apply my-5 border-l-4 border-ink bg-paper-2/60 px-4 py-2 text-ink-2; }
+.prose-kb table { @apply my-5 w-full border-collapse text-sm; }
+.prose-kb th { @apply border-b-2 border-ink px-2 py-2 text-left font-display text-xs font-semibold tracking-wider uppercase; }
+.prose-kb td { @apply border-b border-rule px-2 py-2 align-top; }
+.prose-kb a { @apply text-ink underline decoration-signal decoration-2 underline-offset-2 hover:text-signal; }
+.prose-kb strong { @apply font-semibold text-ink; }
+.prose-kb table { display: block; overflow-x: auto; }

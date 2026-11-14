@@ -17,7 +17,7 @@ const analysis: Analysis = {
   },
 };
 const findings: Finding[] = [
-  { id: "f1", rule_id: "R002", severity: "high", title: "401 Unauthorized: 1 request", cause: "The token had expired.", next_step: "Sign in again.", confidence: "certain", kb: "R002-auth", entry: 2, entries: [2], evidence: {} },
+  { id: "f1", rule_id: "R002", severity: "high", title: "401 Unauthorized: 1 request", cause: "The token had expired.", next_step: "Sign in again.", confidence: "certain", kb: "R002-auth", entry: 2, entries: [2], evidence: {}, evidence_lines: ["Request #2: token exp 10:00:00, sent 10:04:12"] },
 ];
 const entries: EntriesPage = {
   items: [
@@ -56,8 +56,12 @@ describe("AnalysisPage", () => {
     expect(await screen.findByTestId("likely-cause")).toHaveTextContent("had expired");
     expect(screen.getByTestId("redaction-sentence")).toHaveTextContent("Removed 1 token");
     expect(await screen.findByText("401 Unauthorized: 1 request")).toBeInTheDocument();
+    expect(screen.getByText(/token exp 10:00:00/)).toBeInTheDocument();
+    // The KB link opens the article inside the app.
+    expect(screen.getByRole("link", { name: "R002: 401 Unauthorized" })).toHaveAttribute("href", "/kb/R002-auth");
     // The marker is displayed as a marker, never as a value.
-    expect(screen.getAllByText("[REDACTED:aaaaaaaa]")[0]?.tagName).toBe("MARK");
+    expect(screen.getAllByText("aaaaaaaa")[0]?.tagName).toBe("MARK");
+    expect(screen.queryByText(/REDACTED:/)).toBeNull();
   });
 
   it("copies the Markdown summary for the ticket", async () => {

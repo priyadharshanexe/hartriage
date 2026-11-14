@@ -29,9 +29,11 @@ test("upload a HAR, read the findings, copy the summary, inspect a redacted requ
   await page.getByTestId("finding").filter({ hasText: "R002" }).getByRole("button", { name: /^Show/ }).click();
   const detail = page.getByRole("complementary", { name: /Request \d+/ });
   await expect(detail).toBeVisible();
-  await expect(detail.locator("mark").first()).toHaveText(/\[REDACTED:[0-9a-f]{8}\]/);
+  await expect(detail.locator("mark").first()).toHaveText(/^[0-9a-f]{8}$/);
   await expect(detail).toContainText("expired before this request");
 
+  await page.keyboard.press("Escape");
+  await expect(detail).toBeHidden();
   await page.getByRole("link", { name: "History" }).click();
   await expect(page.getByRole("link", { name: "checkout-broken.har" })).toBeVisible();
 });

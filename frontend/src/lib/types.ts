@@ -96,6 +96,7 @@ export interface Finding {
   entry: number | null;
   entries: number[];
   evidence: Record<string, unknown>;
+  evidence_lines?: string[];
 }
 
 export type Phase = "blocked" | "dns" | "connect" | "ssl" | "send" | "wait" | "receive";

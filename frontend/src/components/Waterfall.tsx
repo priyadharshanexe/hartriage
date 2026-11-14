@@ -5,6 +5,7 @@ import type { EntryRow } from "../lib/types";
 import { cx } from "./ui";
 
 const ROW = 30;
+const MAX_HEIGHT = 30 * ROW;
 const PHASE_CLASS: Record<string, string> = {
   blocked: "bg-phase-blocked",
   dns: "bg-phase-dns",
@@ -14,7 +15,8 @@ const PHASE_CLASS: Record<string, string> = {
   wait: "bg-phase-wait",
   receive: "bg-phase-receive",
 };
-const STATUS_CLASS = { green: "text-emerald-700", amber: "text-amber-700", red: "text-red-700 font-semibold", slate: "text-slate-500" };
+const STATUS_CLASS = { green: "text-ok", amber: "text-[#8a5a00] font-medium", red: "bg-high text-white font-semibold", slate: "text-ink-3" };
+const COLS = "grid-cols-[2.75rem_3.5rem_3.25rem_minmax(8rem,1fr)_4rem_4.5rem_minmax(6rem,26%)] max-md:grid-cols-[2rem_2.75rem_2.75rem_minmax(5rem,1fr)_3.5rem] max-md:gap-x-1.5 max-md:px-2";
 
 export interface WaterfallFilter {
   failedOnly: boolean;
@@ -22,6 +24,12 @@ export interface WaterfallFilter {
   minMs: number | null;
   text: string;
   numbers: Set<number> | null;
+}
+
+export const NO_FILTER: WaterfallFilter = { failedOnly: false, host: "", minMs: null, text: "", numbers: null };
+
+export function isFiltered(f: WaterfallFilter): boolean {
+  return Boolean(f.numbers || f.failedOnly || f.host || f.minMs !== null || f.text.trim());
 }
 
 export function applyFilter(rows: EntryRow[], f: WaterfallFilter): EntryRow[] {
@@ -46,19 +54,21 @@ export function Waterfall({ rows, selected, onSelect, highlight }: { rows: Entry
     return Math.max(end, 1);
   }, [rows]);
   const virtualizer = useVirtualizer({ count: rows.length, getScrollElement: () => parent.current, estimateSize: () => ROW, overscan: 12 });
+  // As tall as the rows need, up to 30 rows; then it scrolls.
+  const height = Math.min(Math.max(rows.length, 1) * ROW, MAX_HEIGHT);
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white">
-      <div className="grid grid-cols-[2.75rem_3.5rem_3rem_minmax(10rem,1fr)_4rem_4.5rem_minmax(6rem,22%)] gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium uppercase tracking-wide text-slate-500" role="row">
-        <span>#</span>
-        <span>Method</span>
-        <span>Status</span>
-        <span>URL</span>
-        <span className="text-right">Size</span>
-        <span className="text-right">Time</span>
-        <span>Timeline ({ms(span)})</span>
+    <div className="border border-ink/80 bg-card">
+      <div className={cx("grid gap-2 border-b border-ink bg-paper-2 px-3 py-2", COLS)} role="row">
+        <span className="eyebrow">#</span>
+        <span className="eyebrow">Method</span>
+        <span className="eyebrow">Status</span>
+        <span className="eyebrow">URL</span>
+        <span className="eyebrow text-right">Size</span>
+        <span className="eyebrow text-right max-md:hidden">Time</span>
+        <span className="eyebrow max-md:hidden">Timeline · {ms(span)}</span>
       </div>
-      <div ref={parent} className="h-[28rem] overflow-auto" role="table" aria-label="Requests" data-testid="waterfall">
+      <div ref={parent} className="overflow-auto" style={{ height }} role="table" aria-label="Requests" data-testid="waterfall">
         <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
           {virtualizer.getVirtualItems().map((item) => {
             const r = rows[item.index];
@@ -68,36 +78,42 @@ export function Waterfall({ rows, selected, onSelect, highlight }: { rows: Entry
             const left = ((r.started_ms ?? 0) / span) * 100;
             const width = Math.max((r.time_ms / span) * 100, 0.4);
             const total = PHASES.reduce((sum, p) => sum + (phases[p] ?? 0), 0) || r.time_ms || 1;
+            const isSelected = selected === r.number;
             return (
               <button
                 type="button"
                 key={r.number}
                 role="row"
-                aria-selected={selected === r.number}
+                aria-selected={isSelected}
                 onClick={() => onSelect(r.number)}
                 className={cx(
-                  "absolute left-0 grid w-full grid-cols-[2.75rem_3.5rem_3rem_minmax(10rem,1fr)_4rem_4.5rem_minmax(6rem,22%)] items-center gap-2 border-b border-slate-50 px-3 text-left text-xs hover:bg-slate-50",
-                  selected === r.number && "bg-brand-50 hover:bg-brand-50",
-                  highlight.has(r.number) && selected !== r.number && "bg-amber-50/60",
+                  "absolute left-0 grid w-full items-center gap-2 border-b border-l-[3px] border-b-rule/70 px-3 text-left font-mono text-xs",
+                  COLS,
+                  isSelected
+                    ? "border-l-signal bg-signal-soft"
+                    : highlight.has(r.number)
+                      ? "border-l-medium bg-medium/10 hover:bg-medium/20"
+                      : "border-l-transparent hover:bg-paper-2",
                 )}
                 style={{ top: 0, height: ROW, transform: `translateY(${item.start}px)` }}
               >
-                <span className="tabular-nums text-slate-500">{r.number}</span>
-                <span className="font-mono">{r.method}</span>
-                <span className={cx("tabular-nums", STATUS_CLASS[tone])} title={r.error || undefined}>
-                  {r.status || "ERR"}
+                <span className="text-ink-3 tabular-nums">{r.number}</span>
+                <span>{r.method}</span>
+                <span title={r.error || undefined}>
+                  <span className={cx("px-1 tabular-nums", STATUS_CLASS[tone])}>{r.status || "ERR"}</span>
                 </span>
                 <span className="truncate" title={r.url}>
-                  <span className="text-slate-400">{r.host}</span> {shortUrl(r.url)}
+                  <span className="text-ink-4">{r.host}</span>
+                  <span className="text-ink">{shortUrl(r.url)}</span>
                 </span>
-                <span className="text-right tabular-nums text-slate-600">{bytes(r.response_bytes)}</span>
-                <span className="text-right tabular-nums text-slate-600">{ms(r.time_ms)}</span>
-                <span className="relative h-3 w-full" aria-hidden="true">
-                  <span className="absolute top-0 flex h-3 overflow-hidden rounded-sm" style={{ left: `${left}%`, width: `${width}%` }}>
+                <span className="text-right text-ink-2 tabular-nums">{bytes(r.response_bytes)}</span>
+                <span className="text-right text-ink-2 tabular-nums max-md:hidden">{ms(r.time_ms)}</span>
+                <span className="relative h-3 w-full max-md:hidden" aria-hidden="true">
+                  <span className="absolute top-0 flex h-3 overflow-hidden" style={{ left: `${left}%`, width: `${width}%` }}>
                     {PHASES.map((p) =>
                       phases[p] ? <span key={p} className={PHASE_CLASS[p]} style={{ width: `${((phases[p] ?? 0) / total) * 100}%` }} /> : null,
                     )}
-                    {r.status === 0 && <span className="h-full w-full bg-red-400" />}
+                    {r.status === 0 && <span className="h-full w-full bg-high" />}
                   </span>
                 </span>
               </button>
@@ -105,10 +121,10 @@ export function Waterfall({ rows, selected, onSelect, highlight }: { rows: Entry
           })}
         </div>
       </div>
-      <div className="flex flex-wrap gap-3 border-t border-slate-100 px-3 py-2 text-xs text-slate-500">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-rule px-3 py-2 text-xs text-ink-3">
         {PHASES.map((p) => (
-          <span key={p} className="flex items-center gap-1">
-            <span className={cx("inline-block h-2.5 w-2.5 rounded-sm", PHASE_CLASS[p])} />
+          <span key={p} className="flex items-center gap-1.5">
+            <span className={cx("inline-block h-2.5 w-2.5", PHASE_CLASS[p])} />
             {PHASE_LABEL[p]}
           </span>
         ))}

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
-import { Badge, Button, Card, ConfirmButton, CopyButton, EmptyState, ErrorState, Field, Input, LoadingState, PageHeader, Select } from "../components/ui";
+import { type FormEvent, useCallback, useState } from "react";
+import { Button, Card, ConfirmButton, CopyButton, EmptyState, ErrorState, Field, Input, LoadingState, Notice, PageHeader, Select, Tag } from "../components/ui";
 import { api, fieldErrors } from "../lib/api";
 import { dateTime, relative } from "../lib/format";
 import type { Connection } from "../lib/types";
@@ -12,6 +12,8 @@ export function ConnectionsPage() {
   const list = useQuery({ queryKey: ["connections"], queryFn: () => api<{ items: Connection[] }>("/v1/connections") });
   const [adding, setAdding] = useState(false);
   const [secret, setSecret] = useState<{ id: string; value: string } | null>(null);
+  const [created, setCreated] = useState<string | null>(null);
+  const clearCreated = useCallback(() => setCreated(null), []);
 
   const remove = useMutation({
     mutationFn: (id: string) => api<void>(`/v1/connections/${id}`, { method: "DELETE" }),
@@ -19,8 +21,9 @@ export function ConnectionsPage() {
   });
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="max-w-4xl space-y-6">
       <PageHeader
+        eyebrow="Administration"
         title="Helpdesk connections"
         description="Connect Zendesk or Freshdesk. Agents tag a ticket that has a HAR attachment, and the analysis comes back as a private note."
         action={!adding && <Button variant="primary" onClick={() => setAdding(true)}>Add a connection</Button>}
@@ -30,14 +33,17 @@ export function ConnectionsPage() {
           onDone={(created) => {
             setAdding(false);
             if (created?.webhook_secret) setSecret({ id: created.id, value: created.webhook_secret });
+            if (created) setCreated(`Connected to ${created.subdomain}.${created.platform}.com${created.account ? ` as ${created.account}` : ""}.`);
             void queryClient.invalidateQueries({ queryKey: ["connections"] });
           }}
         />
       )}
+      {created && <Notice onDone={clearCreated}>{created}</Notice>}
+      {remove.isError && <ErrorState error={remove.error} />}
       {list.isPending ? (
         <LoadingState />
       ) : list.isError ? (
-        <ErrorState error={list.error} />
+        <ErrorState error={list.error} onRetry={() => void list.refetch()} />
       ) : list.data.items.length === 0 && !adding ? (
         <EmptyState title="No helpdesk connected">Add Zendesk or Freshdesk to analyse HAR files straight from tickets.</EmptyState>
       ) : (
@@ -57,7 +63,8 @@ export function ConnectionsPage() {
 
 function ConnectionCard({ connection: c, secret, onSecret, onDelete }: { connection: Connection; secret: string | null; onSecret: (s: string) => void; onDelete: () => void }) {
   const queryClient = useQueryClient();
-  const [test, setTest] = useState<string | null>(null);
+  const [test, setTest] = useState<{ ok: boolean; text: string } | null>(null);
+  const [testing, setTesting] = useState(false);
   const toggle = useMutation({
     mutationFn: (value: boolean) => api<Connection>(`/v1/connections/${c.id}`, { method: "PATCH", body: { replace_attachments: value } }),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["connections"] }),
@@ -66,15 +73,23 @@ function ConnectionCard({ connection: c, secret, onSecret, onDelete }: { connect
     <Card
       title={
         <span className="flex items-center gap-2">
-          <Badge tone="blue">{c.platform === "zendesk" ? "Zendesk" : "Freshdesk"}</Badge>
-          {c.subdomain}.{c.platform}.com
+          <Tag tone="ink">{c.platform === "zendesk" ? "Zendesk" : "Freshdesk"}</Tag>
+          <span className="font-mono text-sm tracking-normal text-ink normal-case">{c.subdomain}.{c.platform}.com</span>
         </span>
       }
       action={
         <div className="flex gap-2">
-          <Button size="sm" onClick={async () => {
-            const result = await api<{ ok: boolean; account?: string; error?: string }>(`/v1/connections/${c.id}/test`, { method: "POST" });
-            setTest(result.ok ? `Connected as ${result.account}` : `Failed: ${result.error}`);
+          <Button size="sm" busy={testing} onClick={async () => {
+            setTesting(true);
+            setTest(null);
+            try {
+              const result = await api<{ ok: boolean; account?: string; error?: string }>(`/v1/connections/${c.id}/test`, { method: "POST" });
+              setTest(result.ok ? { ok: true, text: `Connected as ${result.account}` } : { ok: false, text: `Failed: ${result.error}` });
+            } catch (e) {
+              setTest({ ok: false, text: e instanceof Error ? e.message : "The test failed." });
+            } finally {
+              setTesting(false);
+            }
           }}>
             Test
           </Button>
@@ -82,47 +97,47 @@ function ConnectionCard({ connection: c, secret, onSecret, onDelete }: { connect
         </div>
       }
     >
-      {test && <p className="mb-3 text-sm text-slate-700">{test}</p>}
+      {test && <p role="status" className={`mb-4 border-l-4 px-3 py-2 text-sm ${test.ok ? "border-ok bg-ok/[0.08]" : "border-high bg-high/[0.07]"}`}>{test.text}</p>}
       {secret && (
-        <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm" role="alert">
-          <p className="font-medium text-amber-900">Webhook secret, shown once</p>
-          <p className="mt-1 text-amber-900">Add it as the <code>{c.secret_header}</code> header in the Freshdesk automation.</p>
-          <div className="mt-2 flex items-center gap-2">
-            <code className="break-all rounded bg-white px-2 py-1 font-mono text-xs">{secret}</code>
+        <div className="mb-4 border-l-4 border-medium bg-medium/15 p-3 text-sm" role="alert">
+          <p className="font-semibold">Webhook secret, shown once</p>
+          <p className="mt-1">Add it as the <code className="font-mono">{c.secret_header}</code> header in the Freshdesk automation.</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <code className="bg-card px-2 py-1 font-mono text-xs [overflow-wrap:anywhere]">{secret}</code>
             <CopyButton getText={() => secret} />
           </div>
         </div>
       )}
-      <dl className="grid gap-3 text-sm md:grid-cols-[10rem_1fr]">
-        <dt className="text-slate-500">Webhook URL</dt>
+      <dl className="grid gap-x-4 gap-y-3 text-sm md:grid-cols-[10rem_1fr]">
+        <dt className="eyebrow pt-1.5">Webhook URL</dt>
         <dd className="flex flex-wrap items-center gap-2">
-          <code className="break-all rounded bg-slate-50 px-2 py-1 font-mono text-xs">{c.webhook_url}</code>
-          <CopyButton getText={() => c.webhook_url} />
+          <code className="bg-paper-2 px-2 py-1 font-mono text-xs [overflow-wrap:anywhere]">{c.webhook_url}</code>
+          <CopyButton size="sm" getText={() => c.webhook_url} />
         </dd>
-        <dt className="text-slate-500">Last webhook</dt>
+        <dt className="eyebrow pt-0.5">Last webhook</dt>
         <dd>
           {c.last_webhook_at ? (
             <span title={dateTime(c.last_webhook_at)}>
-              {relative(c.last_webhook_at)} — {c.last_webhook_status}
+              {relative(c.last_webhook_at)} · <span className="font-mono text-xs">{c.last_webhook_status}</span>
             </span>
           ) : (
-            "None received yet"
+            <span className="text-ink-3">None received yet</span>
           )}
         </dd>
-        <dt className="text-slate-500">Original attachment</dt>
+        <dt className="eyebrow pt-0.5">Original attachment</dt>
         <dd>
           <label className="flex items-start gap-2">
-            <input type="checkbox" checked={c.replace_attachments} onChange={(e) => toggle.mutate(e.target.checked)} className="mt-1" />
+            <input type="checkbox" checked={c.replace_attachments} onChange={(e) => toggle.mutate(e.target.checked)} className="mt-1 accent-ink" />
             <span>
               Replace the customer's original HAR with the redacted copy after analysis.
-              <span className="block text-xs text-slate-500">The original still holds live session tokens. Zendesk redacts it; Freshdesk deletes it.</span>
+              <span className="block text-xs text-ink-3">The original still holds live session tokens. Zendesk redacts it; Freshdesk deletes it.</span>
             </span>
           </label>
         </dd>
       </dl>
-      <details className="mt-4">
-        <summary className="cursor-pointer text-sm font-medium text-brand-700">Setup steps</summary>
-        <ol className="mt-2 list-decimal space-y-2 pl-5 text-sm text-slate-700">
+      <details className="mt-5 border-t border-rule pt-3">
+        <summary className="eyebrow cursor-pointer text-ink hover:text-signal">Setup steps</summary>
+        <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-ink-2 marker:font-mono marker:text-ink-3">
           {c.setup_steps.map((s) => (
             <li key={s}>{s}</li>
           ))}
@@ -154,13 +169,16 @@ function NewConnection({ onDone }: { onDone: (created: Connection | null) => voi
     onSuccess: (created) => onDone(created),
   });
   const errors = fieldErrors(create.error);
-  const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [key]: e.target.value });
+  const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [key]: e.target.value });
+    if (create.isError) create.reset();
+  };
   return (
     <Card title="New connection">
       <form className="grid gap-4 md:grid-cols-2" onSubmit={(e: FormEvent) => { e.preventDefault(); create.mutate(); }}>
         <Field label="Helpdesk">
           {(p) => (
-            <Select {...p} value={platform} onChange={(e) => setPlatform(e.target.value as Platform)}>
+            <Select {...p} value={platform} onChange={(e) => { setPlatform(e.target.value as Platform); create.reset(); }}>
               <option value="zendesk">Zendesk</option>
               <option value="freshdesk">Freshdesk</option>
             </Select>
@@ -185,8 +203,8 @@ function NewConnection({ onDone }: { onDone: (created: Connection | null) => voi
           </Field>
         )}
         <div className="md:col-span-2">
-          {create.isError && Object.keys(errors).length === 0 && <ErrorState error={create.error} />}
-          <p className="mb-3 text-xs text-slate-500">The credentials are checked against the helpdesk, then stored encrypted. They are never shown again.</p>
+          {create.isError && Object.keys(errors).length === 0 && <div className="mb-3"><ErrorState error={create.error} /></div>}
+          <p className="mb-3 text-xs text-ink-3">The credentials are checked against the helpdesk, then stored encrypted. They are never shown again.</p>
           <div className="flex gap-2">
             <Button type="submit" variant="primary" busy={create.isPending}>
               Connect

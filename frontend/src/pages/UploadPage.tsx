@@ -2,13 +2,19 @@ import { useQuery } from "@tanstack/react-query";
 import { type DragEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
-import { Badge, Button, Card, ErrorState, PageHeader, Spinner } from "../components/ui";
+import { Button, cx, ErrorState, PageHeader, Spinner } from "../components/ui";
 import { api, uploadFile } from "../lib/api";
 import { bytes } from "../lib/format";
 import type { Analysis } from "../lib/types";
 
 const ACCEPT = ".har,.json,.gz,.zip";
 const MAX_BYTES = 100 * 1024 * 1024;
+
+const STEPS = [
+  { n: "01", title: "Redact while reading", body: "Cookies, tokens, API keys, passwords and signatures become markers before a byte is written." },
+  { n: "02", title: "Run the rules", body: "Eleven checks look for expired tokens, CORS, mixed content, timeouts, oversized headers and more." },
+  { n: "03", title: "Write the answer", body: "One summary: the first failing request, the likely cause, the evidence and the next step." },
+];
 
 export function UploadPage() {
   const { canEdit } = useAuth();
@@ -34,6 +40,7 @@ export function UploadPage() {
   async function start(chosen: File) {
     setFile(chosen);
     setError(null);
+    setAnalysisId(null);
     if (chosen.size > MAX_BYTES) {
       // Checked here first: there is no point uploading 100 MB only to be refused.
       setError(new Error(`${chosen.name} is ${bytes(chosen.size)}; the limit is 100 MB. Ask the customer to record a shorter session, or use the CLI.`));
@@ -56,38 +63,43 @@ export function UploadPage() {
     if (dropped) void start(dropped);
   }
 
-  const busy = progress !== null && !error && status.data?.status !== "failed";
+  const failed = status.data?.status === "failed";
+  const busy = progress !== null && !error && !failed;
+  const pct = progress === null ? 0 : Math.round(progress * 100);
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div>
       <PageHeader
+        eyebrow="New case"
         title="Analyse a HAR file"
         description="Drop the file a customer sent. Secrets are removed while it uploads, then the analysis finds the failing request and writes a summary you can paste into the ticket."
       />
-      {!canEdit && (
-        <div className="mb-4 rounded-md bg-amber-50 px-4 py-3 text-sm text-amber-900">Viewers can read analyses but not upload files.</div>
-      )}
+      {!canEdit && <div className="mb-6 border-l-4 border-medium bg-medium/15 px-4 py-3 text-sm">Viewers can read analyses but not upload files.</div>}
+
       <div
         onDragOver={(e) => {
           e.preventDefault();
-          setDragging(true);
+          if (canEdit) setDragging(true);
         }}
         onDragLeave={() => setDragging(false)}
-        onDrop={canEdit ? onDrop : undefined}
-        className={`rounded-xl border-2 border-dashed px-6 py-14 text-center transition-colors ${dragging ? "border-brand-500 bg-brand-50" : "border-slate-300 bg-white"}`}
+        onDrop={canEdit ? onDrop : (e) => e.preventDefault()}
+        className={cx(
+          "relative border-2 border-dashed px-6 py-16 text-center transition-colors",
+          dragging ? "border-signal bg-signal-soft/60" : "border-ink-4 bg-card",
+        )}
       >
         {busy ? (
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-slate-800">{file?.name}</p>
+          <div className="mx-auto max-w-md space-y-4">
+            <p className="font-mono text-sm break-words text-ink">{file?.name}</p>
             {progress !== null && progress < 1 && !analysisId ? (
               <>
-                <div className="mx-auto h-2 w-64 overflow-hidden rounded bg-slate-200" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100}>
-                  <div className="h-full bg-brand-600 transition-all" style={{ width: `${Math.round(progress * 100)}%` }} />
+                <div className="h-1.5 w-full bg-paper-2" role="progressbar" aria-label="Upload progress" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+                  <div className="h-full bg-ink transition-all" style={{ width: `${pct}%` }} />
                 </div>
-                <p className="text-xs text-slate-500">Uploading and redacting… {Math.round(progress * 100)}%</p>
+                <p className="font-mono text-xs text-ink-3">Uploading and redacting · {pct}%</p>
               </>
             ) : (
-              <p className="flex items-center justify-center gap-2 text-sm text-slate-600">
+              <p className="flex items-center justify-center gap-2 font-mono text-sm text-ink-2">
                 <Spinner small />
                 {analysisId ? `Analysis ${status.data?.status ?? "queued"}…` : "Redacting…"}
               </p>
@@ -95,10 +107,11 @@ export function UploadPage() {
           </div>
         ) : (
           <>
-            <p className="text-sm text-slate-700">
-              Drag a <code className="rounded bg-slate-100 px-1">.har</code> file here (also <code className="rounded bg-slate-100 px-1">.har.gz</code> or a zip with one HAR inside)
+            <p className="font-display text-2xl font-semibold">Drop the HAR file here</p>
+            <p className="mt-2 text-sm text-ink-3">
+              <code className="font-mono">.har</code>, <code className="font-mono">.har.gz</code>, or a zip with one HAR inside · up to 100 MB and 50,000 requests
             </p>
-            <Button className="mt-4" variant="primary" disabled={!canEdit} onClick={() => input.current?.click()}>
+            <Button className="mt-6" variant="primary" disabled={!canEdit} onClick={() => input.current?.click()}>
               Choose a file
             </Button>
             <input
@@ -109,10 +122,10 @@ export function UploadPage() {
               data-testid="file-input"
               onChange={(e) => {
                 const chosen = e.target.files?.[0];
+                e.target.value = ""; // choosing the same file again should start again
                 if (chosen) void start(chosen);
               }}
             />
-            <p className="mt-3 text-xs text-slate-500">Up to 100 MB and 50,000 requests.</p>
           </>
         )}
       </div>
@@ -121,32 +134,50 @@ export function UploadPage() {
           <ErrorState error={error} />
         </div>
       )}
-      {status.data?.status === "failed" && (
+      {failed && (
         <div className="mt-4">
-          <ErrorState error={new Error(status.data.error ?? "The analysis failed.")} />
+          <ErrorState error={new Error(status.data?.error ?? "The analysis failed.")} />
         </div>
       )}
 
-      <div className="mt-8 grid gap-4 md:grid-cols-2">
-        <Card title="What happens to the file">
-          <ul className="list-disc space-y-1.5 pl-5 text-sm text-slate-600">
-            <li>It is read as it uploads. Cookies, tokens, API keys, passwords and signatures are replaced with markers such as <Badge tone="amber">[REDACTED:3f9a01c2]</Badge> before anything is written.</li>
-            <li>Response bodies are dropped, except small JSON error messages.</li>
-            <li>Only the redacted copy is stored, encrypted, and deleted automatically after the retention period.</li>
-            <li>Nothing is sent to any AI service.</li>
+      <ol className="mt-10 grid gap-px border border-rule bg-rule md:grid-cols-3">
+        {STEPS.map((s) => (
+          <li key={s.n} className="bg-paper p-5">
+            <span className="font-mono text-xs text-signal">{s.n}</span>
+            <p className="mt-1 font-display text-lg font-semibold">{s.title}</p>
+            <p className="mt-1 text-sm text-ink-2">{s.body}</p>
+          </li>
+        ))}
+      </ol>
+
+      <div className="mt-10 grid gap-10 md:grid-cols-2">
+        <section>
+          <h2 className="eyebrow mb-3">What happens to the file</h2>
+          <ul className="space-y-2.5 text-sm text-ink-2">
+            <li className="border-l-2 border-rule-2 pl-3">
+              Secrets are replaced with markers such as <mark className="redaction">3f9a01c2</mark> before anything is written. The same secret gets the same marker, so you can still follow it.
+            </li>
+            <li className="border-l-2 border-rule-2 pl-3">Response bodies are dropped, except small JSON error messages.</li>
+            <li className="border-l-2 border-rule-2 pl-3">Only the redacted copy is stored, encrypted, and deleted automatically after the retention period.</li>
+            <li className="border-l-2 border-rule-2 pl-3">Nothing is sent to any AI service.</li>
           </ul>
-        </Card>
-        <Card title="Prefer not to upload?">
-          <p className="text-sm text-slate-600">The same analysis runs offline on your machine:</p>
-          <pre className="mt-2 overflow-x-auto rounded bg-slate-900 p-3 text-xs text-slate-100">
-            hartriage analyze file.har{"\n"}hartriage redact file.har -o clean.har
+        </section>
+        <section>
+          <h2 className="eyebrow mb-3">Prefer not to upload?</h2>
+          <p className="text-sm text-ink-2">The same analysis runs offline on your machine:</p>
+          <pre className="mt-3 overflow-x-auto bg-ink p-4 font-mono text-xs leading-relaxed text-paper">
+            <span className="text-[#8a8475]">$</span> hartriage analyze file.har{"\n"}
+            <span className="text-[#8a8475]">$</span> hartriage redact file.har -o clean.har
           </pre>
-          <p className="mt-2 text-sm text-slate-600">
-            Customers asking how to record one: <Link className="text-brand-700 underline" to="/kb/recording-a-har">recording a useful HAR file</Link>.
+          <p className="mt-3 text-sm text-ink-2">
+            Customer asking how to record one? Send them{" "}
+            <Link className="underline decoration-signal decoration-2 underline-offset-2 hover:text-signal" to="/kb/recording-a-har">
+              recording a useful HAR file
+            </Link>
+            .
           </p>
-        </Card>
+        </section>
       </div>
-      {file && <p className="mt-4 text-xs text-slate-400">Selected: {file.name} ({bytes(file.size)})</p>}
     </div>
   );
 }

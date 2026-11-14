@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Badge, Button, EmptyState, ErrorState, Input, LoadingState, PageHeader } from "../components/ui";
+import { Button, EmptyState, ErrorState, Input, LoadingState, PageHeader, Redacted, Tag } from "../components/ui";
 import { api } from "../lib/api";
 import { bytes, dateTime, relative } from "../lib/format";
 import type { Analysis } from "../lib/types";
@@ -16,17 +16,18 @@ export function SourceBadge({ analysis }: { analysis: Analysis }) {
   if (source.kind === "ticket") {
     const label = `${source.platform === "zendesk" ? "Zendesk" : "Freshdesk"} #${source.ticket_id}`;
     return source.ticket_url ? (
-      <a href={source.ticket_url} target="_blank" rel="noreferrer noopener" className="text-brand-700 underline">
-        {label}
+      <a href={source.ticket_url} target="_blank" rel="noreferrer noopener" className="font-mono text-xs underline decoration-signal underline-offset-2 hover:text-signal">
+        {label} ↗
       </a>
     ) : (
-      <Badge tone="blue">{label}</Badge>
+      <Tag tone="ink">{label}</Tag>
     );
   }
-  return <Badge>{source.kind === "cli" ? "CLI" : "Upload"}</Badge>;
+  return <Tag>{source.kind === "cli" ? "CLI" : "Upload"}</Tag>;
 }
 
-const STATUS_TONE = { done: "green", failed: "red", queued: "slate", running: "blue" } as const;
+const PHONE_HIDDEN = new Set(["Source", "Requests", "Analysed", "Expires"]);
+const STATUS_TONE = { done: "ok", failed: "bad", queued: "muted", running: "warn" } as const;
 
 export function HistoryPage() {
   const [q, setQ] = useState("");
@@ -41,55 +42,60 @@ export function HistoryPage() {
   return (
     <div>
       <PageHeader
+        eyebrow="Case files"
         title="History"
         description="Every analysis in this organisation, newest first. Files and results are deleted automatically when they expire."
-        action={<Input aria-label="Search by file name" placeholder="Search file names" value={q} onChange={(e) => setQ(e.target.value)} />}
+        action={<Input className="w-64" type="search" aria-label="Search by file name" placeholder="Search file names" value={q} onChange={(e) => setQ(e.target.value)} />}
       />
       {query.isPending ? (
         <LoadingState />
       ) : query.isError ? (
         <ErrorState error={query.error} onRetry={() => void query.refetch()} />
       ) : items.length === 0 ? (
-        <EmptyState title="No analyses yet" action={<Link to="/" className="text-sm font-medium text-brand-700">Analyse a file</Link>}>
-          Upload a HAR file, or tag a ticket in a connected helpdesk.
-        </EmptyState>
+        q ? (
+          <EmptyState title="No matching files" action={<Button size="sm" onClick={() => setQ("")}>Clear search</Button>}>
+            No file name contains “{q}”.
+          </EmptyState>
+        ) : (
+          <EmptyState title="No analyses yet" action={<Link to="/" className="text-sm font-medium underline decoration-signal decoration-2 underline-offset-2">Analyse a file</Link>}>
+            Upload a HAR file, or tag a ticket in a connected helpdesk.
+          </EmptyState>
+        )
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+        <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="px-4 py-2">File</th>
-                <th className="px-4 py-2">Source</th>
-                <th className="px-4 py-2">Status</th>
-                <th className="px-4 py-2">Likely cause</th>
-                <th className="px-4 py-2">Requests</th>
-                <th className="px-4 py-2">Analysed</th>
-                <th className="px-4 py-2">Expires</th>
+            <thead className="text-left">
+              <tr className="border-b border-rule-2">
+                {["File", "Source", "Status", "Likely cause", "Requests", "Analysed", "Expires"].map((h) => (
+                  <th key={h} className={`eyebrow px-3 py-2.5 font-semibold whitespace-nowrap ${PHONE_HIDDEN.has(h) ? "max-md:hidden" : ""}`}>
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {items.map((a) => (
-                <tr key={a.id} className="hover:bg-slate-50">
-                  <td className="max-w-[16rem] truncate px-4 py-2 font-medium">
-                    <Link to={`/analyses/${a.id}`} className="text-brand-700 hover:underline">
+                <tr key={a.id} className="border-b border-rule align-top hover:bg-card">
+                  <td className="max-w-[16rem] px-3 py-3">
+                    <Link to={`/analyses/${a.id}`} className="block truncate font-medium text-ink hover:text-signal hover:underline" title={a.filename ?? undefined}>
                       {a.filename ?? "file.har"}
                     </Link>
-                    <div className="text-xs font-normal text-slate-500">{bytes(a.original_size_bytes)}</div>
+                    <div className="font-mono text-xs text-ink-3">{bytes(a.original_size_bytes)}</div>
                   </td>
-                  <td className="px-4 py-2">
+                  <td className="px-3 py-3 whitespace-nowrap max-md:hidden">
                     <SourceBadge analysis={a} />
                   </td>
-                  <td className="px-4 py-2">
-                    <Badge tone={STATUS_TONE[a.status]}>{a.status}</Badge>
+                  <td className="px-3 py-3">
+                    <Tag tone={STATUS_TONE[a.status]}>{a.status}</Tag>
                   </td>
-                  <td className="max-w-md px-4 py-2 text-slate-600">
-                    <span className="line-clamp-2">{a.lead ?? (a.status === "done" ? "No failures found" : "—")}</span>
+                  <td className="max-w-md px-3 py-3 text-ink-2">
+                    <span className="line-clamp-2">{a.lead ? <Redacted text={a.lead} /> : (a.status === "done" ? <span className="text-ink-3">No failures found</span> : "—")}</span>
                   </td>
-                  <td className="px-4 py-2 tabular-nums">{a.entry_count}</td>
-                  <td className="whitespace-nowrap px-4 py-2 text-slate-600" title={dateTime(a.created_at)}>
-                    {relative(a.created_at)}
+                  <td className="px-3 py-3 font-mono tabular-nums max-md:hidden">{a.entry_count}</td>
+                  <td className="px-3 py-3 whitespace-nowrap text-ink-2 max-md:hidden" title={dateTime(a.finished_at ?? a.created_at)}>
+                    {relative(a.finished_at ?? a.created_at)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-slate-600" title={dateTime(a.expires_at)}>
+                  <td className="px-3 py-3 whitespace-nowrap text-ink-3 max-md:hidden" title={dateTime(a.expires_at)}>
                     {relative(a.expires_at)}
                   </td>
                 </tr>
@@ -97,7 +103,7 @@ export function HistoryPage() {
             </tbody>
           </table>
           {query.hasNextPage && (
-            <div className="border-t border-slate-100 p-3 text-center">
+            <div className="p-4 text-center">
               <Button size="sm" busy={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>
                 Load more
               </Button>

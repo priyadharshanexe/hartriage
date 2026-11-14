@@ -1,4 +1,4 @@
-import { type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, useId, useState } from "react";
+import { type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, useEffect, useId, useState } from "react";
 import { ApiError, errorMessage } from "../lib/api";
 import { splitMarkers } from "../lib/format";
 import type { Severity } from "../lib/types";
@@ -7,12 +7,13 @@ export function cx(...classes: (string | false | null | undefined)[]): string {
   return classes.filter(Boolean).join(" ");
 }
 
+// ---------------------------------------------------------------------- Button
 type Variant = "primary" | "secondary" | "danger" | "ghost";
 const VARIANTS: Record<Variant, string> = {
-  primary: "bg-brand-600 text-white hover:bg-brand-700 disabled:bg-brand-600/50",
-  secondary: "bg-white text-slate-700 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 disabled:text-slate-400",
-  danger: "bg-red-600 text-white hover:bg-red-700 disabled:bg-red-600/50",
-  ghost: "text-slate-600 hover:bg-slate-100 disabled:text-slate-400",
+  primary: "bg-ink text-paper hover:bg-ink-2 disabled:bg-ink-4",
+  secondary: "border border-ink/80 bg-transparent text-ink hover:bg-ink hover:text-paper disabled:border-ink-4 disabled:text-ink-4 disabled:hover:bg-transparent",
+  danger: "bg-high text-white hover:bg-critical disabled:opacity-50",
+  ghost: "text-ink-2 hover:bg-paper-2 hover:text-ink disabled:text-ink-4",
 };
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -28,8 +29,8 @@ export function Button({ variant = "secondary", size = "md", busy = false, disab
       disabled={disabled || busy}
       aria-busy={busy || undefined}
       className={cx(
-        "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors disabled:cursor-not-allowed",
-        size === "sm" ? "px-2.5 py-1 text-xs" : "px-3.5 py-2 text-sm",
+        "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[2px] font-medium transition-colors disabled:cursor-not-allowed",
+        size === "sm" ? "h-7 px-2.5 text-xs" : "h-9 px-4 text-sm",
         VARIANTS[variant],
         className,
       )}
@@ -41,9 +42,10 @@ export function Button({ variant = "secondary", size = "md", busy = false, disab
   );
 }
 
+// ---------------------------------------------------------------------- Fields
 interface FieldProps {
   label: string;
-  hint?: string;
+  hint?: ReactNode;
   error?: string;
   children: (props: { id: string; "aria-describedby"?: string; "aria-invalid"?: boolean }) => ReactNode;
 }
@@ -53,17 +55,17 @@ export function Field({ label, hint, error, children }: FieldProps) {
   const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
   return (
     <div>
-      <label htmlFor={id} className="mb-1 block text-sm font-medium text-slate-700">
+      <label htmlFor={id} className="eyebrow mb-1.5 block">
         {label}
       </label>
       {children({ id, "aria-describedby": describedBy, "aria-invalid": error ? true : undefined })}
       {hint && !error && (
-        <p id={`${id}-hint`} className="mt-1 text-xs text-slate-500">
+        <p id={`${id}-hint`} className="mt-1.5 text-xs text-ink-3">
           {hint}
         </p>
       )}
       {error && (
-        <p id={`${id}-error`} className="mt-1 text-xs text-red-600">
+        <p id={`${id}-error`} className="mt-1.5 text-xs font-medium text-high">
           {error}
         </p>
       )}
@@ -72,44 +74,62 @@ export function Field({ label, hint, error, children }: FieldProps) {
 }
 
 const INPUT =
-  "block w-full rounded-md border-0 bg-white px-3 py-2 text-sm text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 aria-[invalid=true]:ring-red-500";
+  "block rounded-[2px] border border-rule-2 bg-card px-3 py-2 text-sm text-ink placeholder:text-ink-4 focus:border-ink focus:outline-none disabled:cursor-not-allowed disabled:bg-paper-2 disabled:text-ink-3 aria-[invalid=true]:border-high";
+
+/** Full width unless the caller sets a width. */
+function width(className: string | undefined): string {
+  return className && /(^|\s)(max-)?w-/.test(className) ? "" : "w-full";
+}
 
 export function Input({ className, ...rest }: InputHTMLAttributes<HTMLInputElement>) {
-  return <input className={cx(INPUT, className)} {...rest} />;
+  return <input className={cx(INPUT, width(className), className)} {...rest} />;
 }
 
 export function Select({ className, children, ...rest }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <select className={cx(INPUT, "pr-8", className)} {...rest}>
+    <select className={cx(INPUT, width(className), "pr-8", className)} {...rest}>
       {children}
     </select>
   );
 }
 
-type Tone = "green" | "red" | "amber" | "slate" | "blue" | "purple";
+// ---------------------------------------------------------------------- Tags
+type Tone = "ink" | "ok" | "warn" | "bad" | "muted" | "signal";
 const TONES: Record<Tone, string> = {
-  green: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  red: "bg-red-50 text-red-700 ring-red-600/20",
-  amber: "bg-amber-50 text-amber-800 ring-amber-600/20",
-  slate: "bg-slate-100 text-slate-600 ring-slate-500/20",
-  blue: "bg-brand-50 text-brand-700 ring-brand-600/20",
-  purple: "bg-violet-50 text-violet-700 ring-violet-600/20",
+  ink: "border-ink bg-ink text-paper",
+  ok: "border-ok/40 bg-ok/10 text-ok",
+  warn: "border-medium/50 bg-medium/15 text-[#7a5600]",
+  bad: "border-high/40 bg-high/10 text-high",
+  muted: "border-rule-2 bg-paper-2 text-ink-2",
+  signal: "border-signal/40 bg-signal-soft text-signal",
 };
 
-export function Badge({ tone = "slate", children, title }: { tone?: Tone; children: ReactNode; title?: string }) {
+export function Tag({ tone = "muted", children, title, className }: { tone?: Tone; children: ReactNode; title?: string; className?: string }) {
   return (
-    <span title={title} className={cx("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset", TONES[tone])}>
+    <span title={title} className={cx("inline-flex items-center rounded-[2px] border px-1.5 py-px font-mono text-[0.7rem] leading-5", TONES[tone], className)}>
       {children}
     </span>
   );
 }
 
-const SEVERITY_TONE: Record<Severity, Tone> = { critical: "purple", high: "red", medium: "amber", info: "slate" };
+const SEVERITY_STYLE: Record<Severity, string> = {
+  critical: "bg-critical text-white",
+  high: "bg-high text-white",
+  medium: "bg-medium text-ink",
+  info: "bg-info text-white",
+};
 
+/** A triage tag: the colour says how urgent, the word says it again for colour-blind readers. */
 export function SeverityBadge({ severity }: { severity: Severity }) {
-  return <Badge tone={SEVERITY_TONE[severity]}>{severity}</Badge>;
+  return (
+    <span className={cx("inline-flex h-5 items-center gap-1.5 rounded-[2px] pr-2 pl-1.5 font-display text-[0.68rem] font-bold tracking-[0.1em] uppercase", SEVERITY_STYLE[severity])}>
+      <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
+      {severity}
+    </span>
+  );
 }
 
+// ---------------------------------------------------------------------- States
 export function Spinner({ small = false }: { small?: boolean }) {
   return (
     <span
@@ -122,7 +142,7 @@ export function Spinner({ small = false }: { small?: boolean }) {
 
 export function LoadingState({ label = "Loading…" }: { label?: string }) {
   return (
-    <div className="flex items-center justify-center gap-3 py-16 text-sm text-slate-500">
+    <div className="flex items-center justify-center gap-3 py-16 font-mono text-sm text-ink-3">
       <Spinner />
       {label}
     </div>
@@ -131,63 +151,84 @@ export function LoadingState({ label = "Loading…" }: { label?: string }) {
 
 export function EmptyState({ title, children, action }: { title: string; children?: ReactNode; action?: ReactNode }) {
   return (
-    <div className="rounded-lg border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-      <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-      {children && <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">{children}</p>}
+    <div className="border border-dashed border-rule-2 px-6 py-12 text-center">
+      <p className="font-display text-lg font-semibold">{title}</p>
+      {children && <div className="mx-auto mt-1.5 max-w-md text-sm text-ink-3">{children}</div>}
       {action && <div className="mt-5">{action}</div>}
     </div>
   );
 }
 
-export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
+export function ErrorState({ error, onRetry, action }: { error: unknown; onRetry?: () => void; action?: ReactNode }) {
   const requestId = error instanceof ApiError && error.status >= 500 ? error.requestId : null;
+  const notFound = error instanceof ApiError && error.status === 404;
   return (
-    <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
-      <p className="text-sm font-medium text-red-800">{errorMessage(error)}</p>
-      {requestId && <p className="mt-1 font-mono text-xs text-red-700/80">Request ID: {requestId}</p>}
-      {onRetry && (
-        <Button size="sm" className="mt-3" onClick={onRetry}>
-          Try again
-        </Button>
+    <div role="alert" className="border-l-4 border-high bg-high/[0.07] px-4 py-3">
+      <p className="text-sm font-medium text-ink">{errorMessage(error)}</p>
+      {requestId && <p className="mt-1 font-mono text-xs text-ink-3">Request ID {requestId}</p>}
+      {(action || (onRetry && !notFound)) && (
+        <div className="mt-3 flex gap-2">
+          {action}
+          {onRetry && !notFound && (
+            <Button size="sm" onClick={onRetry}>
+              Try again
+            </Button>
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-export function PageHeader({ title, description, action }: { title: ReactNode; description?: ReactNode; action?: ReactNode }) {
+/** A short-lived confirmation ("Re-run started"). */
+export function Notice({ children, onDone, tone = "ok" }: { children: ReactNode; onDone: () => void; tone?: "ok" | "bad" }) {
+  useEffect(() => {
+    const timer = window.setTimeout(onDone, 4000);
+    return () => window.clearTimeout(timer);
+  }, [onDone]);
   return (
-    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-      <div className="min-w-0">
-        <h1 className="break-words text-xl font-semibold text-slate-900">{title}</h1>
-        {description && <div className="mt-1 text-sm text-slate-600">{description}</div>}
-      </div>
-      {action && <div className="flex flex-wrap gap-2">{action}</div>}
+    <div role="status" className={cx("border-l-4 px-4 py-2.5 text-sm", tone === "ok" ? "border-ok bg-ok/[0.08]" : "border-high bg-high/[0.07]")}>
+      {children}
     </div>
   );
 }
 
-export function Card({ title, action, children, className }: { title?: ReactNode; action?: ReactNode; children: ReactNode; className?: string }) {
+// ---------------------------------------------------------------------- Layout
+export function PageHeader({ eyebrow, title, description, action }: { eyebrow?: ReactNode; title: ReactNode; description?: ReactNode; action?: ReactNode }) {
   return (
-    <section className={cx("rounded-lg border border-slate-200 bg-white shadow-sm", className)}>
+    <header className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-ink pb-5">
+      <div className="min-w-0 max-w-3xl">
+        {eyebrow && <div className="eyebrow mb-2">{eyebrow}</div>}
+        <h1 className="font-display text-3xl font-semibold tracking-tight break-words">{title}</h1>
+        {description && <div className="mt-2 text-sm text-ink-2">{description}</div>}
+      </div>
+      {action && <div className="flex flex-wrap gap-2">{action}</div>}
+    </header>
+  );
+}
+
+export function Card({ title, action, children, className, flush = false }: { title?: ReactNode; action?: ReactNode; children: ReactNode; className?: string; flush?: boolean }) {
+  return (
+    <section className={cx("border border-rule bg-card", className)}>
       {(title || action) && (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
-          {title && <h2 className="text-sm font-semibold text-slate-900">{title}</h2>}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-rule px-5 py-3">
+          {title && <h2 className="eyebrow">{title}</h2>}
           {action}
         </div>
       )}
-      <div className="p-4">{children}</div>
+      <div className={flush ? "" : "p-5"}>{children}</div>
     </section>
   );
 }
 
-/** Text with redaction markers shown as chips, so nobody mistakes them for real values. */
+/** Text where every redaction marker becomes a redaction bar. */
 export function Redacted({ text, className }: { text: string; className?: string }) {
   return (
-    <span className={cx("break-all", className)}>
+    <span className={cx("break-words [overflow-wrap:anywhere]", className)}>
       {splitMarkers(text).map((part, i) =>
         part.marker ? (
-          <mark key={i} className="rounded bg-amber-100 px-1 font-mono text-[0.85em] text-amber-900" title="Removed before storage. The same marker means the same value within this file.">
-            {part.text}
+          <mark key={i} className="redaction" title="Removed before storage. The same id means the same value within this file.">
+            {part.text.slice(10, -1)}
           </mark>
         ) : (
           <span key={i}>{part.text}</span>
@@ -197,11 +238,12 @@ export function Redacted({ text, className }: { text: string; className?: string
   );
 }
 
-export function CopyButton({ getText, label = "Copy", copiedLabel = "Copied", variant = "secondary" }: { getText: () => Promise<string> | string; label?: string; copiedLabel?: string; variant?: Variant }) {
+export function CopyButton({ getText, label = "Copy", copiedLabel = "Copied", variant = "secondary", size = "md" }: { getText: () => Promise<string> | string; label?: string; copiedLabel?: string; variant?: Variant; size?: "sm" | "md" }) {
   const [state, setState] = useState<"idle" | "busy" | "done" | "failed">("idle");
   return (
     <Button
       variant={variant}
+      size={size}
       busy={state === "busy"}
       onClick={async () => {
         setState("busy");
@@ -214,24 +256,23 @@ export function CopyButton({ getText, label = "Copy", copiedLabel = "Copied", va
         window.setTimeout(() => setState("idle"), 2000);
       }}
     >
-      {state === "done" ? copiedLabel : state === "failed" ? "Copy failed" : label}
+      {state === "done" ? `✓ ${copiedLabel}` : state === "failed" ? "Copy failed" : label}
     </Button>
   );
 }
 
-/** A destructive action that asks inline ("Remove? Yes / Cancel") instead of a
- *  browser confirm() dialog, which blocks the page and can't be styled. */
+/** A destructive action that asks inline instead of a browser confirm() dialog. */
 export function ConfirmButton({ label, confirmLabel = "Yes, do it", question, onConfirm, busy = false, size = "sm" }: { label: string; confirmLabel?: string; question: string; onConfirm: () => void; busy?: boolean; size?: "sm" | "md" }) {
   const [asking, setAsking] = useState(false);
   if (!asking) {
     return (
-      <Button size={size} variant="ghost" className="text-red-700 hover:bg-red-50" onClick={() => setAsking(true)}>
+      <Button size={size} variant="ghost" className="text-high hover:bg-high/10 hover:text-high" onClick={() => setAsking(true)}>
         {label}
       </Button>
     );
   }
   return (
-    <span role="group" aria-label={question} className="inline-flex items-center gap-2 rounded-md bg-red-50 px-2 py-1 text-xs text-red-800">
+    <span role="group" aria-label={question} className="inline-flex flex-wrap items-center gap-2 border-l-4 border-high bg-high/[0.07] py-1 pr-1 pl-2.5 text-xs text-ink">
       {question}
       <Button size="sm" variant="danger" busy={busy} onClick={() => { onConfirm(); setAsking(false); }}>
         {confirmLabel}
@@ -240,5 +281,15 @@ export function ConfirmButton({ label, confirmLabel = "Yes, do it", question, on
         Cancel
       </Button>
     </span>
+  );
+}
+
+/** A labelled value in a definition grid. */
+export function Stat({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div>
+      <dt className="eyebrow">{label}</dt>
+      <dd className="mt-1 font-mono text-sm text-ink">{children}</dd>
+    </div>
   );
 }

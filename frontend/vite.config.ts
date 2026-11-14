@@ -9,6 +9,8 @@ const api = process.env.HARTRIAGE_API_URL ?? "http://localhost:8200";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // The CSP (default-src 'self') blocks data: URIs, so never inline fonts or images.
+  build: { assetsInlineLimit: 0 },
   server: {
     port: 5173,
     proxy: { "/v1": { target: api, changeOrigin: false } },
