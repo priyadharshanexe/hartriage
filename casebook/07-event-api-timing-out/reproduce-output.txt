@@ -1,0 +1,86 @@
+
+== Baseline: 20 concurrent events
+summary: {'201': 20}
+
+== Incident: a backfill script takes a SHARE lock on events and runs for 70 s
+
+== Database during the incident (queries.sql)
+ state  | wait_event_type | wait_event | count 
+--------+-----------------+------------+-------
+ active | Lock            | relation   |    20
+ active | Timeout         | PgSleep    |     1
+ idle   | Client          | ClientRead |     1
+(3 rows)
+
+  pid  |   running_for   |                            blocking_query                            | sessions_waiting 
+-------+-----------------+----------------------------------------------------------------------+------------------
+ 58237 | 00:00:14.151123 | BEGIN; LOCK TABLE events IN SHARE MODE; SELECT pg_sleep(70); COMMIT; |               20
+(1 row)
+
+
+== Health check during the incident
+GET /readyz -> HTTP 503 in 2.006291s
+
+== What the customer's integration saw
++ 0.0s             500   30.2s  27eabaf82ab04525b7cf74c6cfd44f8c
++ 0.0s  client timeout   40.0s  
++ 0.0s             500   30.1s  c9b86213e7174fe199499625a95b0406
++ 0.0s             500   30.1s  fdddca796e77483989c4b33ffad00760
++ 0.0s             500   30.1s  8181d81ecd1d4295b9481c18dabf51f1
++ 0.0s             500   30.1s  bb4a7e9020fa45be8d5027a78024c0fa
++ 0.0s             500   30.1s  723b341c513b47f295ba4f546882bfde
++ 0.0s             500   30.1s  f2d8708f7ab04a4caf85f0f2bfde74f9
++ 0.0s             500   30.2s  3347ad32a7c94375bba226b09c49c610
++ 0.0s             500   30.2s  c3fd60135c4845908d240dddefffa6e9
++ 0.0s             500   30.2s  fa9323dcede34a9db4ececf1e2e7a0cc
++ 0.0s             500   30.2s  df85e5aefe8e44f3975da194aacdd058
++ 0.0s  client timeout   40.0s  
++ 0.0s  client timeout   40.0s  
++ 0.0s  client timeout   40.0s  
++ 0.0s  client timeout   40.0s  
++ 0.0s  client timeout   40.0s  
++ 0.0s  client timeout   40.0s  
++ 0.0s  client timeout   40.0s  
++ 0.0s  client timeout   40.0s  
++ 0.0s  client timeout   40.0s  
++ 0.0s  client timeout   40.0s  
++ 0.0s  client timeout   40.0s  
++ 0.0s  client timeout   40.0s  
++ 0.0s  client timeout   40.0s  
++ 0.0s  client timeout   40.0s  
++ 0.0s  client timeout   40.0s  
++ 0.0s  client timeout   40.0s  
++ 0.0s  client timeout   40.0s  
++ 0.0s             500   30.1s  44b83e9e6613460bb3980f3ef1d4734f
++ 0.0s             500   30.1s  d1760722b7db494fa1dd01f38a7ff2fe
++ 0.0s             500   30.1s  113a703ac0db4c2abe2cf028f9db43d7
++ 0.0s             500   30.1s  195da9b35e484fb786beda2e9bd22f4d
++ 0.0s             500   30.1s  9710a1c0555340c994ef8c1f6e348f01
++ 0.0s             500   30.2s  59aa4c779beb41ba8e7a5562669e3fca
++ 0.0s             500   30.2s  77228e82d7f849338369e0afe9b89cdf
++ 0.0s             500   30.2s  94fc1358da8c486487bc98bc7ffa4a69
++ 0.0s  client timeout   40.0s  
++ 0.0s  client timeout   40.0s  
++ 0.0s             500   30.2s  9d5c41435da44355b29609aa3f77b066
+summary: {'client timeout': 20, '500': 20}
+
+== Relay's API log for one of the 500s (looked up by the request id the customer sent)
+2026-11-14T12:48:42.083897Z http.unhandled_error 27eabaf82ab04525b7cf74c6cfd44f8c
+   sqlalchemy.exc.TimeoutError: QueuePool limit of size 10 overflow 10 reached, connection timed out, timeout 30.00 (Background on this error at: https://sqlalche.me/e/21/3o7r)
+
+== Metrics: POST /v1/events latency buckets
+relay_http_request_duration_seconds_bucket{le="0.005",method="POST",route="/v1/events"} 5.0
+relay_http_request_duration_seconds_bucket{le="0.01",method="POST",route="/v1/events"} 137.0
+relay_http_request_duration_seconds_bucket{le="0.025",method="POST",route="/v1/events"} 230.0
+relay_http_request_duration_seconds_bucket{le="0.05",method="POST",route="/v1/events"} 236.0
+relay_http_request_duration_seconds_bucket{le="0.1",method="POST",route="/v1/events"} 240.0
+relay_http_request_duration_seconds_bucket{le="0.25",method="POST",route="/v1/events"} 280.0
+relay_http_request_duration_seconds_bucket{le="0.5",method="POST",route="/v1/events"} 280.0
+relay_http_request_duration_seconds_bucket{le="1.0",method="POST",route="/v1/events"} 280.0
+relay_http_request_duration_seconds_bucket{le="2.5",method="POST",route="/v1/events"} 280.0
+relay_http_request_duration_seconds_bucket{le="5.0",method="POST",route="/v1/events"} 280.0
+relay_http_request_duration_seconds_bucket{le="10.0",method="POST",route="/v1/events"} 280.0
+relay_http_request_duration_seconds_bucket{le="+Inf",method="POST",route="/v1/events"} 360.0
+
+== After the backfill ended: 20 concurrent events again
+summary: {'201': 20}
