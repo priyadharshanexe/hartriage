@@ -6,11 +6,12 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any
 
 from hartriage.har.model import Entry
 from hartriage.rules.base import Context, Finding, Rule, Severity
-from hartriage.rules.util import duration_words, is_noise, iso, numbers, plural
+from hartriage.rules.util import SignInTracker, duration_words, is_noise, iso, numbers, plural
 
 _PARAM = re.compile(r'(\w+)\s*=\s*(?:"((?:[^"\\]|\\.)*)"|([^\s,]+))')
 _CDN_SERVERS = ("cloudflare", "akamai", "cloudfront", "fastly", "imperva", "sucuri")
@@ -36,6 +37,8 @@ class _Group:
     kind: str
     entries: list[int] = field(default_factory=list)
     detail: dict[str, Any] = field(default_factory=dict)
+    starts: list[datetime | None] = field(default_factory=list)
+    paths: list[str] = field(default_factory=list)
 
 
 class Auth(Rule):
@@ -46,8 +49,10 @@ class Auth(Rule):
 
     def __init__(self) -> None:
         self._groups: dict[tuple[int, str, str], _Group] = {}
+        self._sign_in = SignInTracker()
 
     def check(self, entry: Entry, ctx: Context) -> Iterable[Finding]:
+        self._sign_in.observe(entry)
         if entry.status not in (401, 403) or is_noise(entry):
             return ()
         kind, detail = self._classify(entry)
@@ -56,6 +61,8 @@ class Auth(Rule):
         if group is None:
             group = self._groups[key] = _Group(entry.status, entry.host, kind, detail=detail)
         group.entries.append(entry.number)
+        group.starts.append(entry.started)
+        group.paths.append(entry.path)
         return ()
 
     def _classify(self, entry: Entry) -> tuple[str, dict[str, Any]]:
@@ -102,8 +109,34 @@ class Auth(Rule):
     def finish(self, ctx: Context) -> Iterable[Finding]:
         findings = []
         for group in self._groups.values():
+            if group.kind == "no_credentials" and group.status == 401:
+                probes = [
+                    n
+                    for n, s, p in zip(group.entries, group.starts, group.paths, strict=True)
+                    if self._sign_in.is_probe(group.host, 401, False, s, p)
+                ]
+                if probes:
+                    findings.append(self._probe_finding(group, probes))
+                    group.entries = [n for n in group.entries if n not in probes]
+                    if not group.entries:
+                        continue
             findings.append(self._finding(group))
         return findings
+
+    def _probe_finding(self, g: _Group, probes: list[int]) -> Finding:
+        return self.finding(
+            severity=Severity.INFO,
+            title=f"Sign-in check before signing in: {plural(len(probes), 'request')} to {g.host} ({numbers(probes)})",
+            cause=(
+                f"These 401s came before any credentials were sent, and later requests to {g.host}"
+                " with credentials succeeded: the app checking for a session before sign-in. Usually"
+                " expected."
+            ),
+            next_step="Ignore unless the customer reports being signed out; look at the later failures first.",
+            entries=probes,
+            evidence={"status": 401, "host": g.host, "kind": "sign_in_probe", "count": len(probes)},
+            confidence="likely",
+        )
 
     def _finding(self, g: _Group) -> Finding:
         n = len(g.entries)

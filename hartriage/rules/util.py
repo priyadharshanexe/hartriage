@@ -104,3 +104,45 @@ def retry_after_seconds(value: str | None, now: datetime | None) -> float | None
 def origin_of(url: str) -> str:
     parts = urlsplit(url)
     return f"{parts.scheme}://{parts.netloc}".lower() if parts.netloc else ""
+
+
+SESSION_PATH = re.compile(
+    r"/(me|whoami|session|sessions|current[-_]?user|auth|oauth|token|refresh|login|signin)(/|$)",
+    re.IGNORECASE,
+)
+
+
+class SignInTracker:
+    """Spot "sign-in probes": requests refused with 401 because no credentials were
+    sent yet, followed by requests to the same host that succeed *with* credentials.
+
+    Apps check for a session on page load ("GET /me") before the user signs in. Those
+    401s are expected, and must not be reported as the first failure.
+    """
+
+    def __init__(self) -> None:
+        self._first_authed_success: dict[str, float] = {}
+
+    def observe(self, entry: Entry) -> None:
+        if entry.meta.credentials_present and 200 <= entry.status < 400 and entry.started:
+            when = entry.started.timestamp()
+            current = self._first_authed_success.get(entry.host)
+            if current is None or when < current:
+                self._first_authed_success[entry.host] = when
+
+    def is_probe(
+        self,
+        host: str,
+        status: int,
+        credentials_present: bool,
+        started: datetime | None,
+        path: str = "",
+    ) -> bool:
+        if status != 401 or credentials_present or started is None:
+            return False
+        success = self._first_authed_success.get(host)
+        if success is None:
+            return False
+        # Session checks ("/me", "/auth/refresh") are probes whenever they ran; any other
+        # call is only a probe if it ran before the app had credentials.
+        return bool(SESSION_PATH.search(path)) or started.timestamp() <= success

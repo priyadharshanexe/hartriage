@@ -376,3 +376,34 @@ def test_findings_are_sorted_by_severity() -> None:
     findings = run(entry(status=500), entry("https://a.com/s", time=5000))
     ranks = [f.severity.rank for f in findings]
     assert ranks == sorted(ranks)
+
+
+def test_sign_in_probes_are_not_the_first_failure() -> None:
+    """A session check on page load (401, no credentials) followed by authenticated
+    successes is expected; the real failure is the 413 after it."""
+    findings = run(
+        entry("https://app.example.com/v1/auth/me", status=401, started=at(0)),
+        entry(
+            "https://app.example.com/v1/events",
+            method="POST",
+            status=201,
+            started=at(1),
+            request_headers=headers(Authorization="Bearer abcdefgh12345678"),
+        ),
+        entry(
+            "https://app.example.com/v1/events",
+            method="POST",
+            status=413,
+            started=at(2),
+            request_headers=headers(Authorization="Bearer abcdefgh12345678"),
+        ),
+    )
+    first = next(f for f in findings if f.rule_id == "R001")
+    assert first.entry == 3
+    probe = next(f for f in findings if f.rule_id == "R002")
+    assert probe.severity.value == "info" and probe.evidence["kind"] == "sign_in_probe"
+
+
+def test_401_without_later_success_is_still_reported() -> None:
+    [f] = run(entry(status=401, started=at(0)), entry(status=401, started=at(1)), rules=["R002"])
+    assert f.evidence["kind"] == "no_credentials" and f.severity.value == "high"

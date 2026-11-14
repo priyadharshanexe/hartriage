@@ -12,7 +12,7 @@ from datetime import datetime
 
 from hartriage.har.model import Entry
 from hartriage.rules.base import Context, Finding, Rule, Severity
-from hartriage.rules.util import is_noise, numbers, plural
+from hartriage.rules.util import SignInTracker, is_noise, numbers, plural
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,6 +25,8 @@ class _Failure:
     method: str
     url: str
     status_text: str
+    credentials_present: bool = False
+    path: str = ""
 
 
 class FirstFailure(Rule):
@@ -35,8 +37,10 @@ class FirstFailure(Rule):
 
     def __init__(self) -> None:
         self._failures: list[_Failure] = []
+        self._sign_in = SignInTracker()
 
     def check(self, entry: Entry, ctx: Context) -> Iterable[Finding]:
+        self._sign_in.observe(entry)
         if entry.failed and not is_noise(entry):
             self._failures.append(
                 _Failure(
@@ -48,18 +52,27 @@ class FirstFailure(Rule):
                     entry.method,
                     entry.short_url,
                     entry.status_text,
+                    entry.meta.credentials_present,
+                    entry.path,
                 )
             )
         return ()
 
     def finish(self, ctx: Context) -> Iterable[Finding]:
-        if not self._failures:
+        failures = [
+            f
+            for f in self._failures
+            if not self._sign_in.is_probe(
+                f.host, f.status, f.credentials_present, f.started, f.path
+            )
+        ]
+        if not failures:
             return []
 
         def key(f: _Failure) -> tuple[float, int]:
             return (f.started.timestamp() if f.started else float(f.number), f.number)
 
-        ordered = sorted(self._failures, key=key)
+        ordered = sorted(failures, key=key)
         first = ordered[0]
         followers = [f.number for f in ordered[1:] if f.host == first.host]
         other_hosts = sorted({f.host for f in ordered[1:] if f.host != first.host})
