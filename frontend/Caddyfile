@@ -1,0 +1,36 @@
+# One origin for the web app and the API behind it, so the refresh cookie works
+# without any cross-origin configuration.
+:80 {
+	encode zstd gzip
+	request_body {
+		max_size 110MB
+	}
+
+	@api path /v1/* /healthz /readyz /docs /openapi.json
+	handle @api {
+		reverse_proxy {$HARTRIAGE_API_UPSTREAM:api:8000} {
+			# Stream uploads to the API as they arrive instead of buffering them.
+			request_buffers 0
+			flush_interval -1
+		}
+	}
+
+	handle /assets/* {
+		root * /srv
+		header Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
+
+	handle {
+		root * /srv
+		header Cache-Control "no-cache"
+		header {
+			X-Content-Type-Options nosniff
+			Referrer-Policy no-referrer
+			X-Frame-Options DENY
+			Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'"
+		}
+		try_files {path} /index.html
+		file_server
+	}
+}
