@@ -53,9 +53,10 @@ def before_after(page: Page) -> None:
         return f"<section class={tone}><h2>{title}</h2><div class=url>{request['method']} {request['url']}</div>{headers}</section>"
 
     html = f"""<!doctype html><meta charset=utf-8><style>
-    body{{font:14px ui-monospace,Consolas,monospace;margin:0;padding:24px;background:#f8fafc;display:grid;grid-template-columns:1fr 1fr;gap:16px}}
-    section{{background:white;border-radius:8px;padding:16px;border:2px solid}} .raw{{border-color:#f87171}} .clean{{border-color:#14b8a6}}
-    h2{{font:600 16px system-ui;margin:0 0 8px}} .k{{color:#64748b}} div{{word-break:break-all;margin:4px 0}} .url{{font-weight:600}}
+    body{{font:14px "IBM Plex Mono",ui-monospace,Consolas,monospace;margin:0;padding:24px;background:#f2eee5;color:#1b1a17;display:grid;grid-template-columns:1fr 1fr;gap:16px}}
+    section{{background:#fbf9f4;padding:16px;border:1px solid #d9d2c3;border-top:4px solid}} .raw{{border-top-color:#c8352a}} .clean{{border-top-color:#1b1a17}}
+    h2{{font:600 13px system-ui;letter-spacing:.12em;text-transform:uppercase;margin:0 0 10px;color:#6e695d}} .k{{color:#6e695d}} div{{overflow-wrap:anywhere;margin:4px 0}} .url{{font-weight:600}}
+    mark{{background:#1b1a17;color:#b8b19f;padding:1px 6px}}
     </style>{block("Before: what the customer's browser recorded", raw, "raw")}{block("After: what HAR Triage stores", clean, "clean")}"""
     page.set_content(
         html.replace("[REDACTED:", "<mark>[REDACTED:").replace("]</div>", "]</mark></div>")
@@ -89,13 +90,13 @@ def main() -> None:
         page.get_by_test_id("finding").filter(has_text="R002").get_by_role(
             "button", name="Show"
         ).click()
-        page.locator("#requests").scroll_into_view_if_needed()
         page.get_by_role("complementary", name="Request 3").wait_for()
         page.wait_for_timeout(600)
-        page.evaluate("document.getElementById('requests').scrollIntoView()")
         shot(page, "waterfall-and-request")
-        page.evaluate("window.scrollTo(0, 0)")
-        page.get_by_text("Findings (").scroll_into_view_if_needed()
+        page.keyboard.press("Escape")
+        page.evaluate("document.getElementById('requests').scrollIntoView()")
+        shot(page, "waterfall")
+        page.evaluate("document.getElementById('findings-heading').scrollIntoView()")
         shot(page, "findings")
 
         page.goto(f"{WEB}/kb/R002-auth")
