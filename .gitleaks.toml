@@ -10,4 +10,4 @@ Golden HAR fixtures are recorded against tools/fixtures/fault_server.py, which m
 deliberately expired JWTs with a random key that exists only while recording.
 They are worthless outside the test, and the tests need them raw to prove redaction.
 """
-paths = ['''tests/golden/hars/.*\.har$''']
+paths = ['''tests/golden/hars/.*\.har$''', '''tools/fixtures/samples/.*\.har$''']
