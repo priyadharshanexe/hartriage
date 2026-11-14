@@ -1,0 +1,125 @@
+{
+  "chromium/api-errors": [
+    "R001 high 402",
+    "R009 medium card_declined",
+    "R009 medium missing"
+  ],
+  "chromium/auth": [
+    "R001 high 401",
+    "R002 high expired_token",
+    "R002 high insufficient_scope",
+    "R002 high no_credentials",
+    "R009 medium",
+    "R009 medium insufficient_scope",
+    "R009 medium invalid_token"
+  ],
+  "chromium/checkout-story": [
+    "R001 high 401",
+    "R002 high expired_token",
+    "R006 medium wait",
+    "R009 medium internal_error",
+    "R009 medium invalid_token",
+    "R011 high"
+  ],
+  "chromium/cors": [
+    "R001 high",
+    "R003 high blocked"
+  ],
+  "chromium/healthy": [],
+  "chromium/mixed-content": [
+    "R001 high",
+    "R010 high"
+  ],
+  "chromium/network": [
+    "R001 high",
+    "R005 high dns",
+    "R005 high refused",
+    "R005 high tls"
+  ],
+  "chromium/payload": [
+    "R001 high 413",
+    "R008 high 413",
+    "R008 high 431",
+    "R009 medium headers_too_large",
+    "R009 medium payload_too_large"
+  ],
+  "chromium/rate-limit": [
+    "R001 high 429",
+    "R007 high",
+    "R009 medium rate_limited"
+  ],
+  "chromium/redirects": [
+    "R001 high",
+    "R004 high",
+    "R004 medium"
+  ],
+  "chromium/server-errors": [
+    "R001 high 500",
+    "R009 medium internal_error",
+    "R011 high",
+    "R011 high"
+  ],
+  "chromium/slow": [
+    "R006 medium wait"
+  ],
+  "firefox/api-errors": [
+    "R001 high 402",
+    "R009 medium card_declined",
+    "R009 medium missing"
+  ],
+  "firefox/auth": [
+    "R001 high 401",
+    "R002 high expired_token",
+    "R002 high insufficient_scope",
+    "R002 high no_credentials",
+    "R009 medium",
+    "R009 medium insufficient_scope",
+    "R009 medium invalid_token"
+  ],
+  "firefox/checkout-story": [
+    "R001 high 401",
+    "R002 high expired_token",
+    "R006 medium wait",
+    "R009 medium internal_error",
+    "R009 medium invalid_token",
+    "R011 high"
+  ],
+  "firefox/cors": [
+    "R001 high",
+    "R003 high missing"
+  ],
+  "firefox/healthy": [],
+  "firefox/mixed-content": [],
+  "firefox/network": [
+    "R001 high",
+    "R005 high dns",
+    "R005 high refused",
+    "R005 high tls"
+  ],
+  "firefox/payload": [
+    "R001 high 413",
+    "R008 high 413",
+    "R008 high 431",
+    "R009 medium headers_too_large",
+    "R009 medium payload_too_large"
+  ],
+  "firefox/rate-limit": [
+    "R001 high 429",
+    "R007 high",
+    "R009 medium rate_limited"
+  ],
+  "firefox/redirects": [
+    "R001 high 302",
+    "R004 high",
+    "R004 medium"
+  ],
+  "firefox/server-errors": [
+    "R001 high 500",
+    "R009 medium internal_error",
+    "R011 high",
+    "R011 high"
+  ],
+  "firefox/slow": [
+    "R006 medium wait"
+  ]
+}

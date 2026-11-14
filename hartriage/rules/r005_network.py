@@ -69,6 +69,7 @@ _CATEGORIES: tuple[tuple[str, tuple[str, ...]], ...] = (
             "net::ERR_BLOCKED_BY_RESPONSE",
             "net::ERR_BLOCKED_BY_ORB",
             "net::ERR_BLOCKED_BY_CSP",
+            "net::ERR_UNSAFE_PORT",
             "net::ERR_BLOCKED_BY_ADMINISTRATOR",
             "NS_ERROR_CONTENT_BLOCKED",
         ),
@@ -125,6 +126,12 @@ def categorise(error: str) -> str | None:
     for category, prefixes in _CATEGORIES:
         if any(error.startswith(p) or p in error for p in prefixes):
             return category
+    if (
+        "TOO_MANY_REDIRECTS" in error
+        or "REDIRECT_LOOP" in error
+        or error in ("mixed-content", "NS_ERROR_DOM_BAD_URI")
+    ):
+        return None  # R004 and R010 explain these
     if error == "net::ERR_FAILED":
         return None  # generic; usually CORS (R003) or a cancelled request
     return "other"

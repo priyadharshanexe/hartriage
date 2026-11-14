@@ -1,0 +1,13 @@
+# Secret-scanning configuration (https://github.com/gitleaks/gitleaks).
+# Every default rule stays on; this file only documents known false positives.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = """
+Golden HAR fixtures are recorded against tools/fixtures/fault_server.py, which mints
+deliberately expired JWTs with a random key that exists only while recording.
+They are worthless outside the test, and the tests need them raw to prove redaction.
+"""
+paths = ['''tests/golden/hars/.*\.har$''']

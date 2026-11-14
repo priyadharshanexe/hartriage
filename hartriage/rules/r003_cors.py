@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 
 from hartriage.har.model import Entry
 from hartriage.rules.base import Context, Finding, Rule, Severity
-from hartriage.rules.util import is_noise, numbers
+from hartriage.rules.util import is_noise, numbers, origin_of
 
 
 @dataclass
@@ -35,21 +35,41 @@ class Cors(Rule):
     summary = "Failed preflights and cross-origin responses missing Access-Control-Allow-Origin."
 
     def __init__(self) -> None:
-        self._groups: dict[tuple[str, str, str], _Group] = {}
+        self._groups: dict[tuple[str, str], _Group] = {}
 
     def _add(self, entry: Entry, origin: str, kind: str, reason: str) -> None:
-        key = (origin, entry.origin, kind)
+        # One finding per page origin → API origin; the most specific reason wins.
+        key = (origin, entry.origin)
         group = self._groups.get(key)
         if group is None:
             group = self._groups[key] = _Group(
                 origin, entry.origin, kind, reason=reason, status=entry.status
             )
+        elif group.kind == "blocked" and kind != "blocked":
+            group.kind, group.reason, group.status = kind, reason, entry.status
         group.entries.append(entry.number)
 
     def check(self, entry: Entry, ctx: Context) -> Iterable[Finding]:
         if is_noise(entry):
             return ()
         origin = (entry.request_header("origin") or "").lower()
+        page_origin = origin_of(ctx.page_url)
+        if (
+            not origin
+            and entry.status == 0
+            and entry.error in ("net::ERR_FAILED", "NS_ERROR_DOM_BAD_URI")
+            and entry.resource_type in ("fetch", "xhr")
+            and page_origin
+            and entry.origin != page_origin
+        ):
+            # Some recorders drop the request headers of a blocked request, Origin included.
+            self._add(
+                entry,
+                page_origin,
+                "blocked",
+                "the browser recorded no response for a cross-origin request",
+            )
+            return ()
         if not origin or origin == "null" or origin == entry.origin:
             return ()
         mode = (entry.request_header("sec-fetch-mode") or "cors").lower()

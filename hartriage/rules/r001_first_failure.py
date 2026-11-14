@@ -66,6 +66,8 @@ class FirstFailure(Rule):
         outcome = str(first.status) if first.status else (first.error or "no response")
         if first.status and first.status_text:
             outcome = f"{first.status} {first.status_text}"
+        if first.status and first.error:
+            outcome += f" ({first.error})"
 
         if first.status in (401, 403):
             cause = (

@@ -32,12 +32,16 @@ class Null:
 def write_har(path: Path, entries: int, body_bytes: int) -> int:
     body = "y" * body_bytes
     with path.open("w", encoding="utf-8") as f:
-        f.write('{"log": {"version": "1.2", "creator": {"name": "gen", "version": "1"}, "entries": [')
+        f.write(
+            '{"log": {"version": "1.2", "creator": {"name": "gen", "version": "1"}, "entries": ['
+        )
         for i in range(entries):
             e = entry(
                 f"https://api.example.com/items/{i}?token=tok{i:08d}abcdefgh",
                 status=500 if i % 50 == 0 else 200,
-                request_headers=headers(Authorization=f"Bearer tok{i:08d}abcdefgh", Cookie="sid=s1234567"),
+                request_headers=headers(
+                    Authorization=f"Bearer tok{i:08d}abcdefgh", Cookie="sid=s1234567"
+                ),
                 content={"size": body_bytes, "mimeType": "text/html", "text": body},
             )
             f.write(("," if i else "") + json.dumps(e))

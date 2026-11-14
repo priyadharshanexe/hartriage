@@ -121,7 +121,11 @@ class ApiErrors(Rule):
             out.append(
                 self.finding(
                     severity=Severity.MEDIUM,
-                    title=f"API error {label} ({statuses}){quoted} × {len(g.entries)}",
+                    title=(
+                        f"API error {g.code} ({statuses}){quoted} × {len(g.entries)}"
+                        if g.code
+                        else f"API error ({statuses}){quoted} × {len(g.entries)}"
+                    ),
                     cause=f"{hosts} answered {plural(len(g.entries), 'request')} with error {label}{quoted}.",
                     next_step=(
                         "Look the error code up in the API's documentation or the KB, and include"
