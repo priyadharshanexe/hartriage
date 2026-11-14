@@ -136,6 +136,7 @@ def process(
     trusted_redacted: bool = False,
     keep_rows: bool = True,
     on_row: Callable[[EntryRow], None] | None = None,
+    analyse: bool = True,
 ) -> ProcessResult:
     reader = HarReader(source, limits)
     redactor = Redactor(policy)
@@ -159,7 +160,8 @@ def process(
             offset, length = writer.entry(raw)
         entry = Entry.from_har(number, raw, meta)
         del raw
-        engine.observe(entry)
+        if analyse:
+            engine.observe(entry)
         stats.observe(entry)
         if keep_rows or on_row is not None:
             if first_start is None and entry.started:
@@ -214,7 +216,7 @@ def process(
     if keep_rows and first_start is not None:
         rows.sort(key=lambda r: (r.started_ms if r.started_ms is not None else 0.0, r.number))
     result = ProcessResult(
-        findings=engine.finish(),
+        findings=engine.finish() if analyse else [],
         report=redactor.report,
         log=reader.log,
         stats=stats,
