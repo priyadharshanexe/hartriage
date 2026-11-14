@@ -33,16 +33,22 @@ def before_after(page: Page) -> None:
     """A side-by-side of one request before and after redaction."""
     raw = json.loads(SAMPLE.read_text(encoding="utf-8"))["log"]["entries"][2]["request"]
     with httpx.Client(base_url=API, timeout=30) as c:
-        token = c.post("/v1/auth/login", json={"email": EMAIL, "password": PASSWORD}).json()["access_token"]
+        token = c.post("/v1/auth/login", json={"email": EMAIL, "password": PASSWORD}).json()[
+            "access_token"
+        ]
         items = c.get("/v1/analyses", headers={"Authorization": f"Bearer {token}"}).json()["items"]
-        detail = c.get(f"/v1/analyses/{items[-1]['id']}/entries/3", headers={"Authorization": f"Bearer {token}"}).json()
+        detail = c.get(
+            f"/v1/analyses/{items[-1]['id']}/entries/3",
+            headers={"Authorization": f"Bearer {token}"},
+        ).json()
     clean = detail["entry"]["request"]
 
     def block(title: str, request: dict[str, object], tone: str) -> str:
         headers = "".join(
             f"<div><span class=k>{h['name']}:</span> {h['value']}</div>"  # type: ignore[index]
             for h in request["headers"]  # type: ignore[attr-defined]
-            if str(h["name"]).lower() in ("authorization", "cookie", "referer", "user-agent", "accept")  # type: ignore[index]
+            if str(h["name"]).lower()
+            in ("authorization", "cookie", "referer", "user-agent", "accept")  # type: ignore[index]
         )
         return f"<section class={tone}><h2>{title}</h2><div class=url>{request['method']} {request['url']}</div>{headers}</section>"
 
@@ -51,7 +57,9 @@ def before_after(page: Page) -> None:
     section{{background:white;border-radius:8px;padding:16px;border:2px solid}} .raw{{border-color:#f87171}} .clean{{border-color:#14b8a6}}
     h2{{font:600 16px system-ui;margin:0 0 8px}} .k{{color:#64748b}} div{{word-break:break-all;margin:4px 0}} .url{{font-weight:600}}
     </style>{block("Before: what the customer's browser recorded", raw, "raw")}{block("After: what HAR Triage stores", clean, "clean")}"""
-    page.set_content(html.replace("[REDACTED:", "<mark>[REDACTED:").replace("]</div>", "]</mark></div>"))
+    page.set_content(
+        html.replace("[REDACTED:", "<mark>[REDACTED:").replace("]</div>", "]</mark></div>")
+    )
     page.set_viewport_size({"width": 1400, "height": 420})
     shot(page, "before-after-redaction")
 
@@ -78,7 +86,9 @@ def main() -> None:
         page.wait_for_url("**/analyses/*")
         page.get_by_test_id("likely-cause").wait_for()
         shot(page, "analysis-summary")
-        page.get_by_test_id("finding").filter(has_text="R002").get_by_role("button", name="Show").click()
+        page.get_by_test_id("finding").filter(has_text="R002").get_by_role(
+            "button", name="Show"
+        ).click()
         page.locator("#requests").scroll_into_view_if_needed()
         page.get_by_role("complementary", name="Request 3").wait_for()
         page.wait_for_timeout(600)
@@ -89,7 +99,9 @@ def main() -> None:
         shot(page, "findings")
 
         page.goto(f"{WEB}/kb/R002-auth")
-        page.get_by_role("heading", name="R002 — Authentication and permission errors (401 / 403)").wait_for()
+        page.get_by_role(
+            "heading", name="R002 — Authentication and permission errors (401 / 403)"
+        ).wait_for()
         shot(page, "kb-article")
 
         # Helpdesk: connect the fake Zendesk, tag a ticket, read the note.
@@ -103,10 +115,19 @@ def main() -> None:
         page.get_by_text("Webhook URL").first.wait_for()
         webhook = page.locator("code").first.inner_text()
         with httpx.Client(base_url=FAKE, timeout=60) as fake:
-            tid = fake.post("/_admin/tickets", json={"platform": "zendesk", "account": "acme",
-                                                     "subject": "Checkout page says I'm signed out",
-                                                     "attachments": [{"filename": "checkout.har", "sample": SAMPLE.name}]}).json()["id"]
-            fake.post(f"/_admin/tickets/zendesk/acme/{tid}/tag", json={"webhook_url": webhook, "secret": "demo-signing-secret", "repeat": 2})
+            tid = fake.post(
+                "/_admin/tickets",
+                json={
+                    "platform": "zendesk",
+                    "account": "acme",
+                    "subject": "Checkout page says I'm signed out",
+                    "attachments": [{"filename": "checkout.har", "sample": SAMPLE.name}],
+                },
+            ).json()["id"]
+            fake.post(
+                f"/_admin/tickets/zendesk/acme/{tid}/tag",
+                json={"webhook_url": webhook, "secret": "demo-signing-secret", "repeat": 2},
+            )
             for _ in range(60):
                 if "har_analyzed" in fake.get(f"/_admin/tickets/zendesk/acme/{tid}").json()["tags"]:
                     break
