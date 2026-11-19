@@ -355,3 +355,68 @@ def test_polling_survives_a_rate_limited_helpdesk(client: Any, admin: Any) -> No
     assert poll_tagged_tickets() == 0  # skipped this round, no crash
     assert poll_tagged_tickets() == 1
     assert len(private_notes("freshdesk", tid)) == 1
+
+
+def test_zendesk_oauth_client_mints_and_renews_its_token(client: Any, admin: Any) -> None:
+    """Found live: new Zendesk accounts can't create API tokens any more, so a
+    confidential OAuth client (client_credentials grant) is how they connect."""
+    from hartriage.helpdesk.zendesk import ClientCredentials
+
+    ClientCredentials._cache.clear()
+    response = admin.post(
+        "/v1/connections",
+        json={
+            "platform": "zendesk",
+            "subdomain": "acme",
+            "oauth_client_id": "hartriage",
+            "oauth_client_secret": "client-" + "secret",
+            "signing_secret": SIGNING_SECRET,
+        },
+    )
+    assert response.status_code == 201, response.text
+    conn = response.json()
+    assert conn["auth_type"] == "oauth_client"
+    assert conn["account"] == "Fake Zendesk Agent"
+    tid = ticket("zendesk")
+    # Zendesk revokes the token; the next call is refused once, re-mints, and goes on.
+    fake.ZD_TOKENS.clear()
+    assert zendesk_hook(client, conn, tid).status_code == 202
+    assert len(private_notes("zendesk", tid)) == 1
+    assert sum(c.endswith("/oauth/tokens") for c in fake.CALLS) == 2
+
+
+def test_zendesk_oauth_client_with_a_wrong_secret_is_refused(admin: Any) -> None:
+    from hartriage.helpdesk.zendesk import ClientCredentials
+
+    ClientCredentials._cache.clear()
+    response = admin.post(
+        "/v1/connections",
+        json={
+            "platform": "zendesk",
+            "subdomain": "acme",
+            "oauth_client_id": "hartriage",
+            "oauth_client_secret": "",
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_zendesk_can_connect_before_the_webhook_exists(client: Any, admin: Any) -> None:
+    """The webhook needs the connection's URL before Zendesk shows its signing secret,
+    so the secret is added afterwards. Until then every webhook is refused: an empty
+    HMAC key is one anyone could sign with."""
+    response = admin.post(
+        "/v1/connections",
+        json={"platform": "zendesk", "subdomain": "acme", "email": "a@acme.test", "api_token": "t"},
+    )
+    assert response.status_code == 201, response.text
+    conn = response.json()
+    assert conn["needs_signing_secret"] is True
+    tid = ticket("zendesk")
+    assert zendesk_hook(client, conn, tid, secret="").status_code == 401
+    listed = admin.get("/v1/connections").json()["items"][0]
+    assert listed["last_webhook_status"] == "rejected: no signing secret yet"
+    patched = admin.patch(f"/v1/connections/{conn['id']}", json={"signing_secret": SIGNING_SECRET})
+    assert patched.json()["needs_signing_secret"] is False
+    assert zendesk_hook(client, conn, tid).status_code == 202
+    assert len(private_notes("zendesk", tid)) == 1

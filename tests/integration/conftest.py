@@ -83,6 +83,7 @@ def _clean(database: None) -> Iterator[None]:
     fake.UPLOADS.clear()
     fake.FAIL_NEXT.clear()
     fake.CALLS.clear()
+    fake.ZD_TOKENS.clear()
     yield
     with engine().begin() as conn:
         tables = (

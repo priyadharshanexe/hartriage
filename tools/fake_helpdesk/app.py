@@ -72,6 +72,7 @@ TICKETS: dict[tuple[str, str, int], FakeTicket] = {}
 UPLOADS: dict[str, FakeAttachment] = {}
 FAIL_NEXT: dict[str, tuple[int, int]] = {}  # platform -> (status, retry_after)
 CALLS: list[str] = []
+ZD_TOKENS: set[str] = set()  # OAuth access tokens minted by /oauth/tokens
 
 
 def _ticket(platform: str, account: str, ticket_id: int) -> FakeTicket | None:
@@ -80,8 +81,11 @@ def _ticket(platform: str, account: str, ticket_id: int) -> FakeTicket | None:
 
 def _gate(platform: str, request: Request) -> Response | None:
     CALLS.append(f"{request.method} {request.url.path}")
-    if not request.headers.get("authorization"):
+    auth = request.headers.get("authorization", "")
+    if not auth:
         return JSONResponse({"error": "Couldn't authenticate you"}, 401)
+    if auth.startswith("Bearer fake-zd-") and auth.removeprefix("Bearer ") not in ZD_TOKENS:
+        return JSONResponse({"error": "invalid_token"}, 401)  # minted here, since revoked
     if platform in FAIL_NEXT:
         status, retry = FAIL_NEXT.pop(platform)
         return JSONResponse({"error": "rate limited"}, status, headers={"Retry-After": str(retry)})
@@ -103,6 +107,20 @@ def _zd_attachment(account: str, a: FakeAttachment, base: str) -> dict[str, Any]
         "content_type": a.content_type,
         "size": len(a.content),
     }
+
+
+@app.post("/zendesk/{account}/oauth/tokens")
+async def zd_oauth_token(account: str, request: Request) -> Response:
+    """The client_credentials grant of a confidential OAuth client."""
+    CALLS.append(f"POST /zendesk/{account}/oauth/tokens")
+    data = await request.json()
+    if data.get("grant_type") != "client_credentials" or not data.get("client_secret"):
+        return JSONResponse({"error": "invalid_client"}, 401)
+    token = f"fake-zd-{uuid.uuid4().hex}"
+    ZD_TOKENS.add(token)
+    return JSONResponse(
+        {"access_token": token, "token_type": "bearer", "scope": "read write", "expires_in": 172800}
+    )
 
 
 @app.get("/zendesk/{account}/api/v2/users/me.json")
@@ -481,6 +499,7 @@ def reset() -> JSONResponse:
     UPLOADS.clear()
     FAIL_NEXT.clear()
     CALLS.clear()
+    ZD_TOKENS.clear()
     return JSONResponse({"ok": True})
 
 

@@ -183,6 +183,7 @@ export interface Connection {
   last_webhook_status: string | null;
   created_at: string;
   secret_header: string | null;
+  needs_signing_secret?: boolean;
   webhook_secret?: string;
   account?: string | null;
 }

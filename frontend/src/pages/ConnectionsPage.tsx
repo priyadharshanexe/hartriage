@@ -98,6 +98,7 @@ function ConnectionCard({ connection: c, secret, onSecret, onDelete }: { connect
       }
     >
       {test && <p role="status" className={`mb-4 border-l-4 px-3 py-2 text-sm ${test.ok ? "border-ok bg-ok/[0.08]" : "border-high bg-high/[0.07]"}`}>{test.text}</p>}
+      {c.needs_signing_secret && <SigningSecretForm connection={c} />}
       {secret && (
         <div className="mb-4 border-l-4 border-medium bg-medium/15 p-3 text-sm" role="alert">
           <p className="font-semibold">Webhook secret, shown once</p>
@@ -155,16 +156,36 @@ function ConnectionCard({ connection: c, secret, onSecret, onDelete }: { connect
   );
 }
 
+type ZendeskAuth = "oauth_client" | "api_token";
+
 function NewConnection({ onDone }: { onDone: (created: Connection | null) => void }) {
   const [platform, setPlatform] = useState<Platform>("zendesk");
-  const [form, setForm] = useState({ subdomain: "", email: "", api_token: "", api_key: "", signing_secret: "" });
+  // New Zendesk accounts can no longer create API tokens, so OAuth comes first.
+  const [zendeskAuth, setZendeskAuth] = useState<ZendeskAuth>("oauth_client");
+  const [form, setForm] = useState({
+    subdomain: "",
+    email: "",
+    api_token: "",
+    oauth_client_id: "",
+    oauth_client_secret: "",
+    api_key: "",
+    signing_secret: "",
+  });
   const create = useMutation({
     mutationFn: () =>
       api<Connection>("/v1/connections", {
         method: "POST",
-        body: platform === "zendesk"
-          ? { platform, subdomain: form.subdomain, email: form.email, api_token: form.api_token, signing_secret: form.signing_secret }
-          : { platform, subdomain: form.subdomain, api_key: form.api_key },
+        body:
+          platform === "zendesk"
+            ? {
+                platform,
+                subdomain: form.subdomain,
+                ...(zendeskAuth === "oauth_client"
+                  ? { oauth_client_id: form.oauth_client_id, oauth_client_secret: form.oauth_client_secret }
+                  : { email: form.email, api_token: form.api_token }),
+                signing_secret: form.signing_secret || undefined,
+              }
+            : { platform, subdomain: form.subdomain, api_key: form.api_key },
       }),
     onSuccess: (created) => onDone(created),
   });
@@ -189,12 +210,34 @@ function NewConnection({ onDone }: { onDone: (created: Connection | null) => voi
         </Field>
         {platform === "zendesk" ? (
           <>
-            <Field label="Agent email">{(p) => <Input {...p} type="email" required value={form.email} onChange={set("email")} />}</Field>
-            <Field label="API token" hint="Admin Center → Apps and integrations → APIs → Zendesk API">
-              {(p) => <Input {...p} type="password" required value={form.api_token} onChange={set("api_token")} />}
+            <Field label="Sign in with">
+              {(p) => (
+                <Select {...p} value={zendeskAuth} onChange={(e) => { setZendeskAuth(e.target.value as ZendeskAuth); create.reset(); }}>
+                  <option value="oauth_client">OAuth client (recommended)</option>
+                  <option value="api_token">Agent email and API token</option>
+                </Select>
+              )}
             </Field>
-            <Field label="Webhook signing secret" hint="Shown on the webhook's page in Zendesk after you create it">
-              {(p) => <Input {...p} type="password" required value={form.signing_secret} onChange={set("signing_secret")} />}
+            <div className="hidden md:block" />
+            {zendeskAuth === "oauth_client" ? (
+              <>
+                <Field label="OAuth client unique identifier" hint="Admin Center → Apps and integrations → APIs → OAuth clients; client kind Confidential">
+                  {(p) => <Input {...p} required value={form.oauth_client_id} onChange={set("oauth_client_id")} />}
+                </Field>
+                <Field label="OAuth client secret" hint="Shown once when you create the client">
+                  {(p) => <Input {...p} type="password" required value={form.oauth_client_secret} onChange={set("oauth_client_secret")} />}
+                </Field>
+              </>
+            ) : (
+              <>
+                <Field label="Agent email">{(p) => <Input {...p} type="email" required value={form.email} onChange={set("email")} />}</Field>
+                <Field label="API token" hint="Zendesk stops accepting API tokens on 30 April 2027; new accounts cannot create them">
+                  {(p) => <Input {...p} type="password" required value={form.api_token} onChange={set("api_token")} />}
+                </Field>
+              </>
+            )}
+            <Field label="Webhook signing secret (optional now)" hint="The webhook needs this connection's URL first. Add the secret afterwards on the connection.">
+              {(p) => <Input {...p} type="password" value={form.signing_secret} onChange={set("signing_secret")} />}
             </Field>
           </>
         ) : (
@@ -214,5 +257,37 @@ function NewConnection({ onDone }: { onDone: (created: Connection | null) => voi
         </div>
       </form>
     </Card>
+  );
+}
+
+/** Zendesk shows the signing secret only after the webhook exists, so it is added here. */
+function SigningSecretForm({ connection }: { connection: Connection }) {
+  const queryClient = useQueryClient();
+  const [value, setValue] = useState("");
+  const save = useMutation({
+    mutationFn: () => api<Connection>(`/v1/connections/${connection.id}`, { method: "PATCH", body: { signing_secret: value } }),
+    onSuccess: () => {
+      setValue("");
+      void queryClient.invalidateQueries({ queryKey: ["connections"] });
+    },
+  });
+  return (
+    <form
+      className="mb-4 border-l-4 border-medium bg-medium/15 p-3 text-sm"
+      onSubmit={(e: FormEvent) => {
+        e.preventDefault();
+        save.mutate();
+      }}
+    >
+      <p className="font-semibold">Add the webhook signing secret</p>
+      <p className="mt-1">Until it is added, webhooks from Zendesk are refused. Create the webhook with the URL below, reveal its signing secret, and paste it here.</p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <Input className="w-80 max-w-full" type="password" aria-label="Webhook signing secret" required value={value} onChange={(e) => { setValue(e.target.value); save.reset(); }} />
+        <Button type="submit" size="sm" variant="primary" busy={save.isPending}>
+          Save secret
+        </Button>
+      </div>
+      {save.isError && <div className="mt-2"><ErrorState error={save.error} /></div>}
+    </form>
   );
 }

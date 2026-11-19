@@ -104,7 +104,9 @@ class HelpdeskConnection(Base):
     __tablename__ = "helpdesk_connections"
     __table_args__ = (
         CheckConstraint("platform IN ('zendesk','freshdesk')", name="platform_valid"),
-        CheckConstraint("auth_type IN ('api_token','oauth','api_key')", name="auth_type_valid"),
+        CheckConstraint(
+            "auth_type IN ('api_token','oauth','oauth_client','api_key')", name="auth_type_valid"
+        ),
     )
     id: Mapped[uuid.UUID] = _id()
     org_id: Mapped[uuid.UUID] = mapped_column(

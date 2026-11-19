@@ -10,12 +10,15 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
+import threading
+import time
+from collections.abc import Generator
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, ClassVar
 
 import httpx
 
-from hartriage.helpdesk.base import Attachment, HelpdeskClient, Ticket
+from hartriage.helpdesk.base import Attachment, AuthFailed, HelpdeskClient, Ticket
 
 SIGNATURE = "x-zendesk-webhook-signature"
 TIMESTAMP = "x-zendesk-webhook-signature-timestamp"
@@ -32,7 +35,9 @@ def verify_signature(
     secret: str, headers: dict[str, str], body: bytes, now: datetime | None = None
 ) -> bool:
     signature, timestamp = headers.get(SIGNATURE, ""), headers.get(TIMESTAMP, "")
-    if not signature or not timestamp:
+    # No signing secret yet (the connection was made before the webhook existed):
+    # an empty HMAC key is something anyone can sign with, so refuse everything.
+    if not secret or not signature or not timestamp:
         return False
     if not hmac.compare_digest(sign(secret, timestamp, body), signature):
         return False
@@ -53,6 +58,78 @@ def delivery_key(headers: dict[str, str], body: bytes) -> str:
     return "sig:" + hashlib.sha256(headers.get(TIMESTAMP, "").encode() + body).hexdigest()
 
 
+class ClientCredentials(httpx.Auth):
+    """OAuth for a confidential Zendesk OAuth client: mint an access token with the
+    client_credentials grant, reuse it until shortly before it expires, and mint a new
+    one once if Zendesk answers 401 (revoked or expired early).
+
+    Found live: new Zendesk accounts can no longer create API tokens (they stop working
+    on 2027-04-30), so an OAuth client is the way to connect a new account.
+    """
+
+    _cache: ClassVar[dict[tuple[str, str], tuple[str, float]]] = {}
+    _lock = threading.Lock()
+
+    def __init__(
+        self,
+        token_url: str,
+        client_id: str,
+        client_secret: str,
+        timeout: float,
+        transport: httpx.BaseTransport | None = None,
+    ) -> None:
+        self.token_url = token_url
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.timeout = timeout
+        self.transport = transport
+
+    def _mint(self) -> tuple[str, float]:
+        # A shared transport (tests) must outlive this short-lived client: only close
+        # what was created here.
+        http = httpx.Client(timeout=self.timeout, transport=self.transport)
+        try:
+            response = http.post(
+                self.token_url,
+                json={
+                    "grant_type": "client_credentials",
+                    "client_id": self.client_id,
+                    "client_secret": self.client_secret,
+                    "scope": "read write",
+                },
+            )
+        finally:
+            if self.transport is None:
+                http.close()
+        if response.status_code in (400, 401, 403):
+            raise AuthFailed(f"zendesk refused the OAuth client ({response.status_code})")
+        response.raise_for_status()
+        data = response.json()
+        token = str(data.get("access_token") or "")
+        if not token:
+            raise AuthFailed("zendesk returned no access token")
+        lifetime = data.get("expires_in")
+        # A token without expires_in does not expire; still re-mint now and then.
+        ttl = float(lifetime) if isinstance(lifetime, int | float) and lifetime > 0 else 3600.0
+        return token, time.monotonic() + max(ttl - 60, ttl / 2)
+
+    def token(self, force: bool = False) -> str:
+        key = (self.token_url, self.client_id)
+        with self._lock:
+            cached = self._cache.get(key)
+            if force or cached is None or cached[1] <= time.monotonic():
+                cached = self._mint()
+                self._cache[key] = cached
+            return cached[0]
+
+    def auth_flow(self, request: httpx.Request) -> Generator[httpx.Request, httpx.Response]:
+        request.headers["Authorization"] = f"Bearer {self.token()}"
+        response = yield request
+        if response.status_code == 401:
+            request.headers["Authorization"] = f"Bearer {self.token(force=True)}"
+            yield request
+
+
 class ZendeskClient(HelpdeskClient):
     platform = "zendesk"
     allowed_download_hosts = ("zendesk.com", "zdusercontent.com", "zdassets.com")
@@ -68,12 +145,20 @@ class ZendeskClient(HelpdeskClient):
     ) -> ZendeskClient:
         auth: httpx.Auth | None
         headers = {"Accept": "application/json"}
-        if credentials.get("oauth_token"):
+        url = base_url or f"https://{subdomain}.zendesk.com"
+        if credentials.get("client_id"):
+            auth = ClientCredentials(
+                f"{url}/oauth/tokens",
+                credentials["client_id"],
+                credentials["client_secret"],
+                timeout,
+                transport,
+            )
+        elif credentials.get("oauth_token"):
             headers["Authorization"] = f"Bearer {credentials['oauth_token']}"
             auth = None
         else:
             auth = httpx.BasicAuth(f"{credentials['email']}/token", credentials["api_token"])
-        url = base_url or f"https://{subdomain}.zendesk.com"
         return cls(
             url, auth, headers, timeout, transport, trust_any_download_host=base_url is not None
         )

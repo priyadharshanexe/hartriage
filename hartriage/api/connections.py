@@ -32,6 +32,8 @@ class ConnectionIn(BaseModel):
     email: str | None = Field(None, max_length=320)
     api_token: str | None = Field(None, max_length=200)
     oauth_token: str | None = Field(None, max_length=500)
+    oauth_client_id: str | None = Field(None, max_length=200)
+    oauth_client_secret: str | None = Field(None, max_length=500)
     api_key: str | None = Field(None, max_length=200)
     signing_secret: str | None = Field(
         None, max_length=200, description="Zendesk webhook signing secret"
@@ -58,12 +60,17 @@ class ConnectionPatch(BaseModel):
 
 def _credentials(body: ConnectionIn) -> tuple[str, dict[str, str]]:
     if body.platform == "zendesk":
+        if body.oauth_client_id and body.oauth_client_secret:
+            return "oauth_client", {
+                "client_id": body.oauth_client_id,
+                "client_secret": body.oauth_client_secret,
+            }
         if body.oauth_token:
             return "oauth", {"oauth_token": body.oauth_token}
         if body.email and body.api_token:
             return "api_token", {"email": body.email, "api_token": body.api_token}
         raise AppError(
-            "Zendesk needs an OAuth token, or an agent email plus an API token.",
+            "Zendesk needs an OAuth client (id and secret), an OAuth token, or an agent email plus an API token.",
             code="missing_credentials",
             status=422,
         )
@@ -119,6 +126,8 @@ def serialize(settings: Settings, conn: HelpdeskConnection) -> dict[str, Any]:
         "last_webhook_status": conn.last_webhook_status,
         "created_at": conn.created_at.isoformat(),
         "secret_header": SECRET_HEADER if conn.platform == "freshdesk" else None,
+        "needs_signing_secret": conn.platform == "zendesk"
+        and not registry.webhook_secret(settings, conn),
     }
 
 
@@ -161,12 +170,9 @@ def create(
             ) from exc
         finally:
             client.close()
-    if body.platform == "zendesk" and not body.signing_secret:
-        raise AppError(
-            "Paste the Zendesk webhook's signing secret.", code="missing_signing_secret", status=422
-        )
-    secret = body.signing_secret if body.platform == "zendesk" else new_token(24)
-    assert secret is not None  # noqa: S101 - checked above
+    # The Zendesk webhook needs this connection's URL before it can show its signing
+    # secret, so the secret may come later (PATCH). Until then webhooks are refused.
+    secret = (body.signing_secret or "") if body.platform == "zendesk" else new_token(24)
     conn = HelpdeskConnection(
         id=uuid.uuid4(),
         org_id=principal.org_id,

@@ -78,7 +78,9 @@ def _process(
         key = freshdesk.delivery_key(body)
     conn.last_webhook_at = now
     if not valid:
-        conn.last_webhook_status = "rejected: bad signature"
+        conn.last_webhook_status = (
+            "rejected: no signing secret yet" if not secret else "rejected: bad signature"
+        )
         db.commit()
         WEBHOOKS.labels(platform, "bad_signature").inc()
         raise Unauthorized("Signature check failed.")
