@@ -14,10 +14,11 @@ from __future__ import annotations
 import uuid
 from contextlib import closing, suppress
 from datetime import UTC, datetime
+from typing import Any
 
 import structlog
 from celery import Task
-from sqlalchemy import select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.exc import IntegrityError
 
 from hartriage.core.config import get_settings
@@ -102,6 +103,7 @@ def ingest_ticket(self: Task, receipt_id: str) -> None:
             and not a.filename.lower().endswith((".redacted.har", ".redacted.har.gz"))
         ]
         new = 0
+        queued: list[uuid.UUID] = []
         for attachment in hars:
             seen = db.scalar(
                 select(Artifact).where(
@@ -145,8 +147,12 @@ def ingest_ticket(self: Task, receipt_id: str) -> None:
                 ticket=ticket.id,
             )
             db.commit()
-            run_analysis(db, storage, settings, analysis.id)
-            enqueue_note(analysis.id)
+            queued.append(analysis.id)
+        # Every new file is recorded (status queued) before any is analysed, so the
+        # first note can tell that more are coming and leaves the tag for the last.
+        for analysis_id in queued:
+            run_analysis(db, storage, settings, analysis_id)
+            enqueue_note(analysis_id)
         receipt.outcome = (
             "analysed" if new else ("no_har_attachment" if not hars else "already_analysed")
         )
@@ -157,6 +163,31 @@ def ingest_ticket(self: Task, receipt_id: str) -> None:
             with suppress(HelpdeskError):
                 client.swap_tags(ticket, settings.trigger_tag, settings.done_tag)
         client.close()
+
+
+def notes_outstanding(db: Any, case_id: uuid.UUID) -> int:
+    """Analyses of this ticket's HAR files that will still get a note: queued, running,
+    or done without a posted note. Failed analyses never get one, so they don't count."""
+    posted = (
+        select(PostedNote.id)
+        .where(PostedNote.analysis_id == Analysis.id, PostedNote.status == "posted")
+        .exists()
+    )
+    return int(
+        db.scalar(
+            select(func.count())
+            .select_from(Analysis)
+            .join(Artifact, Analysis.artifact_id == Artifact.id)
+            .where(
+                Artifact.case_id == case_id,
+                or_(
+                    Analysis.status.in_(("queued", "running")),
+                    and_(Analysis.status == "done", ~posted),
+                ),
+            )
+        )
+        or 0
+    )
 
 
 @app.task(name="hartriage.post_note", bind=True, max_retries=8)
@@ -246,10 +277,15 @@ def post_note(self: Task, analysis_id: str) -> None:
             note.last_error = None
             db.commit()
             NOTES.labels(conn.platform, "posted").inc()
-            try:
-                client.swap_tags(ticket, settings.trigger_tag, settings.done_tag)
-            except HelpdeskError as exc:
-                log.warning("tag_swap_failed", error=str(exc))
+            # Only say "analysed" once it is true for every HAR on the ticket: with
+            # several files, the earlier notes leave the tag for the last one. Each
+            # task commits its own note before checking, so the last to finish sees
+            # all of them posted (two finishing together both swap, which is harmless).
+            if not notes_outstanding(db, case.id):
+                try:
+                    client.swap_tags(ticket, settings.trigger_tag, settings.done_tag)
+                except HelpdeskError as exc:
+                    log.warning("tag_swap_failed", error=str(exc))
         except RateLimited as exc:
             note.last_error = str(exc)
             db.commit()

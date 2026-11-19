@@ -81,7 +81,10 @@ If a private value survives, the recording fails. To record again (this creates 
 HARTRIAGE_RECORD_LIVE=1 HARTRIAGE_SCRUB_WORDS="<agent name>" uv run pytest tests/contract -m live_helpdesk
 ```
 
-## Still open
+## Found afterwards and fixed
 
-- On a ticket with several HAR files, the tag changes to `har_analyzed` after the *first* note is posted, while the others are still being posted. It would be clearer to change it only once every file on the ticket has its note.
-- A live Zendesk 429.
+- On a ticket with several HAR files (Zendesk ticket 4), the tag changed to `har_analyzed` after the *first* note, while the others were still being posted. The ingest task now records every new file before analysing any of them, and only the last note changes the tag. Exactly-once was never affected: this was about what the tag tells the agent.
+
+## Not tested live
+
+- A Zendesk 429. The trial allows several hundred calls a minute, so provoking one would mean hammering the account; 429 handling is covered by the live Freshdesk 429 and the fake-helpdesk tests.

@@ -442,3 +442,32 @@ def test_redacted_copies_in_the_old_layout_are_accepted_by_zendesk() -> None:
     assert client._upload("file.redacted.har", old) == "t"
     assert seen[0].startswith(b'{\n"log":')
     assert json.loads(seen[0]) == json.loads(old)
+
+
+def test_tag_changes_only_after_the_last_note(client: Any, admin: Any) -> None:
+    """Found live: on a ticket with several HAR files the tag became har_analyzed after
+    the first note, while the others were still being posted."""
+    from hartriage.helpdesk import tasks
+
+    conn = connect_zendesk(admin)
+    tid = ticket("zendesk")
+    t = fake.TICKETS[("zendesk", "acme", tid)]
+    t.comments[0].attachments.append(
+        fake.FakeAttachment(next(fake._ids), "second.har", SAMPLE.read_bytes())
+    )
+    tags_when_posting: list[list[str]] = []
+    original = tasks.post_note.run
+
+    def watch(analysis_id: str) -> None:
+        tags_when_posting.append(list(t.tags))
+        original(analysis_id)
+
+    tasks.post_note.run = watch
+    try:
+        assert zendesk_hook(client, conn, tid).status_code == 202
+    finally:
+        tasks.post_note.run = original
+    assert len(private_notes("zendesk", tid)) == 2
+    # Before the second note the ticket still said "to analyse"; only then "analysed".
+    assert tags_when_posting == [["har_analyze"], ["har_analyze"]]
+    assert t.tags == ["har_analyzed"]

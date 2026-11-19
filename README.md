@@ -174,7 +174,6 @@ docs/         decision records, redaction policy, OpenAPI, screenshots
 
 ## What I'd do next
 
-- On tickets with several HAR files, change the tag to `har_analyzed` only once every file has its note (today it changes after the first).
 - Zendesk's authorization-code OAuth flow (a "Connect with Zendesk" button) alongside the confidential client.
 - Plain-text log files: the redactor already handles free text, but there are no log rules yet.
 - A public demo mode that analyses sample files in memory and stores nothing.
