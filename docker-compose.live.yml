@@ -1,0 +1,22 @@
+# Live helpdesk testing: talk to real Zendesk/Freshdesk instead of the fake helpdesk,
+# and give the helpdesks a public HTTPS address for webhooks (e.g. a cloudflared quick tunnel).
+#
+#   HARTRIAGE_TUNNEL_URL=https://<name>.trycloudflare.com \
+#     docker compose -f docker-compose.yml -f docker-compose.live.yml up -d api worker
+#
+# See docs/live-helpdesk-testing.md.
+
+x-live-env: &live
+  HARTRIAGE_HELPDESK_BASE_URL_OVERRIDE: ""
+  HARTRIAGE_API_PUBLIC_URL: ${HARTRIAGE_TUNNEL_URL:?set HARTRIAGE_TUNNEL_URL to the tunnel address}
+
+services:
+  api:
+    environment:
+      <<: *live
+  worker:
+    environment:
+      <<: *live
+  beat:
+    environment:
+      <<: *live

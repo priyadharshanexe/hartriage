@@ -49,3 +49,7 @@ tests/property/.generated/
 !tests/golden/hars/**/*.har
 !tools/fixtures/samples/*.har
 !casebook/**/*.har
+
+# Live helpdesk test state (ticket ids, generated files)
+tools/live/state.json
+tools/live/generated/
