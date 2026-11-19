@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { type ReactNode, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { api } from "../lib/api";
 import { PHASE_LABEL, PHASES, bytes, epoch, ms } from "../lib/format";
 import type { EntryDetail, NameValue } from "../lib/types";
@@ -8,7 +9,7 @@ import { ErrorState, LoadingState, Redacted, Tag } from "./ui";
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="border-t border-rule px-5 py-4">
-      <h3 className="eyebrow mb-2.5">{title}</h3>
+      <h3 className="mb-2.5 text-sm font-bold text-ink-3">{title}</h3>
       {children}
     </section>
   );
@@ -46,19 +47,21 @@ export function RequestDetail({ analysisId, number, onClose }: { analysisId: str
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose, number]);
 
-  return (
+  // Rendered into <body>: the page's entry animation transforms its container, and a
+  // transformed ancestor would pin this "fixed" drawer to the container, not the window.
+  return createPortal(
     <>
-      <div className="fixed inset-0 z-40 bg-ink/25" onClick={onClose} aria-hidden="true" />
+      <div className="animate-fade fixed inset-0 z-40 bg-black/30" onClick={onClose} aria-hidden="true" />
       <aside
-        className="fixed inset-y-0 right-0 z-50 flex w-full max-w-xl flex-col border-l border-ink bg-card shadow-[-12px_0_32px_-12px_rgba(27,26,23,0.35)]"
+        className="animate-slide-in-right fixed inset-y-0 right-0 z-50 flex w-full max-w-xl flex-col border-l border-rule bg-card shadow-[-16px_0_40px_-16px_rgb(0_0_0/0.35)]"
         aria-label={`Request ${number}`}
       >
-        <div className="flex items-center justify-between bg-ink px-5 py-3 text-paper">
-          <h2 className="font-display text-lg font-semibold">
-            Request <span className="font-mono">#{number}</span>
+        <div className="flex items-center justify-between border-b border-rule px-5 py-3.5">
+          <h2 className="font-display text-xl font-medium">
+            Request <span className="font-mono text-lg">#{number}</span>
           </h2>
-          <button ref={closeRef} type="button" onClick={onClose} aria-label="Close request detail" className="px-2 py-1 font-mono text-xs text-[#b8b19f] hover:bg-white/10 hover:text-paper">
-            ESC ✕
+          <button ref={closeRef} type="button" onClick={onClose} aria-label="Close request detail" className="rounded-[5px] px-2 py-1 text-sm text-ink-3 transition-colors hover:bg-paper-2 hover:text-ink">
+            Esc ✕
           </button>
         </div>
         <div className="flex-1 overflow-y-auto">
@@ -73,7 +76,8 @@ export function RequestDetail({ analysisId, number, onClose }: { analysisId: str
           )}
         </div>
       </aside>
-    </>
+    </>,
+    document.body,
   );
 }
 

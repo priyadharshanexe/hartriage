@@ -2,55 +2,38 @@ import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, type ReactNode, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
-import { Logo } from "../components/Layout";
+import { Logo, ThemeToggle } from "../components/Layout";
 import { Button, ErrorState, Field, Input, LoadingState } from "../components/ui";
 import { api, fieldErrors } from "../lib/api";
 import { dateTime } from "../lib/format";
 import type { Role, Session } from "../lib/types";
 
-/** A redacted line of a request, as the sign-in pages' side panel shows it. */
-function SpecimenLine({ name, value }: { name: string; value: ReactNode }) {
-  return (
-    <div className="flex gap-3 border-b border-white/10 py-2 font-mono text-xs">
-      <span className="w-28 shrink-0 text-[#8a8475]">{name}</span>
-      <span className="min-w-0 break-words text-[#e6e0d2]">{value}</span>
-    </div>
-  );
-}
-
 function Shell({ title, lede, children, footer }: { title: string; lede?: ReactNode; children: ReactNode; footer?: ReactNode }) {
   return (
-    <div className="grid min-h-screen lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-      <div className="flex flex-col px-6 py-8 sm:px-12">
+    <div className="flex min-h-screen flex-col px-5 py-8 sm:px-8">
+      <div className="flex items-center justify-between">
         <Logo />
-        <div className="flex flex-1 items-center">
-          <div className="w-full max-w-sm py-12">
-            <h1 className="font-display text-4xl font-semibold tracking-tight">{title}</h1>
-            {lede && <div className="mt-2 text-sm text-ink-2">{lede}</div>}
-            <div className="mt-8">{children}</div>
-            {footer && <p className="mt-6 border-t border-rule pt-4 text-sm text-ink-2">{footer}</p>}
-          </div>
-        </div>
-        <p className="max-w-sm text-xs text-ink-3">HAR files carry session cookies and tokens. HAR Triage removes them before anything is stored.</p>
+        <ThemeToggle />
       </div>
-      <aside aria-hidden="true" className="hidden flex-col justify-center bg-ink px-12 py-10 text-paper lg:flex">
-        <div className="max-w-md">
-          <p className="eyebrow text-[#8a8475]">Request #212 · after redaction</p>
-          <p className="mt-3 font-mono text-sm text-paper">
-            <span className="mr-2 bg-high px-1.5 py-px text-white">401</span>GET api.example.com/v1/me
-          </p>
-          <div className="mt-5">
-            <SpecimenLine name="authorization" value={<>Bearer <span className="redaction">3f9a01c2</span></>} />
-            <SpecimenLine name="cookie" value={<>session=<span className="redaction">b71e04aa</span></>} />
-            <SpecimenLine name="x-request-id" value="req_8c1d42" />
-            <SpecimenLine name="www-authenticate" value='Bearer error="invalid_token"' />
-          </div>
-          <p className="mt-8 font-display text-2xl leading-snug font-medium">
-            The token <span className="redaction">3f9a01c2</span> expired 4 minutes before this request.
-          </p>
-          <p className="mt-3 text-sm text-[#b8b19f]">Find the failing request, see why it failed, and paste the answer into the ticket.</p>
+      <main className="mx-auto flex w-full max-w-[26rem] flex-1 flex-col justify-center py-12">
+        {/* The product in one line: a secret, removed before anything is stored. */}
+        <p className="animate-rise font-display text-[1.75rem] leading-[1.18] font-medium tracking-[-0.01em] text-ink sm:text-[2.1rem]">
+          Every HAR file carries someone&rsquo;s <span className="redact-word">session</span>. We take it out first.
+        </p>
+        <div className="animate-rise mt-10 rounded-[10px] border border-rule bg-card p-6 shadow-[0_1px_2px_rgb(0_0_0/0.04)] sm:p-7" style={{ animationDelay: "120ms" }}>
+          <h1 className="font-display text-2xl font-medium">{title}</h1>
+          {lede && <div className="mt-1.5 text-sm text-ink-3">{lede}</div>}
+          <div className="mt-6">{children}</div>
         </div>
-      </aside>
+        {footer && (
+          <p className="animate-fade mt-5 text-center text-sm text-ink-3" style={{ animationDelay: "240ms" }}>
+            {footer}
+          </p>
+        )}
+      </main>
+      <p className="mx-auto max-w-[26rem] text-center text-xs text-ink-4">
+        Cookies, tokens and passwords are replaced with markers while the file uploads. Only the redacted copy is kept.
+      </p>
     </div>
   );
 }
@@ -76,7 +59,7 @@ function useSubmit(path: string, after: string) {
   return { submit, error, busy, clearError: () => setError(null) };
 }
 
-const LINK = "font-medium text-ink underline decoration-signal decoration-2 underline-offset-2 hover:text-signal";
+const LINK = "font-bold text-signal underline-offset-2 hover:underline";
 
 export function LoginPage() {
   const { session } = useAuth();
@@ -86,7 +69,7 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   if (session) return <Navigate to={from} replace />;
   return (
-    <Shell title="Sign in" lede="Open the case files for your team." footer={<>New here? <Link className={LINK} to="/register">Create an organisation</Link></>}>
+    <Shell title="Sign in" lede="Welcome back." footer={<>New here? <Link className={LINK} to="/register">Create an organisation</Link></>}>
       <form
         className="space-y-5"
         onSubmit={(e: FormEvent) => {
@@ -190,7 +173,7 @@ export function InvitePage() {
       }
     >
       {session && session.user.email.toLowerCase() !== invite.email.toLowerCase() && (
-        <div role="alert" className="mb-6 border-l-4 border-medium bg-medium/15 px-4 py-3 text-sm">
+        <div role="alert" className="animate-slide-down mb-6 rounded-[6px] bg-medium/15 px-4 py-3 text-sm">
           You are signed in as <span className="font-mono">{session.user.email}</span>, but this invitation is for <span className="font-mono">{invite.email}</span>.
           <div className="mt-2">
             <Button size="sm" onClick={() => void logout()}>

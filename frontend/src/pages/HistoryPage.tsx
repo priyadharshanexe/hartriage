@@ -36,7 +36,7 @@ function FileLink({ analysis: a }: { analysis: Analysis }) {
   return (
     <Link
       to={`/analyses/${a.id}`}
-      className="block font-medium break-words text-ink [overflow-wrap:anywhere] hover:text-signal hover:underline"
+      className="block font-mono text-sm font-medium break-words text-ink [overflow-wrap:anywhere] hover:text-signal hover:underline"
     >
       {a.filename ?? "file.har"}
     </Link>
@@ -77,7 +77,6 @@ export function HistoryPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Case files"
         title="History"
         description="Every analysis in this organisation, newest first. Files and results are deleted automatically when they expire."
         action={<Input className="w-64" type="search" aria-label="Search by file name" placeholder="Search file names" value={q} onChange={(e) => setQ(e.target.value)} />}
@@ -111,15 +110,15 @@ export function HistoryPage() {
             <thead className="text-left">
               <tr className="border-b border-rule-2">
                 {["File", "Source", "Status", "Likely cause", "When"].map((h) => (
-                  <th key={h} className="eyebrow px-3 py-2.5 font-semibold whitespace-nowrap">
+                  <th key={h} className="colhead px-3 py-2.5 whitespace-nowrap">
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {items.map((a) => (
-                <tr key={a.id} className="border-b border-rule align-top hover:bg-card">
+              {items.map((a, i) => (
+                <tr key={a.id} className="animate-rise border-b border-rule align-top transition-colors duration-150 hover:bg-card" style={{ animationDelay: `${Math.min(i, 12) * 30}ms` }}>
                   <td className="px-3 py-3">
                     <FileLink analysis={a} />
                     <div className="font-mono text-xs text-ink-3">
@@ -143,8 +142,8 @@ export function HistoryPage() {
             </tbody>
           </table>
           <ul aria-label="Analyses" className="divide-y divide-rule border-y border-rule xl:hidden">
-            {items.map((a) => (
-              <li key={a.id} className="py-4">
+            {items.map((a, i) => (
+              <li key={a.id} className="animate-rise py-4" style={{ animationDelay: `${Math.min(i, 12) * 30}ms` }}>
                 <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
                   <div className="min-w-0 flex-1">
                     <FileLink analysis={a} />

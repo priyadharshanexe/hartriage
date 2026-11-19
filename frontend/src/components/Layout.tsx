@@ -3,16 +3,80 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { cx } from "./ui";
 
-export function Logo({ inverted = false }: { inverted?: boolean }) {
+export function Logo() {
   return (
     <div className="flex items-center gap-2.5">
       <img src="/favicon.svg" alt="" className="h-7 w-7" />
-      <span className={cx("font-display text-lg leading-none font-bold tracking-tight", inverted ? "text-paper" : "text-ink")}>
-        HAR<span className="text-signal">/</span>Triage
-      </span>
+      <span className="font-display text-xl leading-none font-semibold tracking-[-0.01em] text-ink">HAR Triage</span>
     </div>
   );
 }
+
+// ------------------------------------------------------------------ theme
+
+type Theme = "system" | "light" | "dark";
+const THEME_KEY = "hartriage.theme";
+
+function readTheme(): Theme {
+  try {
+    const value = localStorage.getItem(THEME_KEY);
+    return value === "light" || value === "dark" ? value : "system";
+  } catch {
+    return "system";
+  }
+}
+
+function applyTheme(theme: Theme) {
+  const root = document.documentElement;
+  if (theme === "system") root.removeAttribute("data-theme");
+  else root.setAttribute("data-theme", theme);
+}
+
+export function useTheme(): [Theme, (t: Theme) => void] {
+  const [theme, setTheme] = useState<Theme>(readTheme);
+  useEffect(() => {
+    applyTheme(theme);
+    try {
+      if (theme === "system") localStorage.removeItem(THEME_KEY);
+      else localStorage.setItem(THEME_KEY, theme);
+    } catch {
+      // Private mode: the choice lasts for this page only.
+    }
+  }, [theme]);
+  return [theme, setTheme];
+}
+
+export function ThemeToggle() {
+  const [theme, setTheme] = useTheme();
+  const options: { value: Theme; label: string; icon: string }[] = [
+    { value: "system", label: "Use system theme", icon: "◐" },
+    { value: "light", label: "Light theme", icon: "☀" },
+    { value: "dark", label: "Dark theme", icon: "☾" },
+  ];
+  return (
+    <div role="radiogroup" aria-label="Theme" className="inline-flex rounded-full border border-rule p-0.5">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          role="radio"
+          aria-checked={theme === o.value}
+          aria-label={o.label}
+          title={o.label}
+          onClick={() => setTheme(o.value)}
+          className={cx(
+            "h-7 w-8 rounded-full text-sm transition-colors duration-150",
+            theme === o.value ? "bg-paper-2 text-ink" : "text-ink-4 hover:text-ink",
+          )}
+        >
+          <span aria-hidden="true">{o.icon}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------ layout
 
 interface NavItem {
   to: string;
@@ -47,8 +111,8 @@ export function Layout() {
       end={item.end}
       className={({ isActive }) =>
         cx(
-          "flex items-center border-l-2 py-1.5 pr-3 pl-4 text-sm transition-colors",
-          isActive ? "border-signal bg-white/[0.06] font-medium text-paper" : "border-transparent text-[#b8b19f] hover:text-paper",
+          "relative flex items-center rounded-[6px] px-3 py-2 text-[0.9375rem] transition-colors duration-150",
+          isActive ? "bg-signal-soft font-bold text-signal" : "text-ink-2 hover:bg-paper-2 hover:text-ink",
         )
       }
     >
@@ -58,51 +122,50 @@ export function Layout() {
 
   return (
     <div className="min-h-screen md:flex">
-      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:bg-card focus:px-3 focus:py-2 focus:text-sm">
+      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded focus:bg-card focus:px-3 focus:py-2 focus:text-sm">
         Skip to content
       </a>
-      <header className="sticky top-0 z-20 flex items-center justify-between bg-ink px-4 py-3 md:hidden">
-        <Logo inverted />
+      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-rule bg-card/95 px-4 py-3 backdrop-blur-sm md:hidden">
+        <Logo />
         <button
           type="button"
           aria-label={open ? "Close menu" : "Open menu"}
           aria-expanded={open}
           aria-controls="sidebar"
           onClick={() => setOpen((v) => !v)}
-          className="p-2 text-paper hover:bg-white/10"
+          className="rounded-[6px] p-2 text-ink hover:bg-paper-2"
         >
-          <svg aria-hidden="true" viewBox="0 0 20 20" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="square">
+          <svg aria-hidden="true" viewBox="0 0 20 20" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
             {open ? <path d="M5 5l10 10M15 5L5 15" /> : <path d="M3 5.5h14M3 10h14M3 14.5h14" />}
           </svg>
         </button>
       </header>
-      {open && <div className="fixed inset-0 z-30 bg-ink/50 md:hidden" onClick={() => setOpen(false)} />}
+      {open && <div className="animate-fade fixed inset-0 z-30 bg-black/40 md:hidden" onClick={() => setOpen(false)} />}
       <aside
         id="sidebar"
         className={cx(
-          "fixed inset-y-0 left-0 z-40 flex w-64 max-w-[85vw] flex-col bg-ink text-paper transition-transform duration-200 md:sticky md:top-0 md:z-auto md:h-screen md:w-60 md:shrink-0 md:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 flex w-72 max-w-[85vw] flex-col border-r border-rule bg-card transition-transform duration-200 ease-out md:sticky md:top-0 md:z-auto md:h-screen md:w-64 md:shrink-0 md:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full max-md:invisible",
         )}
       >
-        <div className="hidden px-4 pt-5 pb-6 md:block">
-          <Logo inverted />
+        <div className="hidden px-5 pt-6 pb-7 md:block">
+          <Logo />
         </div>
-        <nav aria-label="Main" className="flex-1 overflow-y-auto py-4 md:py-0">
-          <p className="eyebrow mb-1 px-4 text-[#8a8475]">Work</p>
+        <nav aria-label="Main" className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4 md:py-0">
           {work.map(link)}
           {admin.length > 0 && (
             <>
-              <p className="eyebrow mt-6 mb-1 px-4 text-[#8a8475]">Administration</p>
+              <p className="eyebrow px-3 pt-6 pb-1.5">Administration</p>
               {admin.map(link)}
             </>
           )}
         </nav>
-        <div className="border-t border-white/10 px-4 py-4 text-sm">
+        <div className="space-y-3 border-t border-rule px-5 py-4 text-sm">
           {session && session.orgs.length > 1 ? (
-            <label className="mb-3 block">
-              <span className="eyebrow mb-1 block text-[#8a8475]">Organisation</span>
+            <label className="block">
+              <span className="eyebrow mb-1 block">Organisation</span>
               <select
-                className="w-full rounded-[2px] border border-white/20 bg-ink-2 px-2 py-1.5 text-sm text-paper"
+                className="h-9 w-full rounded-[5px] border border-rule-2 bg-card px-2 text-sm text-ink"
                 value={session.org_id}
                 onChange={(e) => void switchOrg(e.target.value)}
               >
@@ -114,26 +177,30 @@ export function Layout() {
               </select>
             </label>
           ) : (
-            <p className="eyebrow mb-3 truncate text-[#8a8475]" title={orgName}>
+            <p className="eyebrow truncate" title={orgName}>
               {orgName}
             </p>
           )}
-          <p className="truncate font-medium text-paper" title={session?.user.name}>
-            {session?.user.name || session?.user.email}
-          </p>
-          <p className="truncate font-mono text-xs text-[#8a8475]" title={session?.user.email}>
-            {session?.user.email}
-          </p>
-          <div className="mt-3 flex items-center justify-between">
-            {role && <span className="border border-white/25 px-1.5 py-px font-mono text-[0.7rem] text-[#d8d1c0]">{role}</span>}
-            <button type="button" onClick={() => void logout()} className="text-xs text-[#b8b19f] underline-offset-2 hover:text-paper hover:underline">
-              Sign out
-            </button>
+          <div className="min-w-0">
+            <p className="truncate font-bold text-ink" title={session?.user.name}>
+              {session?.user.name || session?.user.email}
+            </p>
+            <p className="truncate text-xs text-ink-3" title={session?.user.email}>
+              {session?.user.email}
+            </p>
           </div>
+          <div className="flex items-center justify-between gap-2">
+            <ThemeToggle />
+            {role && <span className="rounded-full bg-paper-2 px-2 py-0.5 text-xs font-bold text-ink-3">{role}</span>}
+          </div>
+          <button type="button" onClick={() => void logout()} className="text-sm text-ink-3 underline-offset-2 hover:text-ink hover:underline">
+            Sign out
+          </button>
         </div>
       </aside>
-      <main id="main" className="min-w-0 flex-1 px-4 py-6 md:px-10 md:py-8">
-        <div className="mx-auto max-w-6xl">
+      <main id="main" className="min-w-0 flex-1 px-4 py-6 sm:px-6 md:px-10 md:py-10">
+        {/* Keyed by path: every page change gets a short fade-and-rise. */}
+        <div key={location.pathname} className="animate-page mx-auto max-w-6xl">
           <Outlet />
         </div>
       </main>

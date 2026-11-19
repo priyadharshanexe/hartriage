@@ -30,7 +30,7 @@ export function AuditPage() {
   const log = useQuery({ queryKey: ["audit"], queryFn: () => api<{ items: AuditEntry[] }>("/v1/audit", { query: { limit: 200 } }) });
   return (
     <div className="max-w-5xl">
-      <PageHeader eyebrow="Administration" title="Audit log" description="Who viewed, exported, downloaded or changed what, and when. Newest first." />
+      <PageHeader title="Audit log" description="Who viewed, exported, downloaded or changed what, and when. Newest first." />
       {log.isPending ? (
         <LoadingState />
       ) : log.isError ? (
@@ -40,7 +40,7 @@ export function AuditPage() {
       ) : (
         <ol className="text-sm">
           {log.data.items.map((a, i) => (
-            <li key={`${a.at}-${i}`} className="grid gap-x-4 gap-y-0.5 border-b border-rule py-2.5 sm:grid-cols-[11rem_minmax(0,1fr)]">
+            <li key={`${a.at}-${i}`} style={{ animationDelay: `${Math.min(i, 15) * 25}ms` }} className="animate-rise grid gap-x-4 gap-y-0.5 border-b border-rule py-2.5 sm:grid-cols-[11rem_minmax(0,1fr)]">
               <span className="font-mono text-xs text-ink-3 sm:pt-0.5">{dateTime(a.at)}</span>
               <span className="min-w-0">
                 <span className="font-medium">{a.actor ?? "HAR Triage"}</span> <span className="text-ink-2">{ACTIONS[a.action] ?? a.action}</span>

@@ -10,10 +10,10 @@ export function cx(...classes: (string | false | null | undefined)[]): string {
 // ---------------------------------------------------------------------- Button
 type Variant = "primary" | "secondary" | "danger" | "ghost";
 const VARIANTS: Record<Variant, string> = {
-  primary: "bg-ink text-paper hover:bg-ink-2 disabled:bg-ink-4",
-  secondary: "border border-ink/80 bg-transparent text-ink hover:bg-ink hover:text-paper disabled:border-ink-4 disabled:text-ink-4 disabled:hover:bg-transparent",
-  danger: "bg-high text-white hover:bg-critical disabled:opacity-50",
-  ghost: "text-ink-2 hover:bg-paper-2 hover:text-ink disabled:text-ink-4",
+  primary: "bg-primary text-on-primary shadow-[0_1px_0_rgb(0_0_0/0.08)] hover:brightness-110 disabled:opacity-50",
+  secondary: "border border-rule-2 bg-card text-ink hover:border-ink-3 hover:bg-paper-2 disabled:opacity-50",
+  danger: "bg-critical text-white hover:brightness-110 disabled:opacity-50",
+  ghost: "text-ink-2 hover:bg-paper-2 hover:text-ink disabled:opacity-50",
 };
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -29,8 +29,8 @@ export function Button({ variant = "secondary", size = "md", busy = false, disab
       disabled={disabled || busy}
       aria-busy={busy || undefined}
       className={cx(
-        "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[2px] font-medium transition-colors disabled:cursor-not-allowed",
-        size === "sm" ? "h-7 px-2.5 text-xs" : "h-9 px-4 text-sm",
+        "inline-flex shrink-0 items-center justify-center gap-2 rounded-[5px] font-bold whitespace-nowrap transition-[background-color,border-color,filter,transform] duration-150 ease-out active:scale-[0.98] disabled:cursor-not-allowed disabled:active:scale-100",
+        size === "sm" ? "h-8 px-3 text-sm" : "h-10 px-4 text-sm",
         VARIANTS[variant],
         className,
       )}
@@ -55,7 +55,7 @@ export function Field({ label, hint, error, children }: FieldProps) {
   const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
   return (
     <div>
-      <label htmlFor={id} className="eyebrow mb-1.5 block">
+      <label htmlFor={id} className="mb-1.5 block text-sm font-bold text-ink-2">
         {label}
       </label>
       {children({ id, "aria-describedby": describedBy, "aria-invalid": error ? true : undefined })}
@@ -65,7 +65,7 @@ export function Field({ label, hint, error, children }: FieldProps) {
         </p>
       )}
       {error && (
-        <p id={`${id}-error`} className="mt-1.5 text-xs font-medium text-high">
+        <p id={`${id}-error`} className="animate-slide-down mt-1.5 text-xs font-bold text-critical">
           {error}
         </p>
       )}
@@ -74,7 +74,7 @@ export function Field({ label, hint, error, children }: FieldProps) {
 }
 
 const INPUT =
-  "block rounded-[2px] border border-rule-2 bg-card px-3 py-2 text-sm text-ink placeholder:text-ink-4 focus:border-ink focus:outline-none disabled:cursor-not-allowed disabled:bg-paper-2 disabled:text-ink-3 aria-[invalid=true]:border-high";
+  "block h-10 rounded-[5px] border border-rule-2 bg-card px-3 text-base text-ink transition-[border-color,box-shadow] duration-150 placeholder:text-ink-4 focus:border-primary focus:shadow-[0_0_0_3px_var(--primary-soft)] focus:outline-none disabled:cursor-not-allowed disabled:bg-paper-2 disabled:text-ink-3 aria-[invalid=true]:border-critical";
 
 /** Full width unless the caller sets a width. */
 function width(className: string | undefined): string {
@@ -96,35 +96,44 @@ export function Select({ className, children, ...rest }: SelectHTMLAttributes<HT
 // ---------------------------------------------------------------------- Tags
 type Tone = "ink" | "ok" | "warn" | "bad" | "muted" | "signal";
 const TONES: Record<Tone, string> = {
-  ink: "border-ink bg-ink text-paper",
-  ok: "border-ok/40 bg-ok/10 text-ok",
-  warn: "border-medium/50 bg-medium/15 text-[#7a5600]",
-  bad: "border-high/40 bg-high/10 text-high",
-  muted: "border-rule-2 bg-paper-2 text-ink-2",
-  signal: "border-signal/40 bg-signal-soft text-signal",
+  ink: "bg-ink text-paper",
+  ok: "bg-ok/12 text-ok",
+  warn: "bg-medium/20 text-medium-ink",
+  bad: "bg-critical/12 text-critical",
+  muted: "bg-paper-2 text-ink-3",
+  signal: "bg-signal-soft text-signal",
 };
 
 export function Tag({ tone = "muted", children, title, className }: { tone?: Tone; children: ReactNode; title?: string; className?: string }) {
   return (
-    <span title={title} className={cx("inline-flex items-center rounded-[2px] border px-1.5 py-px font-mono text-[0.7rem] leading-5", TONES[tone], className)}>
+    <span title={title} className={cx("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs leading-5 font-bold", TONES[tone], className)}>
       {children}
     </span>
   );
 }
 
-const SEVERITY_STYLE: Record<Severity, string> = {
-  critical: "bg-critical text-white",
-  high: "bg-high text-white",
-  medium: "bg-medium text-ink",
-  info: "bg-info text-white",
+/** An HTTP status, coloured by class, always with its number. */
+export function StatusCode({ status, error }: { status: number; error?: string }) {
+  const tone = status === 0 || error || status >= 500 ? "text-s5xx" : status >= 400 ? "text-s4xx" : status >= 300 ? "text-s3xx" : "text-s2xx";
+  return <span className={cx("font-mono font-medium tabular-nums", tone)}>{status || "ERR"}</span>;
+}
+
+const SEVERITY: Record<Severity, { label: string; shape: string; className: string }> = {
+  critical: { label: "Critical", shape: "◆", className: "bg-critical text-white" },
+  high: { label: "High", shape: "◆", className: "bg-high text-white" },
+  medium: { label: "Medium", shape: "◇", className: "bg-medium text-[#171a1f]" },
+  info: { label: "Info", shape: "●", className: "bg-info/15 text-info" },
 };
 
-/** A triage tag: the colour says how urgent, the word says it again for colour-blind readers. */
+/** Severity: colour, word and shape, so colour is never the only signal. */
 export function SeverityBadge({ severity }: { severity: Severity }) {
+  const s = SEVERITY[severity];
   return (
-    <span className={cx("inline-flex h-5 items-center gap-1.5 rounded-[2px] pr-2 pl-1.5 font-display text-[0.68rem] font-bold tracking-[0.1em] uppercase", SEVERITY_STYLE[severity])}>
-      <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
-      {severity}
+    <span className={cx("inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-xs font-bold", s.className)}>
+      <span aria-hidden="true" className="text-[0.7rem] leading-none">
+        {s.shape}
+      </span>
+      {s.label}
     </span>
   );
 }
@@ -140,20 +149,23 @@ export function Spinner({ small = false }: { small?: boolean }) {
   );
 }
 
-export function LoadingState({ label = "Loading…" }: { label?: string }) {
+/** Placeholder lines while loading (a shimmer; static under reduced motion). */
+export function LoadingState({ label = "Loading…", lines = 4 }: { label?: string; lines?: number }) {
   return (
-    <div className="flex items-center justify-center gap-3 py-16 font-mono text-sm text-ink-3">
-      <Spinner />
-      {label}
+    <div role="status" aria-label={label} className="space-y-3 py-6">
+      {Array.from({ length: lines }, (_, i) => (
+        <div key={i} className="skeleton h-4" style={{ width: `${[92, 78, 85, 60, 70][i % 5]}%` }} />
+      ))}
+      <span className="sr-only">{label}</span>
     </div>
   );
 }
 
 export function EmptyState({ title, children, action }: { title: string; children?: ReactNode; action?: ReactNode }) {
   return (
-    <div className="border border-dashed border-rule-2 px-6 py-12 text-center">
-      <p className="font-display text-lg font-semibold">{title}</p>
-      {children && <div className="mx-auto mt-1.5 max-w-md text-sm text-ink-3">{children}</div>}
+    <div className="animate-rise rounded-[8px] border border-dashed border-rule-2 px-6 py-12 text-center">
+      <p className="font-display text-xl font-medium">{title}</p>
+      {children && <div className="mx-auto mt-2 max-w-md text-sm text-ink-3">{children}</div>}
       {action && <div className="mt-5">{action}</div>}
     </div>
   );
@@ -163,8 +175,8 @@ export function ErrorState({ error, onRetry, action }: { error: unknown; onRetry
   const requestId = error instanceof ApiError && error.status >= 500 ? error.requestId : null;
   const notFound = error instanceof ApiError && error.status === 404;
   return (
-    <div role="alert" className="border-l-4 border-high bg-high/[0.07] px-4 py-3">
-      <p className="text-sm font-medium text-ink">{errorMessage(error)}</p>
+    <div role="alert" className="animate-slide-down rounded-[6px] border border-critical/30 bg-critical/8 px-4 py-3">
+      <p className="text-sm font-bold text-ink">{errorMessage(error)}</p>
       {requestId && <p className="mt-1 font-mono text-xs text-ink-3">Request ID {requestId}</p>}
       {(action || (onRetry && !notFound)) && (
         <div className="mt-3 flex gap-2">
@@ -180,14 +192,25 @@ export function ErrorState({ error, onRetry, action }: { error: unknown; onRetry
   );
 }
 
-/** A short-lived confirmation ("Re-run started"). */
+/** A short-lived confirmation ("Re-run finished"). */
 export function Notice({ children, onDone, tone = "ok" }: { children: ReactNode; onDone: () => void; tone?: "ok" | "bad" }) {
   useEffect(() => {
     const timer = window.setTimeout(onDone, 4000);
     return () => window.clearTimeout(timer);
   }, [onDone]);
   return (
-    <div role="status" className={cx("border-l-4 px-4 py-2.5 text-sm", tone === "ok" ? "border-ok bg-ok/[0.08]" : "border-high bg-high/[0.07]")}>
+    <div
+      role="status"
+      className={cx(
+        "animate-slide-down flex items-center gap-2 rounded-[6px] px-4 py-2.5 text-sm",
+        tone === "ok" ? "bg-ok/10 text-ink" : "border border-critical/30 bg-critical/8 text-ink",
+      )}
+    >
+      {tone === "ok" && (
+        <span aria-hidden="true" className="animate-tick font-bold text-ok">
+          ✓
+        </span>
+      )}
       {children}
     </div>
   );
@@ -196,11 +219,11 @@ export function Notice({ children, onDone, tone = "ok" }: { children: ReactNode;
 // ---------------------------------------------------------------------- Layout
 export function PageHeader({ eyebrow, title, description, action }: { eyebrow?: ReactNode; title: ReactNode; description?: ReactNode; action?: ReactNode }) {
   return (
-    <header className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-ink pb-5">
+    <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0 max-w-3xl">
-        {eyebrow && <div className="eyebrow mb-2">{eyebrow}</div>}
-        <h1 className="font-display text-3xl font-semibold tracking-tight break-words">{title}</h1>
-        {description && <div className="mt-2 text-sm text-ink-2">{description}</div>}
+        {eyebrow && <div className="eyebrow mb-1">{eyebrow}</div>}
+        <h1 className="font-display text-3xl font-medium tracking-[-0.01em] break-words">{title}</h1>
+        {description && <div className="mt-2 text-base text-ink-3">{description}</div>}
       </div>
       {action && <div className="flex flex-wrap gap-2">{action}</div>}
     </header>
@@ -209,10 +232,10 @@ export function PageHeader({ eyebrow, title, description, action }: { eyebrow?: 
 
 export function Card({ title, action, children, className, flush = false }: { title?: ReactNode; action?: ReactNode; children: ReactNode; className?: string; flush?: boolean }) {
   return (
-    <section className={cx("border border-rule bg-card", className)}>
+    <section className={cx("animate-rise rounded-[8px] border border-rule bg-card", className)}>
       {(title || action) && (
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-rule px-5 py-3">
-          {title && <h2 className="eyebrow">{title}</h2>}
+          {title && <h2 className="text-base font-bold">{title}</h2>}
           {action}
         </div>
       )}
@@ -256,7 +279,18 @@ export function CopyButton({ getText, label = "Copy", copiedLabel = "Copied", va
         window.setTimeout(() => setState("idle"), 2000);
       }}
     >
-      {state === "done" ? `✓ ${copiedLabel}` : state === "failed" ? "Copy failed" : label}
+      {state === "done" ? (
+        <>
+          <span aria-hidden="true" className="animate-tick">
+            ✓
+          </span>
+          {copiedLabel}
+        </>
+      ) : state === "failed" ? (
+        "Copy failed"
+      ) : (
+        label
+      )}
     </Button>
   );
 }
@@ -266,13 +300,13 @@ export function ConfirmButton({ label, confirmLabel = "Yes, do it", question, on
   const [asking, setAsking] = useState(false);
   if (!asking) {
     return (
-      <Button size={size} variant="ghost" className="text-high hover:bg-high/10 hover:text-high" onClick={() => setAsking(true)}>
+      <Button size={size} variant="ghost" className="text-critical hover:bg-critical/10 hover:text-critical" onClick={() => setAsking(true)}>
         {label}
       </Button>
     );
   }
   return (
-    <span role="group" aria-label={question} className="inline-flex flex-wrap items-center gap-2 border-l-4 border-high bg-high/[0.07] py-1 pr-1 pl-2.5 text-xs text-ink">
+    <span role="group" aria-label={question} className="animate-slide-down inline-flex flex-wrap items-center gap-2 rounded-[6px] bg-critical/8 py-1 pr-1 pl-3 text-sm text-ink">
       {question}
       <Button size="sm" variant="danger" busy={busy} onClick={() => { onConfirm(); setAsking(false); }}>
         {confirmLabel}
@@ -288,8 +322,8 @@ export function ConfirmButton({ label, confirmLabel = "Yes, do it", question, on
 export function Stat({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
-      <dt className="eyebrow">{label}</dt>
-      <dd className="mt-1 font-mono text-sm text-ink">{children}</dd>
+      <dt className="text-xs text-ink-3">{label}</dt>
+      <dd className="mt-0.5 font-mono text-sm text-ink tabular-nums">{children}</dd>
     </div>
   );
 }

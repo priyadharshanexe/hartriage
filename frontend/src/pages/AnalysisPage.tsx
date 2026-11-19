@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { RequestDetail } from "../components/RequestDetail";
-import { Button, CopyButton, EmptyState, ErrorState, Input, LoadingState, Notice, PageHeader, Redacted, Select, SeverityBadge, Stat, Tag } from "../components/ui";
+import { Button, CopyButton, EmptyState, ErrorState, Input, LoadingState, Notice, Redacted, Select, SeverityBadge, Stat, Tag } from "../components/ui";
 import { NO_FILTER, Waterfall, type WaterfallFilter, applyFilter, isFiltered } from "../components/Waterfall";
 import { api } from "../lib/api";
 import { bytes, dateTime, relative } from "../lib/format";
@@ -31,7 +31,7 @@ export function kbPath(url: string): string | null {
   return match ? `/kb/${match[1]}` : null;
 }
 
-const LINK = "underline decoration-signal decoration-2 underline-offset-2 hover:text-signal";
+const LINK = "font-bold text-signal underline-offset-2 hover:underline";
 
 export function AnalysisPage() {
   const { id = "" } = useParams();
@@ -82,7 +82,7 @@ export function AnalysisPage() {
         error={analysis.error}
         onRetry={() => void analysis.refetch()}
         action={
-          <Link to="/analyses" className="inline-flex h-7 items-center border border-ink/80 px-2.5 text-xs font-medium hover:bg-ink hover:text-paper">
+          <Link to="/analyses" className="inline-flex h-8 items-center rounded-[5px] border border-rule-2 bg-card px-3 text-sm font-bold hover:bg-paper-2">
             Back to history
           </Link>
         }
@@ -122,63 +122,65 @@ export function AnalysisPage() {
   const filtered = isFiltered(filter);
 
   return (
-    <div className="space-y-10">
-      <PageHeader
-        eyebrow={
-          <span className="flex flex-wrap items-center gap-2">
-            Case file <SourceBadge analysis={a} />
-          </span>
-        }
-        title={<span className="break-words">{a.filename ?? "Analysis"}</span>}
-        action={
-          done &&
-          canEdit && (
-            <>
-              <Button onClick={() => void downloadRedacted(id, a.filename)}>Download redacted HAR</Button>
-              <Button busy={rerunning || awaitingRerun} onClick={() => void rerun()}>
-                {rerunning ? "Re-running…" : "Re-run analysis"}
-              </Button>
-            </>
-          )
-        }
-      />
+    <div>
+      <header className="animate-rise flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-ink-3">
+            <SourceBadge analysis={a} />
+            <span>
+              analysed <span title={dateTime(a.finished_at ?? a.created_at)}>{relative(a.finished_at ?? a.created_at)}</span>
+            </span>
+          </div>
+          <h1 className="mt-2 font-mono text-lg font-medium break-words text-ink [overflow-wrap:anywhere]">{a.filename ?? "Analysis"}</h1>
+        </div>
+        {done && canEdit && (
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => void downloadRedacted(id, a.filename)}>
+              Download redacted HAR
+            </Button>
+            <Button size="sm" busy={rerunning || awaitingRerun} onClick={() => void rerun()}>
+              {rerunning ? "Re-running…" : "Re-run analysis"}
+            </Button>
+          </div>
+        )}
+      </header>
       {notice && (
-        <Notice tone={notice.tone} onDone={clearNotice}>
-          {notice.text}
-        </Notice>
+        <div className="mt-4">
+          <Notice tone={notice.tone} onDone={clearNotice}>
+            {notice.text}
+          </Notice>
+        </div>
       )}
 
       {a.status !== "done" ? (
-        a.status === "failed" ? (
-          <ErrorState error={new Error(a.error ?? "The analysis failed.")} />
-        ) : (
-          <LoadingState label={`Analysis ${a.status}…`} />
-        )
+        <div className="mt-8">
+          {a.status === "failed" ? <ErrorState error={new Error(a.error ?? "The analysis failed.")} /> : <LoadingState label={`Analysis ${a.status}…`} />}
+        </div>
       ) : (
         <>
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_18rem]">
-            {a.summary ? <SummaryBlock id={id} summary={a.summary} /> : <div />}
-            <div className="space-y-8">
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-4 border-t-2 border-ink pt-4">
-                <Stat label="Requests">{a.entry_count}</Stat>
-                <Stat label="Failed">{a.stats?.failed ?? "—"}</Stat>
-                <Stat label="Hosts">{a.stats?.host_count ?? "—"}</Stat>
-                <Stat label="Uploaded">{bytes(a.original_size_bytes)}</Stat>
-                <Stat label="Analysed">
-                  <span title={dateTime(a.finished_at ?? a.created_at)}>{relative(a.finished_at ?? a.created_at)}</span>
-                </Stat>
-                <Stat label="Deleted">
-                  <span title={dateTime(a.expires_at)}>{relative(a.expires_at)}</span>
-                </Stat>
-                {a.engine_version && <Stat label="Engine">{a.engine_version}</Stat>}
-              </dl>
-              <RedactionBlock analysis={a} />
-            </div>
-          </div>
+          {a.summary && <Answer id={id} analysis={a} summary={a.summary} />}
 
-          <section aria-labelledby="findings-heading">
-            <h2 id="findings-heading" className="mb-4 flex items-baseline gap-3 border-b border-ink pb-2 font-display text-xl font-semibold">
-              Findings <span className="font-mono text-sm font-normal text-ink-3">{findingCount ?? "…"}</span>
+          <nav
+            aria-label="On this page"
+            className="sticky top-[57px] z-10 -mx-4 mt-10 flex gap-1 overflow-x-auto border-y border-rule bg-paper/95 px-4 py-2 text-sm backdrop-blur-sm sm:-mx-6 sm:px-6 md:top-0 md:-mx-10 md:px-10"
+          >
+            {[
+              ["#answer", "Answer"],
+              ["#details", "Details"],
+              ["#findings", `Findings ${findingCount ?? ""}`],
+              ["#requests", `Requests ${entries.data?.rows.length ?? ""}`],
+            ].map(([href, label]) => (
+              <a key={href} href={href} className="rounded-full px-3 py-1 whitespace-nowrap text-ink-3 transition-colors duration-150 hover:bg-paper-2 hover:text-ink">
+                {label}
+              </a>
+            ))}
+          </nav>
+
+          {a.summary && <Details summary={a.summary} />}
+
+          <section id="findings" aria-labelledby="findings-heading" className="scroll-mt-28 pt-12">
+            <h2 id="findings-heading" className="mb-5 flex items-baseline gap-3 font-display text-2xl font-medium">
+              Findings <span className="font-mono text-base text-ink-3">{findingCount ?? "…"}</span>
             </h2>
             {findings.isPending ? (
               <LoadingState />
@@ -188,23 +190,23 @@ export function AnalysisPage() {
               <EmptyState title="No findings">Every request succeeded and nothing was slow. The problem may not have been recorded.</EmptyState>
             ) : (
               <ol className="space-y-3">
-                {findings.data.items.map((f) => (
-                  <FindingItem key={f.id} finding={f} onShow={() => showRequests(f)} />
+                {findings.data.items.map((f, i) => (
+                  <FindingItem key={f.id} finding={f} index={i} onShow={() => showRequests(f)} />
                 ))}
               </ol>
             )}
           </section>
 
-          <section id="requests" aria-labelledby="requests-heading" className="space-y-3">
-            <h2 id="requests-heading" className="flex items-baseline gap-3 border-b border-ink pb-2 font-display text-xl font-semibold">
+          <section id="requests" aria-labelledby="requests-heading" className="scroll-mt-28 space-y-3 pt-12">
+            <h2 id="requests-heading" className="flex items-baseline gap-3 font-display text-2xl font-medium">
               Requests
-              <span className="font-mono text-sm font-normal text-ink-3">
+              <span className="font-mono text-base text-ink-3">
                 {entries.data ? (filtered ? `${rows.length} of ${entries.data.rows.length}` : entries.data.rows.length) : "…"}
               </span>
             </h2>
-            <div className="flex flex-wrap items-center gap-3">
-              <label className="flex h-9 items-center gap-2 border border-rule-2 bg-card px-3 text-sm">
-                <input type="checkbox" className="accent-ink" checked={filter.failedOnly} onChange={(e) => setFilter({ ...filter, failedOnly: e.target.checked, numbers: null })} />
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="flex h-10 cursor-pointer items-center gap-2 rounded-[5px] border border-rule-2 bg-card px-3 text-sm transition-colors hover:border-ink-3">
+                <input type="checkbox" className="h-4 w-4 accent-[var(--primary)]" checked={filter.failedOnly} onChange={(e) => setFilter({ ...filter, failedOnly: e.target.checked, numbers: null })} />
                 Failed only
               </label>
               <Select className="w-56" aria-label="Host" value={filter.host} onChange={(e) => setFilter({ ...filter, host: e.target.value, numbers: null })}>
@@ -231,7 +233,7 @@ export function AnalysisPage() {
               </Button>
             </div>
             {filter.numbers && (
-              <p className="border-l-4 border-medium bg-medium/10 px-3 py-1.5 text-xs">
+              <p className="animate-slide-down rounded-[6px] bg-medium/15 px-3 py-2 text-sm">
                 Showing the {filter.numbers.size} request{filter.numbers.size === 1 ? "" : "s"} of one finding.
               </p>
             )}
@@ -275,49 +277,104 @@ async function exportJson(id: string) {
   download(await api<string>(`/v1/analyses/${id}/export`, { query: { format: "json" }, text: true }), "analysis.json");
 }
 
+const LABELS: Record<string, [string, string]> = {
+  tokens: ["token", "tokens"],
+  cookies: ["cookie", "cookies"],
+  api_keys: ["API key", "API keys"],
+  passwords: ["password", "passwords"],
+  signatures: ["signature", "signatures"],
+  aws_keys: ["AWS key", "AWS keys"],
+  private_keys: ["private key", "private keys"],
+};
+
+/** The hero: the likely cause, highlighted, and what to do about it. */
+function Answer({ id, analysis: a, summary }: { id: string; analysis: Analysis; summary: Summary }) {
+  const r = a.redaction;
+  const secrets = Object.entries(r.secrets ?? {}).filter(([, v]) => v > 0);
+  return (
+    <section id="answer" aria-labelledby="answer-heading" className="scroll-mt-28 pt-8">
+      <h2 id="answer-heading" className="animate-fade text-sm font-bold text-ink-3">
+        Likely cause
+      </h2>
+      <p className="mt-3 max-w-4xl font-display text-[1.75rem] leading-[1.22] font-medium tracking-[-0.01em] text-ink sm:text-[2.25rem]" data-testid="likely-cause">
+        <span className="highlighter">
+          <Redacted text={summary.likely_cause} />
+        </span>
+      </p>
+      <div className="animate-rise mt-6 flex max-w-3xl gap-3" style={{ animationDelay: "380ms" }}>
+        <span aria-hidden="true" className="mt-0.5 font-bold text-signal">
+          →
+        </span>
+        <p className="text-lg leading-snug text-ink">
+          <span className="sr-only">Next step: </span>
+          {summary.next_step}
+        </p>
+      </div>
+      <div className="animate-rise mt-6 flex flex-wrap gap-2" style={{ animationDelay: "440ms" }}>
+        <CopyButton variant="primary" label="Copy for ticket" getText={() => api<string>(`/v1/analyses/${id}/export`, { query: { format: "md" }, text: true })} />
+        <CopyButton label="Copy as plain text" getText={() => api<string>(`/v1/analyses/${id}/export`, { query: { format: "txt" }, text: true })} />
+        <Button variant="ghost" onClick={() => void exportJson(id)}>
+          JSON
+        </Button>
+      </div>
+
+      <dl className="animate-fade mt-8 flex flex-wrap gap-x-8 gap-y-3" style={{ animationDelay: "500ms" }}>
+        <Stat label="Requests">{a.entry_count}</Stat>
+        <Stat label="Failed">{a.stats?.failed ?? "—"}</Stat>
+        <Stat label="Hosts">{a.stats?.host_count ?? "—"}</Stat>
+        <Stat label="Uploaded">{bytes(a.original_size_bytes)}</Stat>
+        <Stat label="Deleted">
+          <span title={dateTime(a.expires_at)}>{relative(a.expires_at)}</span>
+        </Stat>
+        {a.engine_version && <Stat label="Engine">{a.engine_version}</Stat>}
+      </dl>
+
+      <div className="animate-fade mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[8px] bg-paper-2 px-4 py-3 text-sm" style={{ animationDelay: "560ms" }}>
+        <span aria-hidden="true" className="redaction">
+          redacted
+        </span>
+        <span className="text-ink-2" data-testid="redaction-sentence">
+          {r.sentence}
+        </span>
+        {secrets.map(([k, v]) => (
+          <span key={k} className="rounded-full bg-card px-2 py-0.5 text-xs font-bold text-ink-2">
+            {v} {LABELS[k]?.[v === 1 ? 0 : 1] ?? k}
+          </span>
+        ))}
+        <span className="basis-full text-xs text-ink-3">Secret values were never stored. The same marker in two requests means the same value was sent in both.</span>
+      </div>
+    </section>
+  );
+}
+
 function Row({ label, children, testId }: { label: string; children: React.ReactNode; testId?: string }) {
   return (
-    <div className="grid gap-1 border-t border-rule py-3 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-4">
-      <dt className="eyebrow pt-0.5">{label}</dt>
-      <dd className="min-w-0 text-sm text-ink" data-testid={testId}>
+    <div className="grid gap-1 border-t border-rule py-4 first:border-t-0 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-6">
+      <dt className="text-sm font-bold text-ink-3">{label}</dt>
+      <dd className="min-w-0 text-base text-ink" data-testid={testId}>
         {children}
       </dd>
     </div>
   );
 }
 
-function SummaryBlock({ id, summary }: { id: string; summary: Summary }) {
+function Details({ summary }: { summary: Summary }) {
   const internal = kbPath(summary.kb_url);
   return (
-    <section aria-labelledby="summary-heading">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="summary-heading" className="eyebrow text-signal">
-          Ticket summary
-        </h2>
-        <div className="flex flex-wrap gap-2">
-          <CopyButton variant="primary" label="Copy for ticket" getText={() => api<string>(`/v1/analyses/${id}/export`, { query: { format: "md" }, text: true })} />
-          <CopyButton label="Copy as plain text" getText={() => api<string>(`/v1/analyses/${id}/export`, { query: { format: "txt" }, text: true })} />
-          <Button variant="ghost" onClick={() => void exportJson(id)}>
-            JSON
-          </Button>
-        </div>
-      </div>
-      <p className="mt-4 font-display text-[1.7rem] leading-tight font-semibold tracking-tight text-ink" data-testid="likely-cause">
-        <Redacted text={summary.likely_cause} />
-      </p>
-      <dl className="mt-6">
+    <section id="details" aria-labelledby="details-heading" className="scroll-mt-28 pt-12">
+      <h2 id="details-heading" className="mb-2 font-display text-2xl font-medium">
+        Details
+      </h2>
+      <dl className="max-w-4xl">
         <Row label="First failure" testId="first-failure">
-          <span className="font-mono text-xs">
+          <span className="font-mono text-sm">
             <Redacted text={summary.first_failure} />
           </span>
         </Row>
-        <Row label="Next step">
-          <span className="font-medium">{summary.next_step}</span>
-        </Row>
         <Row label="Evidence">
-          <ul className="space-y-1 font-mono text-xs">
+          <ul className="space-y-1.5 font-mono text-sm text-ink-2">
             {summary.evidence.map((line) => (
-              <li key={line} className="border-l-2 border-rule-2 pl-2.5">
+              <li key={line}>
                 <Redacted text={line} />
               </li>
             ))}
@@ -343,7 +400,7 @@ function SummaryBlock({ id, summary }: { id: string; summary: Summary }) {
         </Row>
       </dl>
       {summary.notes.map((n) => (
-        <p key={n} className="mt-3 border-l-4 border-medium bg-medium/15 px-3 py-2 text-sm">
+        <p key={n} className="mt-3 max-w-4xl rounded-[6px] bg-medium/15 px-4 py-2.5 text-sm">
           {n}
         </p>
       ))}
@@ -351,68 +408,31 @@ function SummaryBlock({ id, summary }: { id: string; summary: Summary }) {
   );
 }
 
-const LABELS: Record<string, [string, string]> = {
-  tokens: ["token", "tokens"],
-  cookies: ["cookie", "cookies"],
-  api_keys: ["API key", "API keys"],
-  passwords: ["password", "passwords"],
-  signatures: ["signature", "signatures"],
-  aws_keys: ["AWS key", "AWS keys"],
-  private_keys: ["private key", "private keys"],
+const SEVERITY_EDGE: Record<Finding["severity"], string> = {
+  critical: "before:bg-critical",
+  high: "before:bg-high",
+  medium: "before:bg-medium",
+  info: "before:bg-info",
 };
 
-function RedactionBlock({ analysis }: { analysis: Analysis }) {
-  const r = analysis.redaction;
-  const secrets = Object.entries(r.secrets ?? {}).filter(([, v]) => v > 0);
+function FindingItem({ finding, index, onShow }: { finding: Finding; index: number; onShow: () => void }) {
   return (
-    <section aria-labelledby="redaction-heading" className="bg-ink p-4 text-paper">
-      <h2 id="redaction-heading" className="eyebrow text-[#8a8475]">
-        Redaction report
-      </h2>
-      <p className="mt-2 text-sm leading-snug" data-testid="redaction-sentence">
-        {r.sentence}
-      </p>
-      {secrets.length > 0 && (
-        <ul className="mt-3 space-y-1 font-mono text-xs">
-          {secrets.map(([k, v]) => (
-            <li key={k} className="flex items-center justify-between gap-2">
-              <span className="redaction">{LABELS[k]?.[v === 1 ? 0 : 1] ?? k}</span>
-              <span className="tabular-nums">{v}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-      <ul className="mt-3 space-y-0.5 text-xs text-[#b8b19f]">
-        {(r.response_bodies_removed ?? 0) > 0 && <li>{r.response_bodies_removed} response {r.response_bodies_removed === 1 ? "body" : "bodies"} dropped</li>}
-        {(r.error_bodies_kept ?? 0) > 0 && <li>{r.error_bodies_kept} small error {r.error_bodies_kept === 1 ? "body" : "bodies"} kept</li>}
-        {(r.request_bodies_removed ?? 0) > 0 && <li>{r.request_bodies_removed} large request bodies dropped</li>}
-      </ul>
-      <p className="mt-3 border-t border-white/10 pt-3 text-xs text-[#8a8475]">Secret values were never stored. The same marker in two requests means the same value was sent in both.</p>
-    </section>
-  );
-}
-
-const SEVERITY_RULE: Record<Finding["severity"], string> = {
-  critical: "border-l-critical",
-  high: "border-l-high",
-  medium: "border-l-medium",
-  info: "border-l-info",
-};
-
-function FindingItem({ finding, onShow }: { finding: Finding; onShow: () => void }) {
-  return (
-    <li className={`border border-l-4 border-rule bg-card p-4 ${SEVERITY_RULE[finding.severity]}`} data-testid="finding">
+    <li
+      className={`animate-rise relative overflow-hidden rounded-[8px] border border-rule bg-card p-5 pl-6 transition-shadow duration-150 before:absolute before:inset-y-0 before:left-0 before:w-1 hover:shadow-[0_2px_10px_rgb(0_0_0/0.06)] ${SEVERITY_EDGE[finding.severity]}`}
+      style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
+      data-testid="finding"
+    >
       <div className="flex flex-wrap items-center gap-2">
         <SeverityBadge severity={finding.severity} />
-        <Tag>{finding.rule_id}</Tag>
+        <span className="font-mono text-xs text-ink-3">{finding.rule_id}</span>
         {finding.confidence === "likely" && <Tag tone="warn">likely</Tag>}
       </div>
-      <p className="mt-2 font-display text-lg leading-snug font-semibold">{finding.title}</p>
-      <p className="mt-1 text-sm text-ink-2">
+      <p className="mt-2.5 font-display text-xl leading-snug font-medium">{finding.title}</p>
+      <p className="mt-1.5 text-base text-ink-2">
         <Redacted text={finding.cause} />
       </p>
       {finding.evidence_lines && finding.evidence_lines.length > 0 && (
-        <ul className="mt-3 space-y-1 bg-paper-2/70 px-3 py-2 font-mono text-xs text-ink-2">
+        <ul className="mt-3 space-y-1 rounded-[6px] bg-paper-2 px-3 py-2.5 font-mono text-xs text-ink-2">
           {finding.evidence_lines.map((line) => (
             <li key={line}>
               <Redacted text={line} />
@@ -420,17 +440,17 @@ function FindingItem({ finding, onShow }: { finding: Finding; onShow: () => void
           ))}
         </ul>
       )}
-      <p className="mt-3 text-sm">
-        <span className="eyebrow mr-2">Next step</span>
+      <p className="mt-3 text-base">
+        <span className="font-bold text-ink-3">Next step: </span>
         {finding.next_step}
       </p>
-      <div className="mt-3 flex flex-wrap items-center gap-3">
+      <div className="mt-4 flex flex-wrap items-center gap-4">
         {finding.entries.length > 0 && (
           <Button size="sm" onClick={onShow}>
             Show {finding.entries.length} request{finding.entries.length === 1 ? "" : "s"}
           </Button>
         )}
-        <Link to={`/kb/${finding.kb}`} className={`text-xs font-medium ${LINK}`}>
+        <Link to={`/kb/${finding.kb}`} className={`text-sm ${LINK}`}>
           KB article →
         </Link>
       </div>

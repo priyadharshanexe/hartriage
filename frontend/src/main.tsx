@@ -5,14 +5,15 @@ import { BrowserRouter } from "react-router-dom";
 import { App } from "./App";
 import { AuthProvider } from "./auth/AuthProvider";
 import { ApiError } from "./lib/api";
-import "@fontsource/ibm-plex-sans/400.css";
-import "@fontsource/ibm-plex-sans/500.css";
-import "@fontsource/ibm-plex-sans/600.css";
-import "@fontsource/ibm-plex-sans-condensed/500.css";
-import "@fontsource/ibm-plex-sans-condensed/600.css";
-import "@fontsource/ibm-plex-sans-condensed/700.css";
-import "@fontsource/ibm-plex-mono/400.css";
-import "@fontsource/ibm-plex-mono/500.css";
+// Self-hosted (the CSP allows only 'self'). Latin subsets only.
+import "@fontsource/newsreader/latin-400.css";
+import "@fontsource/newsreader/latin-500.css";
+import "@fontsource/newsreader/latin-600.css";
+import "@fontsource/atkinson-hyperlegible-next/latin-400.css";
+import "@fontsource/atkinson-hyperlegible-next/latin-500.css";
+import "@fontsource/atkinson-hyperlegible-next/latin-700.css";
+import "@fontsource/jetbrains-mono/latin-400.css";
+import "@fontsource/jetbrains-mono/latin-500.css";
 import "./index.css";
 
 const queryClient = new QueryClient({

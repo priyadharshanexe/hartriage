@@ -1,97 +1,412 @@
 @import "tailwindcss";
 
 /*
- * HAR Triage design system
+ * HAR Triage design system: an evidence report.
  *
- * A case file, not a dashboard: warm paper, near-black ink, hairline rules and
- * square corners. Secrets appear as black redaction bars. Severity uses triage
- * tags. Data is always set in Plex Mono.
+ * Two motifs, both things the product really does: the black redaction bar (a secret
+ * removed) and the yellow highlighter (the answer). Headings in Newsreader, reading
+ * text in Atkinson Hyperlegible Next, data (URLs, headers, markers, status codes,
+ * request numbers) in JetBrains Mono, and nothing else in mono.
+ *
+ * Colours are variables so the same classes work in light and dark. Every text pair
+ * passes WCAG AA (measured). Severity and HTTP status each have their own colour and
+ * also a word or shape, so colour is never the only signal.
  */
-@theme {
-  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "IBM Plex Sans Condensed", "IBM Plex Sans", ui-sans-serif, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
 
-  --color-paper: #f2eee5;
-  --color-paper-2: #e9e3d6;
-  --color-card: #fbf9f4;
-  --color-ink: #1b1a17;
-  --color-ink-2: #3b3832;
-  --color-ink-3: #6e695d;
-  --color-ink-4: #9a9486;
-  --color-rule: #d9d2c3;
-  --color-rule-2: #c3baa6;
-  --color-signal: #c2410c;
-  --color-signal-soft: #f6dccc;
+:root {
+  color-scheme: light;
+  --canvas: #f5f5f1;
+  --surface: #ffffff;
+  --subtle: #ecece6;
+  --ink: #171a1f;
+  --ink-2: #2e333b;
+  --ink-3: #535a66;
+  --ink-4: #6b717c;
+  --rule: #dcdcd6;
+  --rule-2: #c5c6c0;
+  --primary: #1e4b8f;
+  --primary-soft: #e3ecf8;
+  --on-primary: #ffffff;
+  --highlight: #ffe58a;
 
-  /* Triage */
-  --color-critical: #7f1d1d;
-  --color-high: #c8352a;
-  --color-medium: #d99a06;
-  --color-info: #5f7a62;
-  --color-ok: #2f6b3a;
+  --critical: #b42318;
+  --high: #c4410c;
+  --medium: #f5b92e;
+  --medium-ink: #8a5a00;
+  --info: #3f5a73;
+  --ok: #0b7a43;
+
+  --s2xx: #0b7a43;
+  --s3xx: #4b5ba6;
+  --s4xx: #9a5b00;
+  --s5xx: #b42318;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas: #0e1116;
+  --surface: #161a21;
+  --subtle: #1d222b;
+  --ink: #e9ebee;
+  --ink-2: #cdd2d9;
+  --ink-3: #a3abb7;
+  --ink-4: #8a93a0;
+  --rule: #262c36;
+  --rule-2: #343b47;
+  --primary: #8db4f2;
+  --primary-soft: #1b2a40;
+  --on-primary: #0e1116;
+  --highlight: #5c4a12;
+
+  --critical: #f97066;
+  --high: #fb8b4b;
+  --medium: #f2c14e;
+  --medium-ink: #f2c14e;
+  --info: #9db4cc;
+  --ok: #4ade80;
+
+  --s2xx: #4ade80;
+  --s3xx: #a5b4fc;
+  --s4xx: #fbbf24;
+  --s5xx: #f97066;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --canvas: #0e1116;
+    --surface: #161a21;
+    --subtle: #1d222b;
+    --ink: #e9ebee;
+    --ink-2: #cdd2d9;
+    --ink-3: #a3abb7;
+    --ink-4: #8a93a0;
+    --rule: #262c36;
+    --rule-2: #343b47;
+    --primary: #8db4f2;
+    --primary-soft: #1b2a40;
+    --on-primary: #0e1116;
+    --highlight: #5c4a12;
+
+    --critical: #f97066;
+    --high: #fb8b4b;
+    --medium: #f2c14e;
+    --medium-ink: #f2c14e;
+    --info: #9db4cc;
+    --ok: #4ade80;
+
+    --s2xx: #4ade80;
+    --s3xx: #a5b4fc;
+    --s4xx: #fbbf24;
+    --s5xx: #f97066;
+  }
+}
+
+@theme inline {
+  --font-sans: "Atkinson Hyperlegible Next", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+
+  /* Type scale, ratio 1.25: 12 / 14 / 16 / 20 / 25 / 31 / 39 / 49 px */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.45;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.5;
+  --text-base: 1rem;
+  --text-base--line-height: 1.55;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.4;
+  --text-xl: 1.5625rem;
+  --text-xl--line-height: 1.3;
+  --text-2xl: 1.9375rem;
+  --text-2xl--line-height: 1.2;
+  --text-3xl: 2.4375rem;
+  --text-3xl--line-height: 1.12;
+  --text-4xl: 3.0625rem;
+  --text-4xl--line-height: 1.05;
+
+  /* The existing names map onto the new roles. */
+  --color-paper: var(--canvas);
+  --color-paper-2: var(--subtle);
+  --color-card: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+  --color-rule: var(--rule);
+  --color-rule-2: var(--rule-2);
+  --color-signal: var(--primary);
+  --color-signal-soft: var(--primary-soft);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-highlight: var(--highlight);
+
+  --color-critical: var(--critical);
+  --color-high: var(--high);
+  --color-medium: var(--medium);
+  --color-medium-ink: var(--medium-ink);
+  --color-info: var(--info);
+  --color-ok: var(--ok);
+  --color-s2xx: var(--s2xx);
+  --color-s3xx: var(--s3xx);
+  --color-s4xx: var(--s4xx);
+  --color-s5xx: var(--s5xx);
 
   /* Request phases, as in browser DevTools */
-  --color-phase-blocked: #c9c2b2;
+  --color-phase-blocked: #a8acb3;
   --color-phase-dns: #0e86b7;
   --color-phase-connect: #e0711b;
   --color-phase-ssl: #8b4fc4;
-  --color-phase-send: #6e695d;
+  --color-phase-send: #6b717c;
   --color-phase-wait: #2f8f4e;
-  --color-phase-receive: #2f62c4;
+  --color-phase-receive: #3b6fd4;
 
-  --radius-xs: 2px;
+  --radius-xs: 3px;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 html {
-  font-feature-settings: "ss02";
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  @apply bg-paper font-sans text-ink antialiased;
+  @apply bg-paper font-sans text-base text-ink antialiased;
+  transition:
+    background-color 200ms var(--ease-out),
+    color 200ms var(--ease-out);
 }
 
 ::selection {
-  background: var(--color-signal-soft);
+  background: var(--highlight);
+  color: var(--ink);
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-signal);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
+  border-radius: 2px;
 }
 
-/* Small uppercase labels: section names, column heads, field captions. */
+/* A quiet label: sentence case, never letter-spaced capitals. */
 .eyebrow {
-  @apply font-display text-[0.7rem] font-semibold tracking-[0.12em] text-ink-3 uppercase;
+  @apply font-sans text-[0.8125rem] font-medium text-ink-3;
 }
 
-/* A secret that was removed: a redaction bar carrying its marker id. */
+/* Column heads in data tables are the one place for small capitals. */
+.colhead {
+  @apply font-sans text-xs font-bold tracking-[0.06em] text-ink-3 uppercase;
+}
+
+/* A secret that was removed: the redaction bar, carrying its marker id. */
 .redaction {
-  @apply mx-px inline-flex items-center gap-1 rounded-[1px] bg-ink px-1.5 py-px align-baseline font-mono text-[0.78em] leading-tight text-[#b8b19f];
+  @apply mx-px inline-flex items-center gap-1 rounded-[2px] bg-[#111318] px-1.5 py-px align-baseline font-mono text-[0.78em] leading-tight font-normal text-[#e6e1d3];
   white-space: nowrap;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
 }
 .redaction::before {
   content: "";
   display: inline-block;
-  width: 1.4em;
-  height: 0.55em;
+  width: 1.25em;
+  height: 0.5em;
+  border-radius: 1px;
   background: #000;
-  box-shadow: inset 0 0 0 1px #3b3832;
+  box-shadow: inset 0 0 0 1px #3a3f48;
+}
+
+/* The answer: a highlighter stroke behind the text, drawn left to right. */
+.highlighter {
+  background-image: linear-gradient(transparent 12%, var(--highlight) 12%, var(--highlight) 92%, transparent 92%);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0 0.12em;
+  margin: 0 -0.12em;
+  animation: highlighter 380ms var(--ease-out) 120ms both;
+}
+
+/* ------------------------------------------------------------------ motion */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes slide-in-right {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes highlighter {
+  from {
+    background-size: 0% 100%;
+  }
+  to {
+    background-size: 100% 100%;
+  }
+}
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes redact {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes tick {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.animate-rise {
+  animation: rise 220ms var(--ease-out) both;
+}
+.animate-fade {
+  animation: fade 200ms var(--ease-out) both;
+}
+.animate-slide-in-right {
+  animation: slide-in-right 220ms var(--ease-out) both;
+}
+.animate-slide-down {
+  animation: slide-down 180ms var(--ease-out) both;
+}
+.animate-tick {
+  animation: tick 180ms var(--ease-out) both;
+}
+.animate-grow-x {
+  transform-origin: left center;
+  animation: grow-x 300ms var(--ease-out) both;
+}
+.animate-page {
+  animation: rise 180ms var(--ease-out) both;
+}
+
+/* Loading placeholders instead of spinners. */
+.skeleton {
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--subtle) 25%, var(--rule) 50%, var(--subtle) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+/* The login headline's word, covered by a redaction bar once on load. */
+.redact-word {
+  position: relative;
+  display: inline-block;
+}
+.redact-word::after {
+  content: "";
+  position: absolute;
+  inset: 0.14em -0.06em 0.06em;
+  border-radius: 3px;
+  background: #111318;
+  transform-origin: left center;
+  animation: redact 420ms var(--ease-out) 650ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Knowledge-base articles */
-.prose-kb { @apply text-[0.95rem] leading-relaxed text-ink-2; }
-.prose-kb h1 { @apply mb-4 font-display text-3xl font-semibold tracking-tight text-ink; }
-.prose-kb h2 { @apply mt-8 mb-3 border-t border-rule pt-5 font-display text-xl font-semibold text-ink; }
-.prose-kb h3 { @apply mt-5 mb-2 font-semibold text-ink; }
-.prose-kb p { @apply my-3; }
-.prose-kb ul { @apply my-3 list-disc space-y-1.5 pl-5 marker:text-ink-4; }
-.prose-kb ol { @apply my-3 list-decimal space-y-1.5 pl-5 marker:font-mono marker:text-ink-3; }
-.prose-kb code { @apply rounded-[2px] bg-paper-2 px-1 py-px font-mono text-[0.85em] text-ink; }
-.prose-kb blockquote { @apply my-5 border-l-4 border-ink bg-paper-2/60 px-4 py-2 text-ink-2; }
-.prose-kb table { @apply my-5 w-full border-collapse text-sm; }
-.prose-kb th { @apply border-b-2 border-ink px-2 py-2 text-left font-display text-xs font-semibold tracking-wider uppercase; }
-.prose-kb td { @apply border-b border-rule px-2 py-2 align-top; }
-.prose-kb a { @apply text-ink underline decoration-signal decoration-2 underline-offset-2 hover:text-signal; }
-.prose-kb strong { @apply font-semibold text-ink; }
-.prose-kb table { display: block; overflow-x: auto; }
+.prose-kb {
+  @apply text-base leading-relaxed text-ink-2;
+}
+.prose-kb h1 {
+  @apply mb-4 font-display text-3xl font-medium tracking-tight text-ink;
+}
+.prose-kb h2 {
+  @apply mt-10 mb-3 font-display text-2xl font-medium text-ink;
+}
+.prose-kb h3 {
+  @apply mt-6 mb-2 text-lg font-bold text-ink;
+}
+.prose-kb p {
+  @apply my-3;
+}
+.prose-kb ul {
+  @apply my-3 list-disc space-y-1.5 pl-5 marker:text-ink-4;
+}
+.prose-kb ol {
+  @apply my-3 list-decimal space-y-1.5 pl-5 marker:text-ink-3;
+}
+.prose-kb code {
+  @apply rounded-[3px] bg-paper-2 px-1 py-px font-mono text-[0.85em] text-ink;
+}
+.prose-kb blockquote {
+  @apply my-5 border-l-4 border-signal bg-signal-soft/50 px-4 py-2 text-ink-2;
+}
+.prose-kb table {
+  @apply my-5 block w-full overflow-x-auto text-sm;
+  border-collapse: collapse;
+}
+.prose-kb th {
+  @apply border-b border-rule-2 px-2 py-2 text-left font-sans text-xs font-bold tracking-[0.06em] text-ink-3 uppercase;
+}
+.prose-kb td {
+  @apply border-b border-rule px-2 py-2 align-top;
+}
+.prose-kb a {
+  @apply text-signal underline decoration-1 underline-offset-2 hover:decoration-2;
+}
+.prose-kb strong {
+  @apply font-bold text-ink;
+}
