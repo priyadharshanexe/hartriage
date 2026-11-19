@@ -45,7 +45,7 @@ flowchart LR
   subgraph In[" "]
     U[Web upload] --> API
     CLI[hartriage CLI<br/>offline]
-    HD[Zendesk / Freshdesk<br/>tag har_analyze] -- signed webhook --> API
+    HD[Zendesk / Freshdesk<br/>tag har_analyze] -- Zendesk: signed webhook --> API
   end
   API[FastAPI<br/>stream → redact → store] -- redacted file + offsets --> S3[(S3<br/>encrypted, expiring)]
   API -- job --> Q[(Redis)]
@@ -54,7 +54,8 @@ flowchart LR
   W -- range reads --> S3
   W -- findings, waterfall index --> PG[(PostgreSQL)]
   W -- one private note --> HD
-  B[Celery beat<br/>retention] --> PG & S3
+  B[Celery beat<br/>retention, Freshdesk poll] --> PG & S3
+  B -- tagged tickets? --> HD
   Web[React app] --> API
 ```
 
@@ -121,13 +122,17 @@ Nothing leaves the machine.
 
 ### Connecting a helpdesk
 
-Admins add Zendesk (agent email + API token + the webhook's signing secret) or Freshdesk (API key) under **Helpdesk connections**; the page shows the webhook URL and step-by-step trigger setup. Agents then tag a ticket that has a `.har` attachment with `har_analyze`; a private note arrives and the tag becomes `har_analyzed`. An admin can also have the original attachment replaced with the redacted copy.
+Admins add Zendesk (a confidential OAuth client, or agent email + API token on older accounts) or Freshdesk (API key) under **Helpdesk connections**. For Zendesk, the page shows the webhook URL and trigger setup; the webhook's signing secret is added once the webhook exists. Freshdesk needs no setup: its automations cannot fire on a tag change, so HAR Triage polls for tagged tickets every minute ([why](docs/decisions/0011-poll-freshdesk-for-tagged-tickets.md)).
+
+Agents then tag a ticket that has a `.har` attachment with `har_analyze`. A private note arrives for each HAR file on the ticket (never twice for the same file, [why one per file](docs/decisions/0010-one-note-per-har-file.md)), and the tag becomes `har_analyzed`. An admin can also have the original attachment replaced with the redacted copy.
+
+Both helpdesks were tested end to end against real trial accounts: see [live helpdesk testing](docs/live-helpdesk-testing.md) for the scenarios, ticket ids and the seven bugs it found.
 
 ## Tests
 
 ```bash
 docker compose up -d postgres redis s3
-uv run pytest                     # unit, property, golden, integration, helpdesk
+uv run pytest                     # unit, property, golden, integration, helpdesk, recorded traffic
 uv run ruff check . && uv run mypy
 cd frontend && npm test && npm run e2e
 ```
@@ -136,7 +141,8 @@ cd frontend && npm test && npm run e2e
 - **Golden files**: HARs recorded with Playwright in Chromium *and* Firefox against a [fault server](tools/fixtures/fault_server.py) (401, 403, 413, 429, 431, 5xx, slow, broken CORS, redirect loops, mixed content) and `expired.badssl.com`; each must produce exactly the expected findings.
 - **Memory ceiling**: a generated 54 MB HAR is processed under a fixed memory limit (measured peak: about 1 MB).
 - **Integration**: the API and tasks against real PostgreSQL and Redis: upload to findings, the raw upload never reaching storage, tenancy (another organisation gets 404), roles, retention really deleting from the database and storage.
-- **Helpdesk**: Zendesk signatures (valid, tampered, stale), duplicate webhooks giving one note, a 429 retried, a crash after posting not posting twice, attachment replacement, credentials never sent to a download host.
+- **Helpdesk**: Zendesk signatures (valid, tampered, stale), duplicate webhooks giving one note, a 429 retried, a crash after posting not posting twice, attachment replacement, credentials never sent to a download host, Freshdesk polling, the Zendesk OAuth client renewing its token. The [fake helpdesk](tools/fake_helpdesk/app.py) copies every real-API quirk found in live testing.
+- **Recorded traffic** ([cassettes](tests/cassettes)): the real Zendesk and Freshdesk clients replayed against traffic recorded from live trial accounts, scrubbed of credentials, tokens, signed links, emails and subdomains ([how](docs/live-helpdesk-testing.md#recorded-traffic-in-ci)).
 - **Frontend**: Vitest for the API client, helpers and pages; Playwright for upload → findings → copy for ticket → request detail.
 
 CI ([workflow](.github/workflows/ci.yml)) also runs gitleaks over the whole history and builds both images.
@@ -161,13 +167,15 @@ hartriage/
 frontend/     React, TypeScript, TanStack Query and Virtual, Tailwind
 kb/           one article per rule
 casebook/     eight reproducible support cases against Relay
-tools/        fault server and HAR recorder, fake helpdesk, screenshot script
+tools/        fault server and HAR recorder, fake helpdesk, screenshot script,
+              live/ scripts for testing against real helpdesk trials
 docs/         decision records, redaction policy, OpenAPI, screenshots
 ```
 
 ## What I'd do next
 
-- Record the helpdesk tests against real Zendesk and Freshdesk trial accounts (VCR cassettes), alongside the fake-helpdesk tests.
+- On tickets with several HAR files, change the tag to `har_analyzed` only once every file has its note (today it changes after the first).
+- Zendesk's authorization-code OAuth flow (a "Connect with Zendesk" button) alongside the confidential client.
 - Plain-text log files: the redactor already handles free text, but there are no log rules yet.
 - A public demo mode that analyses sample files in memory and stores nothing.
 - Per-organisation retention and a customer-facing "send us a HAR" upload link that redacts in the browser before upload.

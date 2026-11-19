@@ -13,3 +13,6 @@ One file per significant decision, copied from [0000-template.md](0000-template.
 | [0007](0007-unsigned-webhooks-are-rechecked.md) | Signed Zendesk webhooks; Freshdesk webhooks re-checked against the API | accepted |
 | [0008](0008-rustfs-for-local-object-storage.md) | RustFS for local S3-compatible storage | accepted |
 | [0009](0009-no-llm-in-the-analysis.md) | No LLM in the analysis | accepted |
+| [0010](0010-one-note-per-har-file.md) | One private note per HAR file, not per tag action | accepted |
+| [0011](0011-poll-freshdesk-for-tagged-tickets.md) | Find tagged Freshdesk tickets by polling | accepted |
+| [0012](0012-zendesk-oauth-client-credentials.md) | Connect Zendesk with a confidential OAuth client | accepted |
