@@ -33,6 +33,11 @@ def configure(level: str = "INFO", json_logs: bool = False) -> None:
         logger_factory=structlog.PrintLoggerFactory(sys.stdout),
         cache_logger_on_first_use=True,
     )
+    # httpx logs every request URL at INFO. Helpdesk attachment links are pre-signed
+    # (S3 X-Amz-Signature, Freshdesk Signature=...): logging them would let anyone
+    # with log access download the customer's original, unredacted HAR. Found live.
+    for name in ("httpx", "httpcore"):
+        logging.getLogger(name).setLevel(logging.WARNING)
 
 
 async def request_id_middleware(
