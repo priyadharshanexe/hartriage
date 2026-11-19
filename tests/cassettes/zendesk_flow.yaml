@@ -1,0 +1,1206 @@
+interactions:
+- request:
+    body: '{"grant_type":"client_credentials","client_id":"acme_live_tests","client_secret":"SCRUBBED","scope":"read
+      write"}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '174'
+      content-type:
+      - application/json
+      host:
+      - acme.zendesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: POST
+    uri: https://acme.zendesk.com/oauth/tokens
+  response:
+    body:
+      string: '{"access_token":"SCRUBBED","token_type":"bearer","expires_in":1800,"scope":"read
+        write"}'
+    headers:
+      cache-control:
+      - no-store
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-length:
+      - '263'
+      content-type:
+      - application/json
+      date:
+      - Thu, 19 Nov 2026 10:16:48 GMT
+      etag:
+      - W/"7d373ebb356c4485502cb861212f4e8b"
+      p3p:
+      - CP="NOI DSP COR NID ADMa OPTa OUR NOR"
+      pragma:
+      - no-cache
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept, Accept-Encoding
+      via:
+      - zorg
+      x-envoy-decorator-operation:
+      - /oauth
+      x-envoy-upstream-service-time:
+      - '75'
+      x-frame-options:
+      - SAMEORIGIN
+      x-request-validation:
+      - ignored
+      x-runtime:
+      - '0.068147'
+      x-zendesk-zorg:
+      - 'yes'
+      zendesk-service:
+      - classic
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - acme.zendesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://acme.zendesk.com/api/v2/users/me.json
+  response:
+    body:
+      string: '{"user":{"id":31943357288476,"url":"https://acme.zendesk.com/api/v2/users/31943357288476.json","name":"Test
+        Agent","email":"Test agent@example.com","created_at":"2026-11-19T06:35:09Z","updated_at":"2026-11-19T09:50:56Z","time_zone":"Asia/Kolkata","iana_time_zone":"Asia/Kolkata","phone":null,"shared_phone_number":null,"photo":null,"locale_id":1,"locale":"en-US","organization_id":null,"role":"admin","verified":true,"authenticity_token":"SCRUBBED","external_id":null,"tags":[],"alias":null,"active":true,"shared":false,"shared_agent":false,"last_login_at":"2026-11-19T06:35:50Z","two_factor_auth_enabled":false,"signature":null,"details":null,"notes":null,"role_type":4,"custom_role_id":31943306332700,"is_billing_admin":false,"moderator":true,"ticket_restriction":null,"only_private_comments":false,"restricted_agent":false,"suspended":false,"default_group_id":31943342716188,"report_csv":false,"user_fields":{},"suspension_details":null}}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      access-control-expose-headers:
+      - X-Zendesk-API-Warn,X-Zendesk-User-Id,X-Zendesk-User-Session-Expires-At
+      cache-control:
+      - max-age=0, private, must-revalidate
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-length:
+      - '1032'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:16:48 GMT
+      etag:
+      - W/"823171ecc347f4fb6c9fc35823761742"
+      ratelimit-limit:
+      - '400'
+      ratelimit-remaining:
+      - '397'
+      ratelimit-reset:
+      - '12'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      transfer-encoding:
+      - chunked
+      vary:
+      - origin, Accept-Encoding
+      via:
+      - zorg
+      x-content-type-options:
+      - nosniff
+      x-envoy-decorator-operation:
+      - /api/v2/users
+      x-envoy-upstream-service-time:
+      - '117'
+      x-frame-options:
+      - SAMEORIGIN
+      x-openapi-route-path:
+      - /api/v2/users/me
+      x-rate-limit:
+      - '400'
+      x-rate-limit-remaining:
+      - '397'
+      x-request-validation:
+      - matched
+      x-runtime:
+      - '0.113344'
+      x-zendesk-api-version:
+      - v2
+      x-zendesk-application-version:
+      - v27190
+      x-zendesk-zorg:
+      - 'yes'
+      zendesk-service:
+      - classic
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - acme.zendesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://acme.zendesk.com/api/v2/tickets/10.json
+  response:
+    body:
+      string: '{"ticket":{"url":"https://acme.zendesk.com/api/v2/tickets/10.json","id":10,"external_id":null,"via":{"channel":"api","source":{"from":{},"to":{},"rel":null}},"created_at":"2026-11-19T10:16:47Z","updated_at":"2026-11-19T10:16:47Z","generated_timestamp":1795083408,"type":null,"subject":"Contract
+        test: sign-in fails (HAR attached)","raw_subject":"Contract test: sign-in
+        fails (HAR attached)","description":"HAR attached.","priority":"normal","status":"new","recipient":null,"requester_id":31949073889692,"submitter_id":31949073889692,"assignee_id":null,"organization_id":null,"group_id":31943342716188,"collaborator_ids":[],"follower_ids":[],"email_cc_ids":[],"forum_topic_id":null,"problem_id":null,"has_incidents":false,"is_public":true,"due_at":null,"tags":["har_contract"],"custom_fields":[{"id":31943306734748,"value":null},{"id":31943306871964,"value":null},{"id":31943306882716,"value":null},{"id":31943318428444,"value":false},{"id":31943318454044,"value":null},{"id":31943318459164,"value":null},{"id":31943318461596,"value":null},{"id":31943318493340,"value":null},{"id":31943326926108,"value":null},{"id":31943326932380,"value":null},{"id":31943326941980,"value":null},{"id":31943333451548,"value":null},{"id":31943333454492,"value":null},{"id":31943333456028,"value":null},{"id":31943342792348,"value":null},{"id":31943349523612,"value":null},{"id":31943350246172,"value":null}],"satisfaction_rating":{"score":"unoffered"},"sharing_agreement_ids":[],"custom_status_id":31943326848028,"encoded_id":"K5PZ6E-1ENKV","fields":[{"id":31943306734748,"value":null},{"id":31943306871964,"value":null},{"id":31943306882716,"value":null},{"id":31943318428444,"value":false},{"id":31943318454044,"value":null},{"id":31943318459164,"value":null},{"id":31943318461596,"value":null},{"id":31943318493340,"value":null},{"id":31943326926108,"value":null},{"id":31943326932380,"value":null},{"id":31943326941980,"value":null},{"id":31943333451548,"value":null},{"id":31943333454492,"value":null},{"id":31943333456028,"value":null},{"id":31943342792348,"value":null},{"id":31943349523612,"value":null},{"id":31943350246172,"value":null}],"followup_ids":[],"ticket_form_id":31943342659484,"brand_id":31943342692380,"allow_channelback":false,"allow_attachments":true,"from_messaging_channel":false,"support_type":"agent"}}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      access-control-expose-headers:
+      - X-Zendesk-API-Warn,X-Zendesk-User-Id,X-Zendesk-User-Session-Expires-At
+      cache-control:
+      - max-age=0, private, must-revalidate
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-length:
+      - '2317'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:16:49 GMT
+      etag:
+      - W/"8c63dacedb03e6b3caa80fdd4fc3bf6d"
+      ratelimit-limit:
+      - '400'
+      ratelimit-remaining:
+      - '396'
+      ratelimit-reset:
+      - '11'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      via:
+      - zorg
+      x-content-type-options:
+      - nosniff
+      x-envoy-decorator-operation:
+      - /api/v2/tickets
+      x-envoy-upstream-service-time:
+      - '129'
+      x-frame-options:
+      - SAMEORIGIN
+      x-openapi-route-path:
+      - /api/v2/tickets/{ticket_id}
+      x-rate-limit:
+      - '400'
+      x-rate-limit-remaining:
+      - '396'
+      x-request-validation:
+      - matched
+      x-runtime:
+      - '0.124080'
+      x-zendesk-api-version:
+      - v2
+      x-zendesk-application-version:
+      - v27190
+      x-zendesk-zorg:
+      - 'yes'
+      zendesk-service:
+      - classic
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - acme.zendesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://acme.zendesk.com/api/v2/tickets/10/comments.json
+  response:
+    body:
+      string: '{"comments":[{"id":31949301447964,"type":"Comment","author_id":31949073889692,"body":"HAR
+        attached.","html_body":"<div class=\"zd-comment\" dir=\"auto\"><p dir=\"auto\">HAR
+        attached.</p></div>","plain_body":"HAR attached.","public":true,"attachments":[{"url":"https://acme.zendesk.com/api/v2/attachments/31949286927388.json","id":31949286927388,"file_name":"auth.har","content_url":"https://acme.zendesk.com/attachments/token/SCRUBBED/?name=auth.har","mapped_content_url":"https://acme.zendesk.com/attachments/token/SCRUBBED/?name=auth.har","content_type":"application/json","size":10317,"width":null,"height":null,"inline":false,"deleted":false,"malware_access_override":false,"malware_scan_result":"malware_not_found","thumbnails":[]}],"audit_id":31949301447836,"via":{"channel":"api","source":{"from":{},"to":{},"rel":null}},"created_at":"2026-11-19T10:16:47Z","metadata":{"system":{"client":"python-httpx/0.28.1","ip_address":"122.183.51.249","transaction_id":"01M7SMY3Q7HYHT8686QK5DMPSB","location":"Bengaluru,
+        KA, India","latitude":12.9753,"longitude":77.591},"custom":{},"notifications_suppressed_for":[31949073889692]}}],"next_page":null,"previous_page":null,"count":1}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      access-control-expose-headers:
+      - X-Zendesk-API-Warn,X-Zendesk-User-Id,X-Zendesk-User-Session-Expires-At
+      cache-control:
+      - max-age=0, private, must-revalidate
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-length:
+      - '1226'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:16:49 GMT
+      etag:
+      - W/"c4e0bcea6224a24ec1a4189bf4ced611"
+      last-modified:
+      - Thu, 19 Nov 2026 10:16:47 GMT
+      ratelimit-limit:
+      - '400'
+      ratelimit-remaining:
+      - '395'
+      ratelimit-reset:
+      - '11'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      via:
+      - zorg
+      x-content-type-options:
+      - nosniff
+      x-envoy-decorator-operation:
+      - /api/v2/tickets
+      x-envoy-upstream-service-time:
+      - '146'
+      x-frame-options:
+      - SAMEORIGIN
+      x-openapi-route-path:
+      - /api/v2/tickets/{ticket_id}/comments
+      x-rate-limit:
+      - '400'
+      x-rate-limit-remaining:
+      - '395'
+      x-request-validation:
+      - matched
+      x-runtime:
+      - '0.138151'
+      x-zendesk-api-version:
+      - v2
+      x-zendesk-application-version:
+      - v27190
+      x-zendesk-zorg:
+      - 'yes'
+      zendesk-service:
+      - classic
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - acme.zendesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://acme.zendesk.com/attachments/token/SCRUBBED/?name=auth.har
+  response:
+    body:
+      string: ''
+    headers:
+      access-control-allow-origin:
+      - '*'
+      access-control-expose-headers:
+      - X-Zendesk-API-Warn
+      cache-control:
+      - max-age=3600, private
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-type:
+      - text/html; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:16:50 GMT
+      location:
+      - https://p28.zdusercontent.com/attachment/27038729/JGIZJIpFhLgMkPMhWWCPWZZM1?token=SCRUBBED
+      p3p:
+      - CP="NOI DSP COR NID ADMa OPTa OUR NOR"
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept
+      via:
+      - zorg
+      x-envoy-decorator-operation:
+      - /attachments
+      x-envoy-upstream-service-time:
+      - '76'
+      x-frame-options:
+      - SAMEORIGIN
+      x-request-validation:
+      - ignored
+      x-robots-tag:
+      - none, noarchive
+      x-runtime:
+      - '0.071831'
+      x-zendesk-zorg:
+      - 'yes'
+      zendesk-ratelimit-attachmentcontent:
+      - total=2500; remaining=2499
+      zendesk-service:
+      - classic
+    status:
+      code: 302
+      message: Found
+- request:
+    body: ''
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - p28.zdusercontent.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://p28.zdusercontent.com/attachment/27038729/JGIZJIpFhLgMkPMhWWCPWZZM1?token=SCRUBBED
+  response:
+    body:
+      string: '{"log":{"version":"1.2","creator":{"name":"Playwright","version":"1.65.1"},"browser":{"name":"chromium","version":"159.0.8154.6"},"pages":[{"startedDateTime":"2026-11-14T08:24:21.915Z","id":"page@2e92507889e1ca63196695463cb0a525","title":"Orders","pageTimings":{"onContentLoad":11,"onLoad":11}}],"entries":[{"pageref":"page@2e92507889e1ca63196695463cb0a525","startedDateTime":"2026-11-14T08:24:21.917Z","time":3.862,"request":{"method":"GET","url":"http://app.test:8471/scenario/auth","httpVersion":"HTTP/1.1","cookies":[],"headers":[{"name":"Accept","value":"text/html,application/xhtml+xml,application/xml;q=0.9,image/jxl,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"},{"name":"Accept-Encoding","value":"gzip,
+        deflate"},{"name":"Connection","value":"keep-alive"},{"name":"Host","value":"app.test:8471"},{"name":"Upgrade-Insecure-Requests","value":"1"},{"name":"User-Agent","value":"Mozilla/5.0
+        (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/159.0.8154.6
+        Safari/537.36"}],"queryString":[],"headersSize":427,"bodySize":0},"response":{"status":200,"statusText":"OK","httpVersion":"HTTP/1.1","cookies":[],"headers":[{"name":"Content-Length","value":"1153"},{"name":"Content-Type","value":"text/html;
+        charset=utf-8"},{"name":"Date","value":"Sat, 14 Nov 2026 08:24:21 GMT"},{"name":"Server","value":"fault-server/1.0
+        Python/3.13.18"},{"name":"X-Request-Id","value":"req-575a33a6"}],"content":{"size":1153,"mimeType":"text/html;
+        charset=utf-8","compression":0,"text":"<!doctype html><html><head><meta charset=\"utf-8\"><title>Orders</title>\n<link
+        rel=\"icon\" href=\"data:,\"></head><body><h1>Orders</h1><pre id=\"log\"></pre><script>\nconst
+        log = (m) => document.getElementById(''log'').textContent += m + \"\\n\";\nconst
+        API = \"http://api.test:8472\";\nasync function main() {\n\n  const expired
+        = \"eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.eyJzdWIiOiAidXNlci0xMDAxIiwgImlhdCI6IDE3OTQ2Mzc0NjEsICJleHAiOiAxNzk0NjQzNzYxLCAiYXVkIjogImh0dHA6Ly9hcGkudGVzdDo4NDcyIiwgInNjb3BlIjogIm9yZGVyczpyZWFkIn0.iRBswEehcAw5PLBBeXDmtHVhDE9CEoH2gujfaa0TDQg\";\n  await
+        fetch(''/api/me'', {headers: {Authorization: ''Bearer '' + expired}});\n  await
+        fetch(''/api/orders'', {headers: {Authorization: ''Bearer '' + expired}});\n  await
+        fetch(''/api/admin/users'', {headers: {Authorization: ''Bearer eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.eyJzdWIiOiAidXNlci0xMDAxIiwgImlhdCI6IDE3OTQ2Mzc0NjEsICJleHAiOiAxNzk0NjQ4MjYxLCAiYXVkIjogImh0dHA6Ly9hcGkudGVzdDo4NDcyIiwgInNjb3BlIjogIm9yZGVyczpyZWFkIn0.57qurNaMrDf8oMP0hJ7ZnuSWtZ8mOWDyFe-QdfbhLaA''}});\n  await
+        fetch(''/api/settings'');\n\n}\nmain().catch(e => log(''error: '' + e)).finally(()
+        => { window.done = true; });\n</script></body></html>"},"headersSize":187,"bodySize":1153,"redirectURL":"","_transferSize":1340},"cache":{},"timings":{"dns":0.012,"connect":0.401,"ssl":2.479,"send":0,"wait":0.549,"receive":0.421},"_frameref":"frame@2ddceebab434c382c19e9f9432a66e1e","_monotonicTime":3958.889,"_resourceType":"document","serverIPAddress":"127.0.0.1","_serverPort":8471,"_securityDetails":{}},{"pageref":"page@2e92507889e1ca63196695463cb0a525","startedDateTime":"2026-11-14T08:24:21.925Z","time":0.9690000000000001,"request":{"method":"GET","url":"http://app.test:8471/api/me","httpVersion":"HTTP/1.1","cookies":[],"headers":[{"name":"Accept","value":"*/*"},{"name":"Accept-Encoding","value":"gzip,
+        deflate"},{"name":"Authorization","value":"Bearer eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.eyJzdWIiOiAidXNlci0xMDAxIiwgImlhdCI6IDE3OTQ2Mzc0NjEsICJleHAiOiAxNzk0NjQzNzYxLCAiYXVkIjogImh0dHA6Ly9hcGkudGVzdDo4NDcyIiwgInNjb3BlIjogIm9yZGVyczpyZWFkIn0.iRBswEehcAw5PLBBeXDmtHVhDE9CEoH2gujfaa0TDQg"},{"name":"Connection","value":"keep-alive"},{"name":"Host","value":"app.test:8471"},{"name":"Referer","value":"http://app.test:8471/scenario/auth"},{"name":"User-Agent","value":"Mozilla/5.0
+        (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/159.0.8154.6
+        Safari/537.36"}],"queryString":[],"headersSize":553,"bodySize":0},"response":{"status":401,"statusText":"Unauthorized","httpVersion":"HTTP/1.1","cookies":[],"headers":[{"name":"Content-Length","value":"75"},{"name":"Content-Type","value":"application/json"},{"name":"Date","value":"Sat,
+        14 Nov 2026 08:24:21 GMT"},{"name":"Server","value":"fault-server/1.0 Python/3.13.18"},{"name":"WWW-Authenticate","value":"Bearer
+        realm=\"api\", error=\"invalid_token\", error_description=\"The access token
+        expired\""},{"name":"X-Request-Id","value":"req-f99fd041"}],"content":{"size":75,"mimeType":"application/json","compression":0,"text":"{\"error\":
+        \"invalid_token\", \"error_description\": \"The access token expired\"}"},"headersSize":294,"bodySize":75,"redirectURL":"","_transferSize":369},"cache":{},"timings":{"dns":-1,"connect":-1,"ssl":-1,"send":0,"wait":0.421,"receive":0.548},"_frameref":"frame@2ddceebab434c382c19e9f9432a66e1e","_monotonicTime":3967.35,"_resourceType":"fetch","serverIPAddress":"127.0.0.1","_serverPort":8471,"_securityDetails":{}},{"pageref":"page@2e92507889e1ca63196695463cb0a525","startedDateTime":"2026-11-14T08:24:21.931Z","time":0.742,"request":{"method":"GET","url":"http://app.test:8471/api/orders","httpVersion":"HTTP/1.1","cookies":[],"headers":[{"name":"Accept","value":"*/*"},{"name":"Accept-Encoding","value":"gzip,
+        deflate"},{"name":"Authorization","value":"Bearer eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.eyJzdWIiOiAidXNlci0xMDAxIiwgImlhdCI6IDE3OTQ2Mzc0NjEsICJleHAiOiAxNzk0NjQzNzYxLCAiYXVkIjogImh0dHA6Ly9hcGkudGVzdDo4NDcyIiwgInNjb3BlIjogIm9yZGVyczpyZWFkIn0.iRBswEehcAw5PLBBeXDmtHVhDE9CEoH2gujfaa0TDQg"},{"name":"Connection","value":"keep-alive"},{"name":"Host","value":"app.test:8471"},{"name":"Referer","value":"http://app.test:8471/scenario/auth"},{"name":"User-Agent","value":"Mozilla/5.0
+        (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/159.0.8154.6
+        Safari/537.36"}],"queryString":[],"headersSize":557,"bodySize":0},"response":{"status":401,"statusText":"Unauthorized","httpVersion":"HTTP/1.1","cookies":[],"headers":[{"name":"Content-Length","value":"75"},{"name":"Content-Type","value":"application/json"},{"name":"Date","value":"Sat,
+        14 Nov 2026 08:24:21 GMT"},{"name":"Server","value":"fault-server/1.0 Python/3.13.18"},{"name":"WWW-Authenticate","value":"Bearer
+        realm=\"api\", error=\"invalid_token\", error_description=\"The access token
+        expired\""},{"name":"X-Request-Id","value":"req-5f018d0b"}],"content":{"size":75,"mimeType":"application/json","compression":0,"text":"{\"error\":
+        \"invalid_token\", \"error_description\": \"The access token expired\"}"},"headersSize":294,"bodySize":75,"redirectURL":"","_transferSize":369},"cache":{},"timings":{"dns":-1,"connect":-1,"ssl":-1,"send":0,"wait":0.359,"receive":0.383},"_frameref":"frame@2ddceebab434c382c19e9f9432a66e1e","_monotonicTime":3972.67,"_resourceType":"fetch","serverIPAddress":"127.0.0.1","_serverPort":8471,"_securityDetails":{}},{"pageref":"page@2e92507889e1ca63196695463cb0a525","startedDateTime":"2026-11-14T08:24:21.938Z","time":0.765,"request":{"method":"GET","url":"http://app.test:8471/api/admin/users","httpVersion":"HTTP/1.1","cookies":[],"headers":[{"name":"Accept","value":"*/*"},{"name":"Accept-Encoding","value":"gzip,
+        deflate"},{"name":"Authorization","value":"Bearer eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.eyJzdWIiOiAidXNlci0xMDAxIiwgImlhdCI6IDE3OTQ2Mzc0NjEsICJleHAiOiAxNzk0NjQ4MjYxLCAiYXVkIjogImh0dHA6Ly9hcGkudGVzdDo4NDcyIiwgInNjb3BlIjogIm9yZGVyczpyZWFkIn0.57qurNaMrDf8oMP0hJ7ZnuSWtZ8mOWDyFe-QdfbhLaA"},{"name":"Connection","value":"keep-alive"},{"name":"Host","value":"app.test:8471"},{"name":"Referer","value":"http://app.test:8471/scenario/auth"},{"name":"User-Agent","value":"Mozilla/5.0
+        (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/159.0.8154.6
+        Safari/537.36"}],"queryString":[],"headersSize":562,"bodySize":0},"response":{"status":403,"statusText":"Forbidden","httpVersion":"HTTP/1.1","cookies":[],"headers":[{"name":"Content-Length","value":"76"},{"name":"Content-Type","value":"application/json"},{"name":"Date","value":"Sat,
+        14 Nov 2026 08:24:21 GMT"},{"name":"Server","value":"fault-server/1.0 Python/3.13.18"},{"name":"WWW-Authenticate","value":"Bearer
+        error=\"insufficient_scope\", error_description=\"requires admin:users\""},{"name":"X-Request-Id","value":"req-c060c7a5"}],"content":{"size":76,"mimeType":"application/json","compression":0,"text":"{\"error\":
+        \"insufficient_scope\", \"error_description\": \"requires admin:users\"}"},"headersSize":279,"bodySize":76,"redirectURL":"","_transferSize":355},"cache":{},"timings":{"dns":-1,"connect":-1,"ssl":-1,"send":0,"wait":0.381,"receive":0.384},"_frameref":"frame@2ddceebab434c382c19e9f9432a66e1e","_monotonicTime":3980.261,"_resourceType":"fetch","serverIPAddress":"127.0.0.1","_serverPort":8471,"_securityDetails":{}},{"pageref":"page@2e92507889e1ca63196695463cb0a525","startedDateTime":"2026-11-14T08:24:21.940Z","time":0.859,"request":{"method":"GET","url":"http://app.test:8471/api/settings","httpVersion":"HTTP/1.1","cookies":[],"headers":[{"name":"Accept","value":"*/*"},{"name":"Accept-Encoding","value":"gzip,
+        deflate"},{"name":"Connection","value":"keep-alive"},{"name":"Host","value":"app.test:8471"},{"name":"Referer","value":"http://app.test:8471/scenario/auth"},{"name":"User-Agent","value":"Mozilla/5.0
+        (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/159.0.8154.6
+        Safari/537.36"}],"queryString":[],"headersSize":299,"bodySize":0},"response":{"status":401,"statusText":"Unauthorized","httpVersion":"HTTP/1.1","cookies":[],"headers":[{"name":"Content-Length","value":"38"},{"name":"Content-Type","value":"application/json"},{"name":"Date","value":"Sat,
+        14 Nov 2026 08:24:21 GMT"},{"name":"Server","value":"fault-server/1.0 Python/3.13.18"},{"name":"X-Request-Id","value":"req-f6b271a3"}],"content":{"size":38,"mimeType":"application/json","compression":0,"text":"{\"message\":
+        \"Authentication required\"}"},"headersSize":187,"bodySize":38,"redirectURL":"","_transferSize":225},"cache":{},"timings":{"dns":-1,"connect":-1,"ssl":-1,"send":0,"wait":0.47,"receive":0.389},"_frameref":"frame@2ddceebab434c382c19e9f9432a66e1e","_monotonicTime":3982.374,"_resourceType":"fetch","serverIPAddress":"127.0.0.1","_serverPort":8471,"_securityDetails":{}}]}}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      cache-control:
+      - max-age=604800, private
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-disposition:
+      - attachment; filename="auth.har"
+      content-length:
+      - '10317'
+      content-type:
+      - application/json
+      date:
+      - Thu, 19 Nov 2026 10:16:50 GMT
+      etag:
+      - W/"353592109f05037998f8f9ce04109ab1"
+      last-modified:
+      - Thu, 19 Nov 2026 10:16:47 GMT
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=0
+      transfer-encoding:
+      - chunked
+      x-amz-server-side-encryption:
+      - AES256
+      x-amz-version-id:
+      - DHQMzndMwVOzs5FfvkaO_vFTUJ.b0.yW
+      x-content-type-options:
+      - nosniff
+      x-robots-tag:
+      - none, noarchive
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{
+
+      "log":{"entries":[]}}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '23'
+      content-type:
+      - application/binary
+      host:
+      - acme.zendesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: POST
+    uri: https://acme.zendesk.com/api/v2/uploads.json?filename=auth.redacted.har
+  response:
+    body:
+      string: '{"upload":{"token":"SCRUBBED","expires_at":"2026-11-19T11:16:51Z","attachments":[{"url":"https://acme.zendesk.com/api/v2/attachments/31949301793692.json","id":31949301793692,"file_name":"auth.redacted.har","content_url":"https://acme.zendesk.com/attachments/token/SCRUBBED/?name=auth.redacted.har","mapped_content_url":"https://acme.zendesk.com/attachments/token/SCRUBBED/?name=auth.redacted.har","content_type":"application/json","size":23,"width":null,"height":null,"inline":false,"deleted":false,"malware_access_override":false,"malware_scan_result":"not_scanned","thumbnails":[]}],"attachment":{"url":"https://acme.zendesk.com/api/v2/attachments/31949301793692.json","id":31949301793692,"file_name":"auth.redacted.har","content_url":"https://acme.zendesk.com/attachments/token/SCRUBBED/?name=auth.redacted.har","mapped_content_url":"https://acme.zendesk.com/attachments/token/SCRUBBED/?name=auth.redacted.har","content_type":"application/json","size":23,"width":null,"height":null,"inline":false,"deleted":false,"malware_access_override":false,"malware_scan_result":"not_scanned","thumbnails":[]}}}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      access-control-expose-headers:
+      - X-Zendesk-API-Warn,X-Zendesk-User-Id,X-Zendesk-User-Session-Expires-At
+      cache-control:
+      - max-age=0, private, must-revalidate
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:16:51 GMT
+      etag:
+      - W/"08a85f2abe074a5834a3bb9d4d89636f"
+      location:
+      - https://acme.zendesk.com/api/v2/attachments/31949301793692.json
+      ratelimit-limit:
+      - '400'
+      ratelimit-remaining:
+      - '394'
+      ratelimit-reset:
+      - '9'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      via:
+      - zorg
+      x-content-type-options:
+      - nosniff
+      x-envoy-decorator-operation:
+      - /api/v2/uploads
+      x-envoy-upstream-service-time:
+      - '222'
+      x-frame-options:
+      - SAMEORIGIN
+      x-openapi-route-path:
+      - /api/v2/uploads
+      x-rate-limit:
+      - '400'
+      x-rate-limit-remaining:
+      - '394'
+      x-request-validation:
+      - matched
+      x-runtime:
+      - '0.217709'
+      x-zendesk-api-version:
+      - v2
+      x-zendesk-application-version:
+      - v27190
+      x-zendesk-zorg:
+      - 'yes'
+      zendesk-service:
+      - classic
+    status:
+      code: 201
+      message: Created
+- request:
+    body: '{"ticket":{"comment":{"html_body":"<p>HAR Triage contract test 10: findings
+      would go here.</p>","public":false,"uploads":["SCRUBBED"]}}}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '153'
+      content-type:
+      - application/json
+      host:
+      - acme.zendesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: PUT
+    uri: https://acme.zendesk.com/api/v2/tickets/10.json
+  response:
+    body:
+      string: '{"ticket":{"url":"https://acme.zendesk.com/api/v2/tickets/10.json","id":10,"external_id":null,"via":{"channel":"api","source":{"from":{},"to":{},"rel":null}},"created_at":"2026-11-19T10:16:47Z","updated_at":"2026-11-19T10:16:51Z","generated_timestamp":1795083411,"type":null,"subject":"Contract
+        test: sign-in fails (HAR attached)","raw_subject":"Contract test: sign-in
+        fails (HAR attached)","description":"HAR attached.","priority":"normal","status":"new","recipient":null,"requester_id":31949073889692,"submitter_id":31949073889692,"assignee_id":null,"organization_id":null,"group_id":31943342716188,"collaborator_ids":[],"follower_ids":[],"email_cc_ids":[],"forum_topic_id":null,"problem_id":null,"has_incidents":false,"is_public":true,"due_at":null,"tags":["har_contract"],"custom_fields":[{"id":31943306734748,"value":null},{"id":31943306871964,"value":"topic_confidence__medium"},{"id":31943306882716,"value":"language__en"},{"id":31943318428444,"value":false},{"id":31943318454044,"value":"topic__software__issue_generic__error"},{"id":31943318459164,"value":"sentiment__neutral"},{"id":31943318461596,"value":"sentiment_confidence__high"},{"id":31943318493340,"value":"language_confidence__high"},{"id":31943326926108,"value":null},{"id":31943326932380,"value":null},{"id":31943326941980,"value":null},{"id":31943333451548,"value":null},{"id":31943333454492,"value":null},{"id":31943333456028,"value":null},{"id":31943342792348,"value":null},{"id":31943349523612,"value":null},{"id":31943350246172,"value":null}],"satisfaction_rating":{"score":"unoffered"},"sharing_agreement_ids":[],"custom_status_id":31943326848028,"encoded_id":"K5PZ6E-1ENKV","fields":[{"id":31943306734748,"value":null},{"id":31943306871964,"value":"topic_confidence__medium"},{"id":31943306882716,"value":"language__en"},{"id":31943318428444,"value":false},{"id":31943318454044,"value":"topic__software__issue_generic__error"},{"id":31943318459164,"value":"sentiment__neutral"},{"id":31943318461596,"value":"sentiment_confidence__high"},{"id":31943318493340,"value":"language_confidence__high"},{"id":31943326926108,"value":null},{"id":31943326932380,"value":null},{"id":31943326941980,"value":null},{"id":31943333451548,"value":null},{"id":31943333454492,"value":null},{"id":31943333456028,"value":null},{"id":31943342792348,"value":null},{"id":31943349523612,"value":null},{"id":31943350246172,"value":null}],"followup_ids":[],"ticket_form_id":31943342659484,"brand_id":31943342692380,"allow_channelback":false,"allow_attachments":true,"from_messaging_channel":false,"support_type":"agent"},"audit":{"id":31949287388700,"ticket_id":10,"created_at":"2026-11-19T10:16:51Z","author_id":31943357288476,"metadata":{"system":{"client":"python-httpx/0.28.1","ip_address":"122.183.51.249","transaction_id":"01M7SMY7XXA97CAENM3RVZPNJH","location":"Bengaluru,
+        KA, India","latitude":12.9753,"longitude":77.591},"custom":{}},"events":[{"id":31949287389724,"type":"Comment","author_id":31943357288476,"body":"HAR
+        Triage contract test 10: findings would go here.","html_body":"<div class=\"zd-comment\"
+        dir=\"auto\"><p dir=\"auto\">HAR Triage contract test 10: findings would go
+        here.</p></div>","plain_body":"HAR Triage contract test 10: findings would
+        go here.","public":false,"attachments":[{"url":"https://acme.zendesk.com/api/v2/attachments/31949301793692.json","id":31949301793692,"file_name":"auth.redacted.har","content_url":"https://acme.zendesk.com/attachments/token/SCRUBBED/?name=auth.redacted.har","mapped_content_url":"https://acme.zendesk.com/attachments/token/SCRUBBED/?name=auth.redacted.har","content_type":"application/json","size":23,"width":null,"height":null,"inline":false,"deleted":false,"malware_access_override":false,"malware_scan_result":"not_scanned","thumbnails":[]}],"audit_id":31949287388700}],"via":{"channel":"api","source":{"from":{},"to":{},"rel":null}}}}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      access-control-expose-headers:
+      - X-Zendesk-API-Warn,X-Zendesk-User-Id,X-Zendesk-User-Session-Expires-At
+      cache-control:
+      - max-age=0, private, must-revalidate
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-length:
+      - '3912'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:16:51 GMT
+      etag:
+      - W/"50b473679f30c37194f95a9af91bedc4"
+      ratelimit-limit:
+      - '400'
+      ratelimit-remaining:
+      - '393'
+      ratelimit-reset:
+      - '9'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      via:
+      - zorg
+      x-content-type-options:
+      - nosniff
+      x-envoy-decorator-operation:
+      - /api/v2/tickets
+      x-envoy-upstream-service-time:
+      - '387'
+      x-frame-options:
+      - SAMEORIGIN
+      x-openapi-route-path:
+      - /api/v2/tickets/{ticket_id}
+      x-rate-limit:
+      - '400'
+      x-rate-limit-remaining:
+      - '393'
+      x-request-validation:
+      - matched
+      x-runtime:
+      - '0.383305'
+      x-zendesk-api-version:
+      - v2
+      x-zendesk-application-version:
+      - v27190
+      x-zendesk-zorg:
+      - 'yes'
+      zendesk-ratelimit-per-ticket-updates:
+      - total=30; remaining=29; resets=189
+      zendesk-ratelimit-tickets-update:
+      - total=20; remaining=19; resets=9
+      zendesk-service:
+      - classic
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - acme.zendesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://acme.zendesk.com/api/v2/tickets/10/comments.json
+  response:
+    body:
+      string: '{"comments":[{"id":31949301447964,"type":"Comment","author_id":31949073889692,"body":"HAR
+        attached.","html_body":"<div class=\"zd-comment\" dir=\"auto\"><p dir=\"auto\">HAR
+        attached.</p></div>","plain_body":"HAR attached.","public":true,"attachments":[{"url":"https://acme.zendesk.com/api/v2/attachments/31949286927388.json","id":31949286927388,"file_name":"auth.har","content_url":"https://acme.zendesk.com/attachments/token/SCRUBBED/?name=auth.har","mapped_content_url":"https://acme.zendesk.com/attachments/token/SCRUBBED/?name=auth.har","content_type":"application/json","size":10317,"width":null,"height":null,"inline":false,"deleted":false,"malware_access_override":false,"malware_scan_result":"malware_not_found","thumbnails":[]}],"audit_id":31949301447836,"via":{"channel":"api","source":{"from":{},"to":{},"rel":null}},"created_at":"2026-11-19T10:16:47Z","metadata":{"system":{"client":"python-httpx/0.28.1","ip_address":"122.183.51.249","transaction_id":"01M7SMY3Q7HYHT8686QK5DMPSB","location":"Bengaluru,
+        KA, India","latitude":12.9753,"longitude":77.591},"custom":{},"notifications_suppressed_for":[31949073889692]}},{"id":31949287389724,"type":"Comment","author_id":31943357288476,"body":"HAR
+        Triage contract test 10: findings would go here.","html_body":"<div class=\"zd-comment\"
+        dir=\"auto\"><p dir=\"auto\">HAR Triage contract test 10: findings would go
+        here.</p></div>","plain_body":"HAR Triage contract test 10: findings would
+        go here.","public":false,"attachments":[{"url":"https://acme.zendesk.com/api/v2/attachments/31949301793692.json","id":31949301793692,"file_name":"auth.redacted.har","content_url":"https://acme.zendesk.com/attachments/token/SCRUBBED/?name=auth.redacted.har","mapped_content_url":"https://acme.zendesk.com/attachments/token/SCRUBBED/?name=auth.redacted.har","content_type":"application/json","size":23,"width":null,"height":null,"inline":false,"deleted":false,"malware_access_override":false,"malware_scan_result":"not_scanned","thumbnails":[]}],"audit_id":31949287388700,"via":{"channel":"api","source":{"from":{},"to":{},"rel":null}},"created_at":"2026-11-19T10:16:51Z","metadata":{"system":{"client":"python-httpx/0.28.1","ip_address":"122.183.51.249","transaction_id":"01M7SMY7XXA97CAENM3RVZPNJH","location":"Bengaluru,
+        KA, India","latitude":12.9753,"longitude":77.591},"custom":{}}}],"next_page":null,"previous_page":null,"count":2}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      access-control-expose-headers:
+      - X-Zendesk-API-Warn,X-Zendesk-User-Id,X-Zendesk-User-Session-Expires-At
+      cache-control:
+      - max-age=0, private, must-revalidate
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-length:
+      - '2478'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:16:52 GMT
+      etag:
+      - W/"db5f98a7245a560ec1d5bfc03e606a69"
+      last-modified:
+      - Thu, 19 Nov 2026 10:16:51 GMT
+      ratelimit-limit:
+      - '400'
+      ratelimit-remaining:
+      - '392'
+      ratelimit-reset:
+      - '8'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      via:
+      - zorg
+      x-content-type-options:
+      - nosniff
+      x-envoy-decorator-operation:
+      - /api/v2/tickets
+      x-envoy-upstream-service-time:
+      - '139'
+      x-frame-options:
+      - SAMEORIGIN
+      x-openapi-route-path:
+      - /api/v2/tickets/{ticket_id}/comments
+      x-rate-limit:
+      - '400'
+      x-rate-limit-remaining:
+      - '392'
+      x-request-validation:
+      - matched
+      x-runtime:
+      - '0.135285'
+      x-zendesk-api-version:
+      - v2
+      x-zendesk-application-version:
+      - v27190
+      x-zendesk-zorg:
+      - 'yes'
+      zendesk-service:
+      - classic
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"tags":["har_contract_done"]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '30'
+      content-type:
+      - application/json
+      host:
+      - acme.zendesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: PUT
+    uri: https://acme.zendesk.com/api/v2/tickets/10/tags.json
+  response:
+    body:
+      string: '{"tags":["har_contract","har_contract_done"]}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      access-control-expose-headers:
+      - X-Zendesk-API-Warn,X-Zendesk-User-Id,X-Zendesk-User-Session-Expires-At
+      cache-control:
+      - max-age=0, private, must-revalidate
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-length:
+      - '45'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:16:52 GMT
+      etag:
+      - W/"b29f06e726758f1d05bcb6f625cd1f60"
+      ratelimit-limit:
+      - '400'
+      ratelimit-remaining:
+      - '391'
+      ratelimit-reset:
+      - '8'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      via:
+      - zorg
+      x-content-type-options:
+      - nosniff
+      x-envoy-decorator-operation:
+      - /api/v2/tickets
+      x-envoy-upstream-service-time:
+      - '280'
+      x-frame-options:
+      - SAMEORIGIN
+      x-openapi-route-path:
+      - /api/v2/tickets/{ticket_id}/tags
+      x-rate-limit:
+      - '400'
+      x-rate-limit-remaining:
+      - '391'
+      x-request-validation:
+      - matched
+      x-runtime:
+      - '0.276063'
+      x-zendesk-api-version:
+      - v2
+      x-zendesk-application-version:
+      - v27190
+      x-zendesk-zorg:
+      - 'yes'
+      zendesk-ratelimit-per-ticket-updates:
+      - total=30; remaining=28; resets=188
+      zendesk-service:
+      - classic
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"tags":["har_contract"]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '25'
+      content-type:
+      - application/json
+      host:
+      - acme.zendesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: DELETE
+    uri: https://acme.zendesk.com/api/v2/tickets/10/tags.json
+  response:
+    body:
+      string: '{"tags":["har_contract_done"]}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      access-control-expose-headers:
+      - X-Zendesk-API-Warn,X-Zendesk-User-Id,X-Zendesk-User-Session-Expires-At
+      cache-control:
+      - max-age=0, private, must-revalidate
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-length:
+      - '30'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:16:53 GMT
+      etag:
+      - W/"906d12bdab06d6fa7a07036288d2bdfe"
+      ratelimit-limit:
+      - '400'
+      ratelimit-remaining:
+      - '390'
+      ratelimit-reset:
+      - '7'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      via:
+      - zorg
+      x-content-type-options:
+      - nosniff
+      x-envoy-decorator-operation:
+      - /api/v2/tickets
+      x-envoy-upstream-service-time:
+      - '275'
+      x-frame-options:
+      - SAMEORIGIN
+      x-openapi-route-path:
+      - /api/v2/tickets/{ticket_id}/tags
+      x-rate-limit:
+      - '400'
+      x-rate-limit-remaining:
+      - '390'
+      x-request-validation:
+      - matched
+      x-runtime:
+      - '0.270564'
+      x-zendesk-api-version:
+      - v2
+      x-zendesk-application-version:
+      - v27190
+      x-zendesk-zorg:
+      - 'yes'
+      zendesk-ratelimit-per-ticket-updates:
+      - total=30; remaining=27; resets=187
+      zendesk-service:
+      - classic
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '0'
+      host:
+      - acme.zendesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: PUT
+    uri: https://acme.zendesk.com/api/v2/tickets/10/comments/31949301447964/attachments/31949286927388/redact.json
+  response:
+    body:
+      string: '{"attachment":{"url":"https://acme.zendesk.com/api/v2/attachments/31949286927388.json","id":31949286927388,"file_name":"auth.har","content_url":"https://acme.zendesk.com/attachments/token/SCRUBBED/?name=auth.har","mapped_content_url":"https://acme.zendesk.com/attachments/token/SCRUBBED/?name=auth.har","content_type":"application/json","size":10317,"width":null,"height":null,"inline":false,"deleted":false,"malware_access_override":false,"malware_scan_result":"malware_not_found","thumbnails":[]}}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      access-control-expose-headers:
+      - X-Zendesk-API-Warn,X-Zendesk-User-Id,X-Zendesk-User-Session-Expires-At
+      cache-control:
+      - max-age=0, private, must-revalidate
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-length:
+      - '548'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:16:54 GMT
+      etag:
+      - W/"9a1889df7bc220c80a8de3ee7e0ac4df"
+      ratelimit-limit:
+      - '400'
+      ratelimit-remaining:
+      - '389'
+      ratelimit-reset:
+      - '6'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      via:
+      - zorg
+      x-content-type-options:
+      - nosniff
+      x-envoy-decorator-operation:
+      - /api/v2/tickets
+      x-envoy-upstream-service-time:
+      - '693'
+      x-frame-options:
+      - SAMEORIGIN
+      x-openapi-route-path:
+      - /api/v2/tickets/{ticket_id}/comments/{comment_id}/attachments/{attachment_id}/redact
+      x-rate-limit:
+      - '400'
+      x-rate-limit-remaining:
+      - '389'
+      x-request-validation:
+      - matched
+      x-runtime:
+      - '0.686353'
+      x-zendesk-api-version:
+      - v2
+      x-zendesk-application-version:
+      - v27190
+      x-zendesk-zorg:
+      - 'yes'
+      zendesk-ratelimit-per-ticket-updates:
+      - total=30; remaining=26; resets=186
+      zendesk-service:
+      - classic
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - acme.zendesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://acme.zendesk.com/api/v2/tickets/10.json
+  response:
+    body:
+      string: '{"ticket":{"url":"https://acme.zendesk.com/api/v2/tickets/10.json","id":10,"external_id":null,"via":{"channel":"api","source":{"from":{},"to":{},"rel":null}},"created_at":"2026-11-19T10:16:47Z","updated_at":"2026-11-19T10:16:54Z","generated_timestamp":1795083414,"type":null,"subject":"Contract
+        test: sign-in fails (HAR attached)","raw_subject":"Contract test: sign-in
+        fails (HAR attached)","description":"HAR attached.","priority":"normal","status":"new","recipient":null,"requester_id":31949073889692,"submitter_id":31949073889692,"assignee_id":null,"organization_id":null,"group_id":31943342716188,"collaborator_ids":[],"follower_ids":[],"email_cc_ids":[],"forum_topic_id":null,"problem_id":null,"has_incidents":false,"is_public":true,"due_at":null,"tags":["har_contract_done"],"custom_fields":[{"id":31943306734748,"value":null},{"id":31943306871964,"value":"topic_confidence__medium"},{"id":31943306882716,"value":"language__en"},{"id":31943318428444,"value":false},{"id":31943318454044,"value":"topic__software__issue_generic__error"},{"id":31943318459164,"value":"sentiment__neutral"},{"id":31943318461596,"value":"sentiment_confidence__high"},{"id":31943318493340,"value":"language_confidence__high"},{"id":31943326926108,"value":null},{"id":31943326932380,"value":null},{"id":31943326941980,"value":null},{"id":31943333451548,"value":null},{"id":31943333454492,"value":null},{"id":31943333456028,"value":null},{"id":31943342792348,"value":null},{"id":31943349523612,"value":null},{"id":31943350246172,"value":null}],"satisfaction_rating":{"score":"unoffered"},"sharing_agreement_ids":[],"custom_status_id":31943326848028,"encoded_id":"K5PZ6E-1ENKV","fields":[{"id":31943306734748,"value":null},{"id":31943306871964,"value":"topic_confidence__medium"},{"id":31943306882716,"value":"language__en"},{"id":31943318428444,"value":false},{"id":31943318454044,"value":"topic__software__issue_generic__error"},{"id":31943318459164,"value":"sentiment__neutral"},{"id":31943318461596,"value":"sentiment_confidence__high"},{"id":31943318493340,"value":"language_confidence__high"},{"id":31943326926108,"value":null},{"id":31943326932380,"value":null},{"id":31943326941980,"value":null},{"id":31943333451548,"value":null},{"id":31943333454492,"value":null},{"id":31943333456028,"value":null},{"id":31943342792348,"value":null},{"id":31943349523612,"value":null},{"id":31943350246172,"value":null}],"followup_ids":[],"ticket_form_id":31943342659484,"brand_id":31943342692380,"allow_channelback":false,"allow_attachments":true,"from_messaging_channel":false,"support_type":"agent"}}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      access-control-expose-headers:
+      - X-Zendesk-API-Warn,X-Zendesk-User-Id,X-Zendesk-User-Session-Expires-At
+      cache-control:
+      - max-age=0, private, must-revalidate
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-length:
+      - '2582'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:16:55 GMT
+      etag:
+      - W/"5eb87debe3cce58e04af2626024f78bd"
+      ratelimit-limit:
+      - '400'
+      ratelimit-remaining:
+      - '388'
+      ratelimit-reset:
+      - '5'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      via:
+      - zorg
+      x-content-type-options:
+      - nosniff
+      x-envoy-decorator-operation:
+      - /api/v2/tickets
+      x-envoy-upstream-service-time:
+      - '245'
+      x-frame-options:
+      - SAMEORIGIN
+      x-openapi-route-path:
+      - /api/v2/tickets/{ticket_id}
+      x-rate-limit:
+      - '400'
+      x-rate-limit-remaining:
+      - '388'
+      x-request-validation:
+      - matched
+      x-runtime:
+      - '0.234699'
+      x-zendesk-api-version:
+      - v2
+      x-zendesk-application-version:
+      - v27190
+      x-zendesk-zorg:
+      - 'yes'
+      zendesk-service:
+      - classic
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - acme.zendesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://acme.zendesk.com/api/v2/tickets/10/comments.json
+  response:
+    body:
+      string: '{"comments":[{"id":31949301447964,"type":"Comment","author_id":31949073889692,"body":"HAR
+        attached.","html_body":"<div class=\"zd-comment\" dir=\"auto\"><p dir=\"auto\">HAR
+        attached.</p></div>","plain_body":"HAR attached.","public":true,"attachments":[{"url":"https://acme.zendesk.com/api/v2/attachments/31949302032924.json","id":31949302032924,"file_name":"redacted.txt","content_url":"https://acme.zendesk.com/attachments/token/SCRUBBED/?name=redacted.txt","mapped_content_url":"https://acme.zendesk.com/attachments/token/SCRUBBED/?name=redacted.txt","content_type":"text/plain","size":1,"width":null,"height":null,"inline":false,"deleted":false,"malware_access_override":false,"malware_scan_result":"not_scanned","thumbnails":[]}],"audit_id":31949301447836,"via":{"channel":"api","source":{"from":{},"to":{},"rel":null}},"created_at":"2026-11-19T10:16:47Z","metadata":{"system":{"client":"python-httpx/0.28.1","ip_address":"122.183.51.249","transaction_id":"01M7SMY3Q7HYHT8686QK5DMPSB","location":"Bengaluru,
+        KA, India","latitude":12.9753,"longitude":77.591},"custom":{},"notifications_suppressed_for":[31949073889692]}},{"id":31949287389724,"type":"Comment","author_id":31943357288476,"body":"HAR
+        Triage contract test 10: findings would go here.","html_body":"<div class=\"zd-comment\"
+        dir=\"auto\"><p dir=\"auto\">HAR Triage contract test 10: findings would go
+        here.</p></div>","plain_body":"HAR Triage contract test 10: findings would
+        go here.","public":false,"attachments":[{"url":"https://acme.zendesk.com/api/v2/attachments/31949301793692.json","id":31949301793692,"file_name":"auth.redacted.har","content_url":"https://acme.zendesk.com/attachments/token/SCRUBBED/?name=auth.redacted.har","mapped_content_url":"https://acme.zendesk.com/attachments/token/SCRUBBED/?name=auth.redacted.har","content_type":"application/json","size":23,"width":null,"height":null,"inline":false,"deleted":false,"malware_access_override":false,"malware_scan_result":"malware_not_found","thumbnails":[]}],"audit_id":31949287388700,"via":{"channel":"api","source":{"from":{},"to":{},"rel":null}},"created_at":"2026-11-19T10:16:51Z","metadata":{"system":{"client":"python-httpx/0.28.1","ip_address":"122.183.51.249","transaction_id":"01M7SMY7XXA97CAENM3RVZPNJH","location":"Bengaluru,
+        KA, India","latitude":12.9753,"longitude":77.591},"custom":{}}}],"next_page":null,"previous_page":null,"count":2}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      access-control-expose-headers:
+      - X-Zendesk-API-Warn,X-Zendesk-User-Id,X-Zendesk-User-Session-Expires-At
+      cache-control:
+      - max-age=0, private, must-revalidate
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-length:
+      - '2480'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:16:55 GMT
+      etag:
+      - W/"c30a46ab5c99ab8640c2271b88aa21de"
+      last-modified:
+      - Thu, 19 Nov 2026 10:16:54 GMT
+      ratelimit-limit:
+      - '400'
+      ratelimit-remaining:
+      - '387'
+      ratelimit-reset:
+      - '5'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      via:
+      - zorg
+      x-content-type-options:
+      - nosniff
+      x-envoy-decorator-operation:
+      - /api/v2/tickets
+      x-envoy-upstream-service-time:
+      - '112'
+      x-frame-options:
+      - SAMEORIGIN
+      x-openapi-route-path:
+      - /api/v2/tickets/{ticket_id}/comments
+      x-rate-limit:
+      - '400'
+      x-rate-limit-remaining:
+      - '387'
+      x-request-validation:
+      - matched
+      x-runtime:
+      - '0.109022'
+      x-zendesk-api-version:
+      - v2
+      x-zendesk-application-version:
+      - v27190
+      x-zendesk-zorg:
+      - 'yes'
+      zendesk-service:
+      - classic
+    status:
+      code: 200
+      message: OK
+version: 1

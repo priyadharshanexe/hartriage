@@ -1,0 +1,990 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - acme.freshdesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://acme.freshdesk.com/api/v2/agents/me
+  response:
+    body:
+      string: '{"available":false,"occasional":false,"id":87007964534,"ticket_scope":1,"signature":"<div
+        dir=\"ltr\"><p><br></p>\n</div>","group_ids":[],"role_ids":[87000115282,87000115283,87000115284,87000115285],"skill_ids":[],"available_since":null,"contact":{"active":true,"email":"Test
+        agent@example.com","job_title":null,"language":"en","mobile":null,"name":"Test
+        Agent","phone":null,"time_zone":"Chennai","city":null,"state":null,"zipcode":null,"country":null,"other_phone_numbers":[],"phone_dialable":null,"mobile_dialable":null,"guest_name":null,"guest_profile_pic":null,"social_handler":[],"owner_agent":null,"created_at":"2026-11-19T06:36:45Z","updated_at":"2026-11-19T06:37:26Z","last_login_at":null},"created_at":"2026-11-19T06:36:45Z","updated_at":"2026-11-19T08:32:40Z","type":"support_agent"}'
+    headers:
+      cache-control:
+      - no-store
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-length:
+      - '810'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:17:59 GMT
+      expires:
+      - Wed, 13 Oct 2010 00:00:00 UTC
+      pragma:
+      - no-cache
+      server:
+      - cloudflare
+      status:
+      - 200 OK
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - accept-encoding
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '247'
+      x-freshdesk-api-version:
+      - latest=v2; requested=v2
+      x-fw-ratelimiting-managed:
+      - 'true'
+      x-ratelimit-account-label:
+      - Account Overall Limit
+      x-ratelimit-account-remaining:
+      - '22'
+      x-ratelimit-account-total:
+      - '50'
+      x-ratelimit-account-used:
+      - '28'
+      x-ratelimit-account-window-end-at:
+      - '2026-11-19T10:18:00.000+00:00'
+      x-ratelimit-account-window-start-at:
+      - '2026-11-19T10:17:00.000+00:00'
+      x-ratelimit-remaining:
+      - '22.0'
+      x-ratelimit-total:
+      - '50.0'
+      x-ratelimit-used-currentrequest:
+      - '1'
+      x-server-processing-time-ms:
+      - '261'
+      x-trace-id:
+      - 00-82c9b0c7913bcb3e82ada8bd7da89284-b4e03d7b6248f78f-01
+      x-xss-protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - acme.freshdesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://acme.freshdesk.com/api/v2/search/tickets?query=%22tag%3A%27har_contract%27%22&page=1
+  response:
+    body:
+      string: '{"results":[{"cc_emails":[],"fwd_emails":[],"reply_cc_emails":[],"ticket_cc_emails":[],"ticket_bcc_emails":[],"fr_escalated":false,"spam":false,"email_config_id":87000014024,"group_id":null,"priority":1,"requester_id":87007966454,"responder_id":null,"source":2,"company_id":null,"status":2,"subject":"Contract
+        test: sign-in fails (HAR attached)","association_type":null,"support_email":null,"to_emails":null,"product_id":87000011377,"id":11,"type":null,"due_by":"2026-11-26T06:16:56Z","fr_due_by":"2026-11-20T03:16:56Z","is_escalated":false,"description":"<div>HAR
+        attached.</div>","description_text":"HAR attached.","custom_fields":{"cf_reference_number":null},"created_at":"2026-11-19T10:16:56Z","updated_at":"2026-11-19T10:16:56Z","associated_tickets_count":null,"tags":["har_contract"],"structured_description":null,"nr_due_by":null,"nr_escalated":false},{"cc_emails":[],"fwd_emails":[],"reply_cc_emails":[],"ticket_cc_emails":[],"ticket_bcc_emails":[],"fr_escalated":false,"spam":false,"email_config_id":87000014024,"group_id":null,"priority":1,"requester_id":87007966454,"responder_id":null,"source":2,"company_id":null,"status":2,"subject":"Contract
+        test: sign-in fails (HAR attached)","association_type":null,"support_email":null,"to_emails":null,"product_id":87000011377,"id":9,"type":null,"due_by":"2026-11-26T06:10:20Z","fr_due_by":"2026-11-20T03:10:20Z","is_escalated":false,"description":"<div>HAR
+        attached.</div>","description_text":"HAR attached.","custom_fields":{"cf_reference_number":null},"created_at":"2026-11-19T10:10:20Z","updated_at":"2026-11-19T10:10:21Z","associated_tickets_count":null,"tags":["har_contract"],"structured_description":null,"nr_due_by":null,"nr_escalated":false}],"total":2}'
+    headers:
+      cache-control:
+      - no-store
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-length:
+      - '1716'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:17:59 GMT
+      expires:
+      - Wed, 13 Oct 2010 00:00:00 UTC
+      pragma:
+      - no-cache
+      server:
+      - cloudflare
+      status:
+      - 200 OK
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - accept-encoding
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '117'
+      x-freshdesk-api-version:
+      - latest=v2; requested=v2
+      x-fw-ratelimiting-managed:
+      - 'true'
+      x-ratelimit-account-label:
+      - Account Overall Limit
+      x-ratelimit-account-remaining:
+      - '21'
+      x-ratelimit-account-total:
+      - '50'
+      x-ratelimit-account-used:
+      - '29'
+      x-ratelimit-account-window-end-at:
+      - '2026-11-19T10:18:00.000+00:00'
+      x-ratelimit-account-window-start-at:
+      - '2026-11-19T10:17:00.000+00:00'
+      x-ratelimit-remaining:
+      - '21.0'
+      x-ratelimit-total:
+      - '50.0'
+      x-ratelimit-used-currentrequest:
+      - '1'
+      x-server-processing-time-ms:
+      - '131'
+      x-trace-id:
+      - 00-6f84ae53fe176f2a8c3f6303cbf758cb-13eb278ef2bfde57-01
+      x-xss-protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - acme.freshdesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://acme.freshdesk.com/api/v2/tickets/11
+  response:
+    body:
+      string: '{"cc_emails":[],"fwd_emails":[],"reply_cc_emails":[],"ticket_cc_emails":[],"ticket_bcc_emails":[],"fr_escalated":false,"spam":false,"email_config_id":87000014024,"group_id":null,"priority":1,"requester_id":87007966454,"responder_id":null,"source":2,"company_id":null,"status":2,"subject":"Contract
+        test: sign-in fails (HAR attached)","association_type":null,"support_email":null,"to_emails":null,"product_id":87000011377,"id":11,"type":null,"due_by":"2026-11-26T06:16:56Z","fr_due_by":"2026-11-20T03:16:56Z","is_escalated":false,"description":"<div>HAR
+        attached.</div>","description_text":"HAR attached.","custom_fields":{"cf_reference_number":null},"created_at":"2026-11-19T10:16:56Z","updated_at":"2026-11-19T10:16:56Z","tags":["har_contract"],"attachments":[{"id":87027974736,"content_type":"application/octet-stream","size":10317,"name":"auth.har","attachment_url":"https://s3.ap-south-1.amazonaws.com/ind-cdn.freshdesk.com/data/helpdesk/attachments/production/87027974736/original/auth.har?X-Amz-Algorithm=SCRUBBED&X-Amz-Credential=SCRUBBED&X-Amz-Date=SCRUBBED&X-Amz-Expires=SCRUBBED&X-Amz-SignedHeaders=SCRUBBED&X-Amz-Signature=SCRUBBED","created_at":"2026-11-19T10:16:56Z","updated_at":"2026-11-19T10:16:56Z"}],"source_info":null,"source_additional_info":null,"structured_description":null,"form_id":87000044821,"nr_due_by":null,"nr_escalated":false}'
+    headers:
+      cache-control:
+      - no-store
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-length:
+      - '1476'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:17:59 GMT
+      expires:
+      - Wed, 13 Oct 2010 00:00:00 UTC
+      pragma:
+      - no-cache
+      server:
+      - cloudflare
+      status:
+      - 200 OK
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - accept-encoding
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '83'
+      x-freshdesk-api-version:
+      - latest=v2; requested=v2
+      x-fw-ratelimiting-managed:
+      - 'true'
+      x-ratelimit-account-label:
+      - Account Overall Limit
+      x-ratelimit-account-remaining:
+      - '20'
+      x-ratelimit-account-total:
+      - '50'
+      x-ratelimit-account-used:
+      - '30'
+      x-ratelimit-account-window-end-at:
+      - '2026-11-19T10:18:00.000+00:00'
+      x-ratelimit-account-window-start-at:
+      - '2026-11-19T10:17:00.000+00:00'
+      x-ratelimit-remaining:
+      - '20.0'
+      x-ratelimit-total:
+      - '50.0'
+      x-ratelimit-used-currentrequest:
+      - '1'
+      x-server-processing-time-ms:
+      - '96'
+      x-trace-id:
+      - 00-1a68baa7fcbb603cbc456432fc543f4e-db21b680917154f4-01
+      x-xss-protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - acme.freshdesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://acme.freshdesk.com/api/v2/tickets/11/conversations?page=1&per_page=100
+  response:
+    body:
+      string: '[]'
+    headers:
+      cache-control:
+      - no-store
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-length:
+      - '2'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:18:00 GMT
+      expires:
+      - Wed, 13 Oct 2010 00:00:00 UTC
+      pragma:
+      - no-cache
+      server:
+      - cloudflare
+      status:
+      - 200 OK
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - accept-encoding
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '51'
+      x-freshdesk-api-version:
+      - latest=v2; requested=v2
+      x-fw-ratelimiting-managed:
+      - 'true'
+      x-ratelimit-account-label:
+      - Account Overall Limit
+      x-ratelimit-account-remaining:
+      - '49'
+      x-ratelimit-account-total:
+      - '50'
+      x-ratelimit-account-used:
+      - '1'
+      x-ratelimit-account-window-end-at:
+      - '2026-11-19T10:19:00.000+00:00'
+      x-ratelimit-account-window-start-at:
+      - '2026-11-19T10:18:00.000+00:00'
+      x-ratelimit-remaining:
+      - '49.0'
+      x-ratelimit-total:
+      - '50.0'
+      x-ratelimit-used-currentrequest:
+      - '1'
+      x-server-processing-time-ms:
+      - '63'
+      x-trace-id:
+      - 00-79d60a5ba2cb4cba6df91fa0f5139a95-8fdebe90af7ca7f4-01
+      x-xss-protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - s3.ap-south-1.amazonaws.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://s3.ap-south-1.amazonaws.com/ind-cdn.freshdesk.com/data/helpdesk/attachments/production/87027974736/original/auth.har?X-Amz-Algorithm=SCRUBBED&X-Amz-Credential=SCRUBBED&X-Amz-Date=SCRUBBED&X-Amz-Expires=SCRUBBED&X-Amz-SignedHeaders=SCRUBBED&X-Amz-Signature=SCRUBBED
+  response:
+    body:
+      string: '{"log":{"version":"1.2","creator":{"name":"Playwright","version":"1.65.1"},"browser":{"name":"chromium","version":"159.0.8154.6"},"pages":[{"startedDateTime":"2026-11-14T08:24:21.915Z","id":"page@2e92507889e1ca63196695463cb0a525","title":"Orders","pageTimings":{"onContentLoad":11,"onLoad":11}}],"entries":[{"pageref":"page@2e92507889e1ca63196695463cb0a525","startedDateTime":"2026-11-14T08:24:21.917Z","time":3.862,"request":{"method":"GET","url":"http://app.test:8471/scenario/auth","httpVersion":"HTTP/1.1","cookies":[],"headers":[{"name":"Accept","value":"text/html,application/xhtml+xml,application/xml;q=0.9,image/jxl,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"},{"name":"Accept-Encoding","value":"gzip,
+        deflate"},{"name":"Connection","value":"keep-alive"},{"name":"Host","value":"app.test:8471"},{"name":"Upgrade-Insecure-Requests","value":"1"},{"name":"User-Agent","value":"Mozilla/5.0
+        (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/159.0.8154.6
+        Safari/537.36"}],"queryString":[],"headersSize":427,"bodySize":0},"response":{"status":200,"statusText":"OK","httpVersion":"HTTP/1.1","cookies":[],"headers":[{"name":"Content-Length","value":"1153"},{"name":"Content-Type","value":"text/html;
+        charset=utf-8"},{"name":"Date","value":"Sat, 14 Nov 2026 08:24:21 GMT"},{"name":"Server","value":"fault-server/1.0
+        Python/3.13.18"},{"name":"X-Request-Id","value":"req-575a33a6"}],"content":{"size":1153,"mimeType":"text/html;
+        charset=utf-8","compression":0,"text":"<!doctype html><html><head><meta charset=\"utf-8\"><title>Orders</title>\n<link
+        rel=\"icon\" href=\"data:,\"></head><body><h1>Orders</h1><pre id=\"log\"></pre><script>\nconst
+        log = (m) => document.getElementById(''log'').textContent += m + \"\\n\";\nconst
+        API = \"http://api.test:8472\";\nasync function main() {\n\n  const expired
+        = \"eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.eyJzdWIiOiAidXNlci0xMDAxIiwgImlhdCI6IDE3OTQ2Mzc0NjEsICJleHAiOiAxNzk0NjQzNzYxLCAiYXVkIjogImh0dHA6Ly9hcGkudGVzdDo4NDcyIiwgInNjb3BlIjogIm9yZGVyczpyZWFkIn0.iRBswEehcAw5PLBBeXDmtHVhDE9CEoH2gujfaa0TDQg\";\n  await
+        fetch(''/api/me'', {headers: {Authorization: ''Bearer '' + expired}});\n  await
+        fetch(''/api/orders'', {headers: {Authorization: ''Bearer '' + expired}});\n  await
+        fetch(''/api/admin/users'', {headers: {Authorization: ''Bearer eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.eyJzdWIiOiAidXNlci0xMDAxIiwgImlhdCI6IDE3OTQ2Mzc0NjEsICJleHAiOiAxNzk0NjQ4MjYxLCAiYXVkIjogImh0dHA6Ly9hcGkudGVzdDo4NDcyIiwgInNjb3BlIjogIm9yZGVyczpyZWFkIn0.57qurNaMrDf8oMP0hJ7ZnuSWtZ8mOWDyFe-QdfbhLaA''}});\n  await
+        fetch(''/api/settings'');\n\n}\nmain().catch(e => log(''error: '' + e)).finally(()
+        => { window.done = true; });\n</script></body></html>"},"headersSize":187,"bodySize":1153,"redirectURL":"","_transferSize":1340},"cache":{},"timings":{"dns":0.012,"connect":0.401,"ssl":2.479,"send":0,"wait":0.549,"receive":0.421},"_frameref":"frame@2ddceebab434c382c19e9f9432a66e1e","_monotonicTime":3958.889,"_resourceType":"document","serverIPAddress":"127.0.0.1","_serverPort":8471,"_securityDetails":{}},{"pageref":"page@2e92507889e1ca63196695463cb0a525","startedDateTime":"2026-11-14T08:24:21.925Z","time":0.9690000000000001,"request":{"method":"GET","url":"http://app.test:8471/api/me","httpVersion":"HTTP/1.1","cookies":[],"headers":[{"name":"Accept","value":"*/*"},{"name":"Accept-Encoding","value":"gzip,
+        deflate"},{"name":"Authorization","value":"Bearer eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.eyJzdWIiOiAidXNlci0xMDAxIiwgImlhdCI6IDE3OTQ2Mzc0NjEsICJleHAiOiAxNzk0NjQzNzYxLCAiYXVkIjogImh0dHA6Ly9hcGkudGVzdDo4NDcyIiwgInNjb3BlIjogIm9yZGVyczpyZWFkIn0.iRBswEehcAw5PLBBeXDmtHVhDE9CEoH2gujfaa0TDQg"},{"name":"Connection","value":"keep-alive"},{"name":"Host","value":"app.test:8471"},{"name":"Referer","value":"http://app.test:8471/scenario/auth"},{"name":"User-Agent","value":"Mozilla/5.0
+        (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/159.0.8154.6
+        Safari/537.36"}],"queryString":[],"headersSize":553,"bodySize":0},"response":{"status":401,"statusText":"Unauthorized","httpVersion":"HTTP/1.1","cookies":[],"headers":[{"name":"Content-Length","value":"75"},{"name":"Content-Type","value":"application/json"},{"name":"Date","value":"Sat,
+        14 Nov 2026 08:24:21 GMT"},{"name":"Server","value":"fault-server/1.0 Python/3.13.18"},{"name":"WWW-Authenticate","value":"Bearer
+        realm=\"api\", error=\"invalid_token\", error_description=\"The access token
+        expired\""},{"name":"X-Request-Id","value":"req-f99fd041"}],"content":{"size":75,"mimeType":"application/json","compression":0,"text":"{\"error\":
+        \"invalid_token\", \"error_description\": \"The access token expired\"}"},"headersSize":294,"bodySize":75,"redirectURL":"","_transferSize":369},"cache":{},"timings":{"dns":-1,"connect":-1,"ssl":-1,"send":0,"wait":0.421,"receive":0.548},"_frameref":"frame@2ddceebab434c382c19e9f9432a66e1e","_monotonicTime":3967.35,"_resourceType":"fetch","serverIPAddress":"127.0.0.1","_serverPort":8471,"_securityDetails":{}},{"pageref":"page@2e92507889e1ca63196695463cb0a525","startedDateTime":"2026-11-14T08:24:21.931Z","time":0.742,"request":{"method":"GET","url":"http://app.test:8471/api/orders","httpVersion":"HTTP/1.1","cookies":[],"headers":[{"name":"Accept","value":"*/*"},{"name":"Accept-Encoding","value":"gzip,
+        deflate"},{"name":"Authorization","value":"Bearer eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.eyJzdWIiOiAidXNlci0xMDAxIiwgImlhdCI6IDE3OTQ2Mzc0NjEsICJleHAiOiAxNzk0NjQzNzYxLCAiYXVkIjogImh0dHA6Ly9hcGkudGVzdDo4NDcyIiwgInNjb3BlIjogIm9yZGVyczpyZWFkIn0.iRBswEehcAw5PLBBeXDmtHVhDE9CEoH2gujfaa0TDQg"},{"name":"Connection","value":"keep-alive"},{"name":"Host","value":"app.test:8471"},{"name":"Referer","value":"http://app.test:8471/scenario/auth"},{"name":"User-Agent","value":"Mozilla/5.0
+        (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/159.0.8154.6
+        Safari/537.36"}],"queryString":[],"headersSize":557,"bodySize":0},"response":{"status":401,"statusText":"Unauthorized","httpVersion":"HTTP/1.1","cookies":[],"headers":[{"name":"Content-Length","value":"75"},{"name":"Content-Type","value":"application/json"},{"name":"Date","value":"Sat,
+        14 Nov 2026 08:24:21 GMT"},{"name":"Server","value":"fault-server/1.0 Python/3.13.18"},{"name":"WWW-Authenticate","value":"Bearer
+        realm=\"api\", error=\"invalid_token\", error_description=\"The access token
+        expired\""},{"name":"X-Request-Id","value":"req-5f018d0b"}],"content":{"size":75,"mimeType":"application/json","compression":0,"text":"{\"error\":
+        \"invalid_token\", \"error_description\": \"The access token expired\"}"},"headersSize":294,"bodySize":75,"redirectURL":"","_transferSize":369},"cache":{},"timings":{"dns":-1,"connect":-1,"ssl":-1,"send":0,"wait":0.359,"receive":0.383},"_frameref":"frame@2ddceebab434c382c19e9f9432a66e1e","_monotonicTime":3972.67,"_resourceType":"fetch","serverIPAddress":"127.0.0.1","_serverPort":8471,"_securityDetails":{}},{"pageref":"page@2e92507889e1ca63196695463cb0a525","startedDateTime":"2026-11-14T08:24:21.938Z","time":0.765,"request":{"method":"GET","url":"http://app.test:8471/api/admin/users","httpVersion":"HTTP/1.1","cookies":[],"headers":[{"name":"Accept","value":"*/*"},{"name":"Accept-Encoding","value":"gzip,
+        deflate"},{"name":"Authorization","value":"Bearer eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.eyJzdWIiOiAidXNlci0xMDAxIiwgImlhdCI6IDE3OTQ2Mzc0NjEsICJleHAiOiAxNzk0NjQ4MjYxLCAiYXVkIjogImh0dHA6Ly9hcGkudGVzdDo4NDcyIiwgInNjb3BlIjogIm9yZGVyczpyZWFkIn0.57qurNaMrDf8oMP0hJ7ZnuSWtZ8mOWDyFe-QdfbhLaA"},{"name":"Connection","value":"keep-alive"},{"name":"Host","value":"app.test:8471"},{"name":"Referer","value":"http://app.test:8471/scenario/auth"},{"name":"User-Agent","value":"Mozilla/5.0
+        (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/159.0.8154.6
+        Safari/537.36"}],"queryString":[],"headersSize":562,"bodySize":0},"response":{"status":403,"statusText":"Forbidden","httpVersion":"HTTP/1.1","cookies":[],"headers":[{"name":"Content-Length","value":"76"},{"name":"Content-Type","value":"application/json"},{"name":"Date","value":"Sat,
+        14 Nov 2026 08:24:21 GMT"},{"name":"Server","value":"fault-server/1.0 Python/3.13.18"},{"name":"WWW-Authenticate","value":"Bearer
+        error=\"insufficient_scope\", error_description=\"requires admin:users\""},{"name":"X-Request-Id","value":"req-c060c7a5"}],"content":{"size":76,"mimeType":"application/json","compression":0,"text":"{\"error\":
+        \"insufficient_scope\", \"error_description\": \"requires admin:users\"}"},"headersSize":279,"bodySize":76,"redirectURL":"","_transferSize":355},"cache":{},"timings":{"dns":-1,"connect":-1,"ssl":-1,"send":0,"wait":0.381,"receive":0.384},"_frameref":"frame@2ddceebab434c382c19e9f9432a66e1e","_monotonicTime":3980.261,"_resourceType":"fetch","serverIPAddress":"127.0.0.1","_serverPort":8471,"_securityDetails":{}},{"pageref":"page@2e92507889e1ca63196695463cb0a525","startedDateTime":"2026-11-14T08:24:21.940Z","time":0.859,"request":{"method":"GET","url":"http://app.test:8471/api/settings","httpVersion":"HTTP/1.1","cookies":[],"headers":[{"name":"Accept","value":"*/*"},{"name":"Accept-Encoding","value":"gzip,
+        deflate"},{"name":"Connection","value":"keep-alive"},{"name":"Host","value":"app.test:8471"},{"name":"Referer","value":"http://app.test:8471/scenario/auth"},{"name":"User-Agent","value":"Mozilla/5.0
+        (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/159.0.8154.6
+        Safari/537.36"}],"queryString":[],"headersSize":299,"bodySize":0},"response":{"status":401,"statusText":"Unauthorized","httpVersion":"HTTP/1.1","cookies":[],"headers":[{"name":"Content-Length","value":"38"},{"name":"Content-Type","value":"application/json"},{"name":"Date","value":"Sat,
+        14 Nov 2026 08:24:21 GMT"},{"name":"Server","value":"fault-server/1.0 Python/3.13.18"},{"name":"X-Request-Id","value":"req-f6b271a3"}],"content":{"size":38,"mimeType":"application/json","compression":0,"text":"{\"message\":
+        \"Authentication required\"}"},"headersSize":187,"bodySize":38,"redirectURL":"","_transferSize":225},"cache":{},"timings":{"dns":-1,"connect":-1,"ssl":-1,"send":0,"wait":0.47,"receive":0.389},"_frameref":"frame@2ddceebab434c382c19e9f9432a66e1e","_monotonicTime":3982.374,"_resourceType":"fetch","serverIPAddress":"127.0.0.1","_serverPort":8471,"_securityDetails":{}}]}}'
+    headers:
+      accept-ranges:
+      - bytes
+      content-length:
+      - '10317'
+      content-type:
+      - text/html
+      date:
+      - Thu, 19 Nov 2026 10:18:00 GMT
+      etag:
+      - '"353592109f05037998f8f9ce04109ab1"'
+      last-modified:
+      - Thu, 19 Nov 2026 10:16:57 GMT
+      server:
+      - AmazonS3
+      x-amz-id-2:
+      - 9WeSroX7KH+9nl2M+GnLn/HUVCvNd2w1xOm7HgEp0ZaND0hGhNqLKhHzSKfM8Fo08yPqbr9NDKk=
+      x-amz-replication-status:
+      - COMPLETED
+      x-amz-request-id:
+      - MQ5EZ6CCT8VTD6C2
+      x-amz-server-side-encryption:
+      - AES256
+      x-amz-version-id:
+      - .KqXS09RkfbUjzVwTbjocWHcp5G_mwFu
+    status:
+      code: 200
+      message: OK
+- request:
+    body: "--52e665d1acacecfe68151ee72ba770c0\r\nContent-Disposition: form-data; name=\"body\"\r\n\r\n<p>HAR
+      Triage contract test 11: findings would go here.</p>\r\n--52e665d1acacecfe68151ee72ba770c0\r\nContent-Disposition:
+      form-data; name=\"private\"\r\n\r\ntrue\r\n--52e665d1acacecfe68151ee72ba770c0\r\nContent-Disposition:
+      form-data; name=\"attachments[]\"; filename=\"auth.redacted.har\"\r\nContent-Type:
+      application/json\r\n\r\n{\n\"log\":{\"entries\":[]}}\r\n--52e665d1acacecfe68151ee72ba770c0--\r\n"
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '453'
+      content-type:
+      - multipart/form-data; boundary=52e665d1acacecfe68151ee72ba770c0
+      host:
+      - acme.freshdesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: POST
+    uri: https://acme.freshdesk.com/api/v2/tickets/11/notes
+  response:
+    body:
+      string: '{"body":"<div>HAR Triage contract test 11: findings would go here.</div>","body_text":"HAR
+        Triage contract test 11: findings would go here.","structured_body":null,"id":87131842679,"incoming":false,"private":true,"user_id":87007964534,"support_email":"agent@example.com","ticket_id":11,"to_emails":[],"created_at":"2026-11-19T10:18:00Z","updated_at":"2026-11-19T10:18:00Z","attachments":[{"id":87027974750,"name":"auth.redacted.har","content_type":"application/octet-stream","size":23,"created_at":"2026-11-19T10:18:00Z","updated_at":"2026-11-19T10:18:00Z","attachment_url":"https://acme.attachments-ind4.freshdesk.com/data/helpdesk/attachments/production/87027974750/original/auth.redacted.har?Expires=SCRUBBED&Signature=SCRUBBED&Key-Pair-Id=SCRUBBED"}]}'
+    headers:
+      cache-control:
+      - no-store
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:18:01 GMT
+      expires:
+      - Wed, 13 Oct 2010 00:00:00 UTC
+      location:
+      - https://acme.freshdesk.com/api/v2/conversations/87131842679
+      pragma:
+      - no-cache
+      server:
+      - cloudflare
+      status:
+      - 201 Created
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '632'
+      x-freshdesk-api-version:
+      - latest=v2; requested=v2
+      x-fw-ratelimiting-managed:
+      - 'true'
+      x-ratelimit-account-label:
+      - Account Overall Limit
+      x-ratelimit-account-remaining:
+      - '48'
+      x-ratelimit-account-total:
+      - '50'
+      x-ratelimit-account-used:
+      - '2'
+      x-ratelimit-account-window-end-at:
+      - '2026-11-19T10:19:00.000+00:00'
+      x-ratelimit-account-window-start-at:
+      - '2026-11-19T10:18:00.000+00:00'
+      x-ratelimit-remaining:
+      - '48.0'
+      x-ratelimit-total:
+      - '50.0'
+      x-ratelimit-used-currentrequest:
+      - '1'
+      x-server-processing-time-ms:
+      - '642'
+      x-trace-id:
+      - 00-b53b3766e454acba570b0835a264d44b-453fc83bf24b57aa-01
+      x-xss-protection:
+      - 1; mode=block
+    status:
+      code: 201
+      message: Created
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - acme.freshdesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://acme.freshdesk.com/api/v2/tickets/11/conversations?page=1&per_page=100
+  response:
+    body:
+      string: '[{"body":"<div>HAR Triage contract test 11: findings would go here.</div>","body_text":"HAR
+        Triage contract test 11: findings would go here.","structured_body":null,"id":87131842679,"incoming":false,"private":true,"user_id":87007964534,"support_email":"agent@example.com","source":2,"category":2,"to_emails":[],"from_email":"acme
+        <agent@example.com>","cc_emails":[],"bcc_emails":null,"email_failure_count":null,"outgoing_failures":null,"thread_id":null,"thread_message_id":null,"created_at":"2026-11-19T10:18:00Z","updated_at":"2026-11-19T10:18:00Z","last_edited_at":null,"last_edited_user_id":null,"attachments":[{"id":87027974750,"name":"auth.redacted.har","content_type":"application/octet-stream","size":23,"created_at":"2026-11-19T10:18:00Z","updated_at":"2026-11-19T10:18:00Z","attachment_url":"https://acme.attachments-ind4.freshdesk.com/data/helpdesk/attachments/production/87027974750/original/auth.redacted.har?Expires=SCRUBBED&Signature=SCRUBBED&Key-Pair-Id=SCRUBBED"}],"automation_id":null,"automation_type_id":null,"automation_channel_type":null,"oauth_app":null,"email_config_id":87000014024,"auto_response":false,"ticket_id":11,"threading_type":null,"delivery_details":{"failed_emails":[],"pending_emails":[]},"is_offline_note":false,"source_additional_info":null}]'
+    headers:
+      cache-control:
+      - no-store
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-length:
+      - '1716'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:18:01 GMT
+      expires:
+      - Wed, 13 Oct 2010 00:00:00 UTC
+      pragma:
+      - no-cache
+      server:
+      - cloudflare
+      status:
+      - 200 OK
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - accept-encoding
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '76'
+      x-freshdesk-api-version:
+      - latest=v2; requested=v2
+      x-fw-ratelimiting-managed:
+      - 'true'
+      x-ratelimit-account-label:
+      - Account Overall Limit
+      x-ratelimit-account-remaining:
+      - '47'
+      x-ratelimit-account-total:
+      - '50'
+      x-ratelimit-account-used:
+      - '3'
+      x-ratelimit-account-window-end-at:
+      - '2026-11-19T10:19:00.000+00:00'
+      x-ratelimit-account-window-start-at:
+      - '2026-11-19T10:18:00.000+00:00'
+      x-ratelimit-remaining:
+      - '47.0'
+      x-ratelimit-total:
+      - '50.0'
+      x-ratelimit-used-currentrequest:
+      - '1'
+      x-server-processing-time-ms:
+      - '88'
+      x-trace-id:
+      - 00-73b3a55463d5719042f71392d4e0e461-514af8dafed04411-01
+      x-xss-protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - acme.freshdesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://acme.freshdesk.com/api/v2/tickets/11
+  response:
+    body:
+      string: '{"cc_emails":[],"fwd_emails":[],"reply_cc_emails":[],"ticket_cc_emails":[],"ticket_bcc_emails":[],"fr_escalated":false,"spam":false,"email_config_id":87000014024,"group_id":null,"priority":1,"requester_id":87007966454,"responder_id":null,"source":2,"company_id":null,"status":2,"subject":"Contract
+        test: sign-in fails (HAR attached)","association_type":null,"support_email":null,"to_emails":null,"product_id":87000011377,"id":11,"type":null,"due_by":"2026-11-26T06:16:56Z","fr_due_by":"2026-11-20T03:16:56Z","is_escalated":false,"description":"<div>HAR
+        attached.</div>","description_text":"HAR attached.","custom_fields":{"cf_reference_number":null},"created_at":"2026-11-19T10:16:56Z","updated_at":"2026-11-19T10:18:00Z","tags":["har_contract"],"attachments":[{"id":87027974736,"content_type":"application/octet-stream","size":10317,"name":"auth.har","attachment_url":"https://s3.ap-south-1.amazonaws.com/ind-cdn.freshdesk.com/data/helpdesk/attachments/production/87027974736/original/auth.har?X-Amz-Algorithm=SCRUBBED&X-Amz-Credential=SCRUBBED&X-Amz-Date=SCRUBBED&X-Amz-Expires=SCRUBBED&X-Amz-SignedHeaders=SCRUBBED&X-Amz-Signature=SCRUBBED","created_at":"2026-11-19T10:16:56Z","updated_at":"2026-11-19T10:16:56Z"}],"source_info":null,"source_additional_info":null,"structured_description":null,"form_id":87000044821,"nr_due_by":null,"nr_escalated":false}'
+    headers:
+      cache-control:
+      - no-store
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-length:
+      - '1476'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:18:01 GMT
+      expires:
+      - Wed, 13 Oct 2010 00:00:00 UTC
+      pragma:
+      - no-cache
+      server:
+      - cloudflare
+      status:
+      - 200 OK
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - accept-encoding
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '47'
+      x-freshdesk-api-version:
+      - latest=v2; requested=v2
+      x-fw-ratelimiting-managed:
+      - 'true'
+      x-ratelimit-account-label:
+      - Account Overall Limit
+      x-ratelimit-account-remaining:
+      - '46'
+      x-ratelimit-account-total:
+      - '50'
+      x-ratelimit-account-used:
+      - '4'
+      x-ratelimit-account-window-end-at:
+      - '2026-11-19T10:19:00.000+00:00'
+      x-ratelimit-account-window-start-at:
+      - '2026-11-19T10:18:00.000+00:00'
+      x-ratelimit-remaining:
+      - '46.0'
+      x-ratelimit-total:
+      - '50.0'
+      x-ratelimit-used-currentrequest:
+      - '1'
+      x-server-processing-time-ms:
+      - '57'
+      x-trace-id:
+      - 00-1ebf7a78bad26ca2b656c65175cb8c73-eb74c21a5dae5504-01
+      x-xss-protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"tags":["har_contract_done"]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '30'
+      content-type:
+      - application/json
+      host:
+      - acme.freshdesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: PUT
+    uri: https://acme.freshdesk.com/api/v2/tickets/11
+  response:
+    body:
+      string: '{"cc_emails":[],"fwd_emails":[],"reply_cc_emails":[],"ticket_cc_emails":[],"ticket_bcc_emails":[],"spam":false,"email_config_id":87000014024,"fr_escalated":false,"group_id":null,"priority":1,"requester_id":87007966454,"responder_id":null,"source":2,"status":2,"subject":"Contract
+        test: sign-in fails (HAR attached)","company_id":null,"custom_fields":{"cf_reference_number":null},"description":"<div>HAR
+        attached.</div>","description_text":"HAR attached.","id":11,"type":null,"support_email":null,"to_emails":null,"product_id":87000011377,"source_info":null,"attachments":[{"id":87027974736,"content_type":"application/octet-stream","size":10317,"name":"auth.har","attachment_url":"https://s3.ap-south-1.amazonaws.com/ind-cdn.freshdesk.com/data/helpdesk/attachments/production/87027974736/original/auth.har?X-Amz-Algorithm=SCRUBBED&X-Amz-Credential=SCRUBBED&X-Amz-Date=SCRUBBED&X-Amz-Expires=SCRUBBED&X-Amz-SignedHeaders=SCRUBBED&X-Amz-Signature=SCRUBBED","created_at":"2026-11-19T10:16:56Z","updated_at":"2026-11-19T10:16:56Z"}],"is_escalated":false,"tags":["har_contract_done"],"nr_escalated":false,"created_at":"2026-11-19T10:16:56Z","updated_at":"2026-11-19T10:18:01Z","due_by":"2026-11-26T06:16:56Z","fr_due_by":"2026-11-20T03:16:56Z","nr_due_by":null,"structured_description":null,"form_id":87000044821}'
+    headers:
+      cache-control:
+      - no-store
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-length:
+      - '1427'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:18:01 GMT
+      expires:
+      - Wed, 13 Oct 2010 00:00:00 UTC
+      pragma:
+      - no-cache
+      server:
+      - cloudflare
+      status:
+      - 200 OK
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - accept-encoding
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '195'
+      x-freshdesk-api-version:
+      - latest=v2; requested=v2
+      x-fw-ratelimiting-managed:
+      - 'true'
+      x-ratelimit-account-label:
+      - Account Overall Limit
+      x-ratelimit-account-remaining:
+      - '45'
+      x-ratelimit-account-total:
+      - '50'
+      x-ratelimit-account-used:
+      - '5'
+      x-ratelimit-account-window-end-at:
+      - '2026-11-19T10:19:00.000+00:00'
+      x-ratelimit-account-window-start-at:
+      - '2026-11-19T10:18:00.000+00:00'
+      x-ratelimit-remaining:
+      - '45.0'
+      x-ratelimit-total:
+      - '50.0'
+      x-ratelimit-used-currentrequest:
+      - '1'
+      x-server-processing-time-ms:
+      - '208'
+      x-trace-id:
+      - 00-381de4c4db4ac8a1d813ac5786333ea2-c51d3af0d6a1a786-01
+      x-xss-protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - acme.freshdesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: DELETE
+    uri: https://acme.freshdesk.com/api/v2/attachments/87027974736
+  response:
+    body:
+      string: ''
+    headers:
+      cache-control:
+      - no-store
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      date:
+      - Thu, 19 Nov 2026 10:18:02 GMT
+      expires:
+      - Wed, 13 Oct 2010 00:00:00 UTC
+      pragma:
+      - no-cache
+      server:
+      - cloudflare
+      status:
+      - 204 No Content
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '137'
+      x-freshdesk-api-version:
+      - latest=v2; requested=v2
+      x-fw-ratelimiting-managed:
+      - 'true'
+      x-ratelimit-account-label:
+      - Account Overall Limit
+      x-ratelimit-account-remaining:
+      - '44'
+      x-ratelimit-account-total:
+      - '50'
+      x-ratelimit-account-used:
+      - '6'
+      x-ratelimit-account-window-end-at:
+      - '2026-11-19T10:19:00.000+00:00'
+      x-ratelimit-account-window-start-at:
+      - '2026-11-19T10:18:00.000+00:00'
+      x-ratelimit-remaining:
+      - '44.0'
+      x-ratelimit-total:
+      - '50.0'
+      x-ratelimit-used-currentrequest:
+      - '1'
+      x-server-processing-time-ms:
+      - '149'
+      x-trace-id:
+      - 00-bec63b2ea4ff801ef2f9305816941a5c-0137834408db774d-01
+      x-xss-protection:
+      - 1; mode=block
+    status:
+      code: 204
+      message: No Content
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - acme.freshdesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://acme.freshdesk.com/api/v2/tickets/11
+  response:
+    body:
+      string: '{"cc_emails":[],"fwd_emails":[],"reply_cc_emails":[],"ticket_cc_emails":[],"ticket_bcc_emails":[],"fr_escalated":false,"spam":false,"email_config_id":87000014024,"group_id":null,"priority":1,"requester_id":87007966454,"responder_id":null,"source":2,"company_id":null,"status":2,"subject":"Contract
+        test: sign-in fails (HAR attached)","association_type":null,"support_email":null,"to_emails":null,"product_id":87000011377,"id":11,"type":null,"due_by":"2026-11-26T06:16:56Z","fr_due_by":"2026-11-20T03:16:56Z","is_escalated":false,"description":"<div>HAR
+        attached.</div>","description_text":"HAR attached.","custom_fields":{"cf_reference_number":null},"created_at":"2026-11-19T10:16:56Z","updated_at":"2026-11-19T10:18:01Z","tags":["har_contract_done"],"attachments":[],"source_info":null,"source_additional_info":null,"structured_description":null,"form_id":87000044821,"nr_due_by":null,"nr_escalated":false}'
+    headers:
+      cache-control:
+      - no-store
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-length:
+      - '907'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:18:02 GMT
+      expires:
+      - Wed, 13 Oct 2010 00:00:00 UTC
+      pragma:
+      - no-cache
+      server:
+      - cloudflare
+      status:
+      - 200 OK
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - accept-encoding
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '62'
+      x-freshdesk-api-version:
+      - latest=v2; requested=v2
+      x-fw-ratelimiting-managed:
+      - 'true'
+      x-ratelimit-account-label:
+      - Account Overall Limit
+      x-ratelimit-account-remaining:
+      - '43'
+      x-ratelimit-account-total:
+      - '50'
+      x-ratelimit-account-used:
+      - '7'
+      x-ratelimit-account-window-end-at:
+      - '2026-11-19T10:19:00.000+00:00'
+      x-ratelimit-account-window-start-at:
+      - '2026-11-19T10:18:00.000+00:00'
+      x-ratelimit-remaining:
+      - '43.0'
+      x-ratelimit-total:
+      - '50.0'
+      x-ratelimit-used-currentrequest:
+      - '1'
+      x-server-processing-time-ms:
+      - '72'
+      x-trace-id:
+      - 00-2f7312f6fc832afb64732add4e0991f5-09b06bc255d290ac-01
+      x-xss-protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - acme.freshdesk.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://acme.freshdesk.com/api/v2/tickets/11/conversations?page=1&per_page=100
+  response:
+    body:
+      string: '[{"body":"<div>HAR Triage contract test 11: findings would go here.</div>","body_text":"HAR
+        Triage contract test 11: findings would go here.","structured_body":null,"id":87131842679,"incoming":false,"private":true,"user_id":87007964534,"support_email":"agent@example.com","source":2,"category":2,"to_emails":[],"from_email":"acme
+        <agent@example.com>","cc_emails":[],"bcc_emails":null,"email_failure_count":null,"outgoing_failures":null,"thread_id":null,"thread_message_id":null,"created_at":"2026-11-19T10:18:00Z","updated_at":"2026-11-19T10:18:00Z","last_edited_at":null,"last_edited_user_id":null,"attachments":[{"id":87027974750,"name":"auth.redacted.har","content_type":"application/octet-stream","size":23,"created_at":"2026-11-19T10:18:00Z","updated_at":"2026-11-19T10:18:00Z","attachment_url":"https://acme.attachments-ind4.freshdesk.com/data/helpdesk/attachments/production/87027974750/original/auth.redacted.har?Expires=SCRUBBED&Signature=SCRUBBED&Key-Pair-Id=SCRUBBED"}],"automation_id":null,"automation_type_id":null,"automation_channel_type":null,"oauth_app":null,"email_config_id":87000014024,"auto_response":false,"ticket_id":11,"threading_type":null,"delivery_details":{"failed_emails":[],"pending_emails":[]},"is_offline_note":false,"source_additional_info":null}]'
+    headers:
+      cache-control:
+      - no-store
+      cf-cache-status:
+      - DYNAMIC
+      connection:
+      - keep-alive
+      content-length:
+      - '1716'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Thu, 19 Nov 2026 10:18:02 GMT
+      expires:
+      - Wed, 13 Oct 2010 00:00:00 UTC
+      pragma:
+      - no-cache
+      server:
+      - cloudflare
+      status:
+      - 200 OK
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - accept-encoding
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '78'
+      x-freshdesk-api-version:
+      - latest=v2; requested=v2
+      x-fw-ratelimiting-managed:
+      - 'true'
+      x-ratelimit-account-label:
+      - Account Overall Limit
+      x-ratelimit-account-remaining:
+      - '42'
+      x-ratelimit-account-total:
+      - '50'
+      x-ratelimit-account-used:
+      - '8'
+      x-ratelimit-account-window-end-at:
+      - '2026-11-19T10:19:00.000+00:00'
+      x-ratelimit-account-window-start-at:
+      - '2026-11-19T10:18:00.000+00:00'
+      x-ratelimit-remaining:
+      - '42.0'
+      x-ratelimit-total:
+      - '50.0'
+      x-ratelimit-used-currentrequest:
+      - '1'
+      x-server-processing-time-ms:
+      - '90'
+      x-trace-id:
+      - 00-fa91123d54ba56ea89357d39a9141488-19084d896a0a731f-01
+      x-xss-protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+version: 1

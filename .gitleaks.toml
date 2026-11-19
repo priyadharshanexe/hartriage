@@ -9,5 +9,7 @@ description = """
 Golden HAR fixtures are recorded against tools/fixtures/fault_server.py, which mints
 deliberately expired JWTs with a random key that exists only while recording.
 They are worthless outside the test, and the tests need them raw to prove redaction.
+The helpdesk cassettes contain the same fixture HARs, downloaded back from the trial
+tickets they were attached to; everything else in them is scrubbed before writing.
 """
-paths = ['''tests/golden/hars/.*\.har$''', '''tools/fixtures/samples/.*\.har$''']
+paths = ['''tests/golden/hars/.*\.har$''', '''tools/fixtures/samples/.*\.har$''', '''tests/cassettes/.*\.yaml$''']

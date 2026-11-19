@@ -137,5 +137,116 @@ def freshdesk() -> None:
     print(json.dumps(tickets, indent=1))
 
 
+# ------------------------------------------------------------------ Zendesk
+
+
+def zendesk() -> None:
+    from tools.live.zd_setup import zendesk as client
+
+    s = state()
+    tickets = s.setdefault("zendesk", {})
+    with client() as z:
+
+        def upload(name: str, body: bytes, kind: str) -> dict[str, Any]:
+            r = z.post(
+                "/api/v2/uploads.json",
+                params={"filename": name},
+                content=body,
+                headers={"Content-Type": kind},
+                timeout=600,
+            )
+            r.raise_for_status()
+            return dict(r.json()["upload"])
+
+        def create(
+            key: str, subject: str, html: str, files: list[tuple[str, bytes]], email: str
+        ) -> str:
+            if key in tickets:
+                return str(tickets[key])
+            tokens = [
+                upload(n, b, "application/json" if n.endswith(".har") else "image/png")["token"]
+                for n, b in files
+            ]
+            r = z.post(
+                "/api/v2/tickets.json",
+                json={
+                    "ticket": {
+                        "subject": subject,
+                        "requester": {"name": "HAR Tester", "email": email},
+                        "comment": {"html_body": html, "uploads": tokens},
+                    }
+                },
+                timeout=120,
+            )
+            print(key, r.status_code, r.text[:200] if r.status_code >= 300 else "")
+            r.raise_for_status()
+            tickets[key] = str(r.json()["ticket"]["id"])
+            save(s)
+            return str(tickets[key])
+
+        create(
+            "single",
+            "Checkout says I am signed out (Chromium HAR)",
+            "<p>Checkout fails. HAR attached.</p>",
+            [har("chromium", "checkout-story")],
+            "har.tester+zd1@example.com",
+        )
+        # Several HAR files, a screenshot shown inline, and a later private comment with
+        # another HAR.
+        if "multi" not in tickets:
+            image = upload("screenshot.png", PNG, "image/png")
+            url = image["attachments"][0]["content_url"]
+            tokens = [
+                upload(n, b, "application/json")["token"]
+                for n, b in (har("chromium", "auth"), har("firefox", "cors"))
+            ]
+            r = z.post(
+                "/api/v2/tickets.json",
+                json={
+                    "ticket": {
+                        "subject": "Several problems, two HAR files and an inline screenshot",
+                        "requester": {"name": "HAR Tester", "email": "har.tester+zd2@example.com"},
+                        "comment": {
+                            "html_body": f'<p>Here is what I see:</p><p><img src="{url}" alt="screenshot"></p>',
+                            "uploads": [image["token"], *tokens],
+                        },
+                    }
+                },
+            )
+            print("multi", r.status_code, r.text[:200] if r.status_code >= 300 else "")
+            r.raise_for_status()
+            tickets["multi"] = str(r.json()["ticket"]["id"])
+            save(s)
+        if "multi_comment" not in tickets:
+            n, b = har("firefox", "network")
+            token = upload(n, b, "application/json")["token"]
+            r = z.put(
+                f"/api/v2/tickets/{tickets['multi']}.json",
+                json={
+                    "ticket": {
+                        "comment": {
+                            "html_body": "<p>Customer sent another recording.</p>",
+                            "public": False,
+                            "uploads": [token],
+                        }
+                    }
+                },
+            )
+            print("multi comment", r.status_code)
+            r.raise_for_status()
+            tickets["multi_comment"] = "added"
+            save(s)
+        big = big_har(45 * 1024 * 1024)
+        create(
+            "big",
+            "Large HAR near the 50 MB attachment limit",
+            "<p>Large recording.</p>",
+            [(big.name, big.read_bytes())],
+            "har.tester+zd3@example.com",
+        )
+        create("empty", "No attachment at all", "<p>No file.</p>", [], "har.tester+zd4@example.com")
+    print(json.dumps(tickets, indent=1))
+
+
 if __name__ == "__main__":
-    {"freshdesk": freshdesk}[sys.argv[1]]()
+    {"freshdesk": freshdesk, "zendesk": zendesk}[sys.argv[1]]()
