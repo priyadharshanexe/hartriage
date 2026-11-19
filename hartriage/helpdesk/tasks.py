@@ -39,7 +39,7 @@ from hartriage.services.intake import intake
 from hartriage.storage.s3 import get_storage
 from hartriage.summary.builder import Summary, to_html
 from hartriage.worker.celery_app import app
-from hartriage.worker.dispatch import enqueue_note
+from hartriage.worker.dispatch import enqueue_note, enqueue_ticket
 
 log = structlog.get_logger()
 ATTACHMENT_LIMITS = {"zendesk": 50 * 1024 * 1024, "freshdesk": 20 * 1024 * 1024}
@@ -264,3 +264,52 @@ def post_note(self: Task, analysis_id: str) -> None:
             raise self.retry(countdown=min(600, 15 * 2**self.request.retries)) from exc
         finally:
             client.close()
+
+
+@app.task(name="hartriage.poll_tagged_tickets")
+def poll_tagged_tickets() -> int:
+    """Find tagged tickets on helpdesks whose automations can't fire on a tag change
+    (Freshdesk), and ingest each one exactly as if its webhook had arrived.
+
+    A ticket is recorded once per version (id + updated_at), so a ticket that stays
+    tagged is not re-queued every minute, while a re-tagged ticket is picked up again.
+    """
+    settings = get_settings()
+    if settings.freshdesk_poll_seconds <= 0:
+        return 0
+    queued: list[uuid.UUID] = []
+    with session_scope() as db:
+        connections = db.scalars(
+            select(HelpdeskConnection).where(HelpdeskConnection.platform == "freshdesk")
+        ).all()
+        for conn in connections:
+            client = registry.client(settings, conn)
+            try:
+                tagged = client.tagged_tickets(settings.trigger_tag)
+            except HelpdeskError as exc:
+                log.warning("poll_failed", connection=str(conn.id), error=str(exc))
+                conn.last_webhook_status = f"poll error: {exc}"[:40]
+                db.commit()
+                continue
+            finally:
+                client.close()
+            for ticket_id, updated_at in tagged:
+                receipt = WebhookReceipt(
+                    connection_id=conn.id,
+                    delivery_key=f"poll:{ticket_id}:{updated_at}"[:200],
+                    ticket_id=ticket_id,
+                )
+                try:
+                    with db.begin_nested():
+                        db.add(receipt)
+                    db.commit()
+                except IntegrityError:
+                    db.rollback()
+                    continue
+                conn.last_webhook_at = datetime.now(UTC)
+                conn.last_webhook_status = f"polled: ticket {ticket_id}"
+                db.commit()
+                queued.append(receipt.id)
+    for receipt_id in queued:
+        enqueue_ticket(receipt_id)
+    return len(queued)

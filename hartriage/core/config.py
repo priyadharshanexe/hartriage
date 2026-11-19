@@ -65,6 +65,9 @@ class Settings(BaseSettings):
     # Helpdesk integration
     trigger_tag: str = "har_analyze"
     done_tag: str = "har_analyzed"
+    # Freshdesk automations do not fire when only a tag changes, so tagged tickets are
+    # also found by polling the search API. 0 turns polling off.
+    freshdesk_poll_seconds: int = 60
     helpdesk_timeout_seconds: float = 30.0
     helpdesk_base_url_override: str | None = None  # points both clients at a fake server
 

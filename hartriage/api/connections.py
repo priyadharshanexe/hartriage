@@ -89,15 +89,20 @@ def setup_steps(settings: Settings, conn: HelpdeskConnection) -> list[str]:
             f"Tag a ticket that has a .har attachment with {settings.trigger_tag}. A private note appears"
             f" within a minute, and the tag becomes {settings.done_tag}.",
         ]
+    # Freshdesk has no "tag is added" event, and its "Ticket is updated" event does not
+    # fire when only a tag changes (found on a live trial). Tagged tickets are found by
+    # polling; the webhook below is optional and only speeds up other updates.
     return [
-        "Admin → Workflows → Automations → Ticket updates → New rule:"
-        f" event 'Tag is added: {settings.trigger_tag}'.",
-        f"Action 'Trigger webhook': POST {url}, encoding JSON, content"
-        ' {"ticket_id": {{ticket.id}}}.',
-        f"Under custom headers add {SECRET_HEADER}: the secret shown once when this connection was created"
-        " (rotate it here if lost).",
+        f"Nothing else is needed for tagging: HAR Triage checks Freshdesk every"
+        f" {max(settings.freshdesk_poll_seconds, 1)} seconds for tickets tagged"
+        f" {settings.trigger_tag}.",
         f"Tag a ticket that has a .har attachment with {settings.trigger_tag}. A private note appears"
-        f" within a minute, and the tag becomes {settings.done_tag}.",
+        f" within about a minute, and the tag becomes {settings.done_tag}.",
+        "Optional, for faster pick-up when an agent also changes the ticket: Admin → Workflows →"
+        " Automations → Ticket updates → New rule, performed by Agent, event 'Ticket is Updated',"
+        f" condition 'Tag contains all of {settings.trigger_tag}', action 'Trigger webhook': POST"
+        f' {url}, JSON content {{"ticket_id": {{{{ticket.id}}}}}}, custom header {SECRET_HEADER}:'
+        " the secret shown once when this connection was created (rotate it here if lost).",
     ]
 
 

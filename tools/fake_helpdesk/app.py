@@ -255,6 +255,29 @@ def fd_ticket(account: str, ticket_id: int, request: Request) -> Response:
     )
 
 
+@app.get("/freshdesk/{account}/api/v2/search/tickets")
+def fd_search(account: str, request: Request, query: str, page: int = 1) -> Response:
+    """Only the one query HAR Triage sends: "tag:'<tag>'"."""
+    if (gate := _gate("freshdesk", request)) is not None:
+        return gate
+    tag = query.strip('"').removeprefix("tag:").strip("'")
+    hits = [
+        t
+        for (p, a, _), t in sorted(TICKETS.items())
+        if p == "freshdesk" and a == account and tag in t.tags
+    ]
+    chunk = hits[(page - 1) * 30 : page * 30]
+    return JSONResponse(
+        {
+            "total": len(hits),
+            "results": [
+                {"id": t.id, "tags": t.tags, "updated_at": f"v{len(t.comments)}-{','.join(t.tags)}"}
+                for t in chunk
+            ],
+        }
+    )
+
+
 @app.get("/freshdesk/{account}/api/v2/tickets/{ticket_id}/conversations")
 def fd_conversations(account: str, ticket_id: int, request: Request, page: int = 1) -> Response:
     if (gate := _gate("freshdesk", request)) is not None:

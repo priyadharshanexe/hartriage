@@ -17,7 +17,11 @@ from hartriage.core.logging import configure
 
 settings = get_settings()
 
-app = Celery("hartriage", broker=settings.redis_url, include=["hartriage.worker.tasks"])
+app = Celery(
+    "hartriage",
+    broker=settings.redis_url,
+    include=["hartriage.worker.tasks", "hartriage.helpdesk.tasks"],
+)
 app.conf.update(
     task_acks_late=True,
     task_reject_on_worker_lost=True,
@@ -34,6 +38,16 @@ app.conf.update(
     broker_transport_options={"visibility_timeout": 3600},
     beat_schedule={
         "retention-sweep": {"task": "hartriage.retention_sweep", "schedule": crontab(minute=17)},
+        **(
+            {
+                "poll-tagged-tickets": {
+                    "task": "hartriage.poll_tagged_tickets",
+                    "schedule": float(settings.freshdesk_poll_seconds),
+                }
+            }
+            if settings.freshdesk_poll_seconds > 0
+            else {}
+        ),
     },
 )
 

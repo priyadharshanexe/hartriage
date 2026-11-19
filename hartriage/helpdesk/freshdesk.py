@@ -9,6 +9,7 @@ the ticket id: everything else is re-read from the Freshdesk API.
 from __future__ import annotations
 
 import hashlib
+import re
 import time
 
 import httpx
@@ -16,6 +17,7 @@ import httpx
 from hartriage.core.security import constant_time_equals
 from hartriage.helpdesk.base import Attachment, AuthFailed, HelpdeskClient, Ticket
 
+TAG = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 SECRET_HEADER = "x-hartriage-secret"  # noqa: S105 - a header name, not a secret
 
 
@@ -146,6 +148,23 @@ class FreshdeskClient(HelpdeskClient):
         if add not in tags:
             tags.append(add)
         self.request("PUT", f"/api/v2/tickets/{ticket.id}", json={"tags": tags})
+
+    def tagged_tickets(self, tag: str) -> list[tuple[str, str]]:
+        """Found live: a Freshdesk "Ticket is updated" automation does not fire when an
+        agent only adds a tag, so tagging alone never sends the webhook. The search
+        API finds tagged tickets within seconds instead."""
+        if not TAG.match(tag):
+            raise ValueError("tags may only contain letters, digits, _ and -")
+        found: list[tuple[str, str]] = []
+        for page in range(1, 11):  # the search API stops at 10 pages of 30
+            data = self.request(
+                "GET", "/api/v2/search/tickets", params={"query": f"\"tag:'{tag}'\"", "page": page}
+            ).json()
+            results = data.get("results") or []
+            found.extend((str(t["id"]), str(t.get("updated_at") or "")) for t in results)
+            if len(results) < 30:
+                break
+        return found
 
     def remove_attachment(self, ticket: Ticket, attachment: Attachment) -> None:
         self.request("DELETE", f"/api/v2/attachments/{attachment.id}")

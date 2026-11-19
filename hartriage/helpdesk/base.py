@@ -185,6 +185,11 @@ class HelpdeskClient(ABC):
     @abstractmethod
     def swap_tags(self, ticket: Ticket, remove: str, add: str) -> None: ...
 
+    def tagged_tickets(self, tag: str) -> list[tuple[str, str]]:
+        """(ticket id, updated_at) of open tickets carrying `tag`, for helpdesks whose
+        automations cannot fire on a tag change. Webhook-only helpdesks return []."""
+        return []
+
     @abstractmethod
     def remove_attachment(self, ticket: Ticket, attachment: Attachment) -> None:
         """Remove the original (unredacted) attachment from the ticket."""

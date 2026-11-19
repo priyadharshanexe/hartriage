@@ -326,3 +326,32 @@ def test_tag_is_cleared_when_there_is_nothing_new(client: Any, admin: Any) -> No
     zendesk_hook(client, conn, tid, invocation="inv-retag")
     assert t.tags == ["har_analyzed"]
     assert len(private_notes("zendesk", tid)) == 1
+
+
+def test_freshdesk_tagged_tickets_are_found_by_polling(client: Any, admin: Any) -> None:
+    """Found on a live Freshdesk trial: a "Ticket is updated" automation does not fire
+    when an agent only adds a tag, so no webhook ever arrives. Polling finds the ticket."""
+    from hartriage.helpdesk.tasks import poll_tagged_tickets
+
+    connect_freshdesk(admin)
+    tagged = ticket("freshdesk")
+    untagged = ticket("freshdesk", tags=[])
+    assert poll_tagged_tickets() == 1
+    [note] = private_notes("freshdesk", tagged)
+    assert "Likely cause" in note.body
+    assert fake.TICKETS[("freshdesk", "acme", tagged)].tags == ["har_analyzed"]
+    assert private_notes("freshdesk", untagged) == []
+    # Polling again finds nothing new: the tag is gone, and nothing is posted twice.
+    assert poll_tagged_tickets() == 0
+    assert len(private_notes("freshdesk", tagged)) == 1
+
+
+def test_polling_survives_a_rate_limited_helpdesk(client: Any, admin: Any) -> None:
+    from hartriage.helpdesk.tasks import poll_tagged_tickets
+
+    connect_freshdesk(admin)
+    tid = ticket("freshdesk")
+    fake.FAIL_NEXT["freshdesk"] = (429, 30)
+    assert poll_tagged_tickets() == 0  # skipped this round, no crash
+    assert poll_tagged_tickets() == 1
+    assert len(private_notes("freshdesk", tid)) == 1
