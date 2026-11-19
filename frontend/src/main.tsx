@@ -2,7 +2,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
+import { MotionConfig } from "motion/react";
 import { App } from "./App";
+import { applyTheme, readTheme } from "./components/Layout";
 import { AuthProvider } from "./auth/AuthProvider";
 import { ApiError } from "./lib/api";
 // Self-hosted (the CSP allows only 'self'). Latin subsets only.
@@ -26,11 +28,15 @@ const queryClient = new QueryClient({
   },
 });
 
+// Before the first paint, so a stored light/system choice never flashes dark.
+applyTheme(readTheme());
+
 const root = document.getElementById("root");
 if (!root) throw new Error("#root is missing from index.html");
 
 createRoot(root).render(
   <StrictMode>
+    <MotionConfig reducedMotion="user">
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
@@ -38,5 +44,6 @@ createRoot(root).render(
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
+    </MotionConfig>
   </StrictMode>,
 );

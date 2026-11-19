@@ -46,7 +46,7 @@ export function applyFilter(rows: EntryRow[], f: WaterfallFilter): EntryRow[] {
 
 /** A DevTools-style timeline. Virtualised: only the rows on screen are rendered,
  *  so a file with 50,000 requests scrolls as smoothly as one with 50. */
-export function Waterfall({ rows, selected, onSelect, highlight }: { rows: EntryRow[]; selected: number | null; onSelect: (n: number) => void; highlight: Set<number> }) {
+export function Waterfall({ rows, selected, onSelect, highlight, pulse }: { rows: EntryRow[]; selected: number | null; onSelect: (n: number) => void; highlight: Set<number>; pulse?: Set<number> }) {
   const parent = useRef<HTMLDivElement>(null);
   const span = useMemo(() => {
     let end = 0;
@@ -57,7 +57,7 @@ export function Waterfall({ rows, selected, onSelect, highlight }: { rows: Entry
   // just appear.
   const [intro, setIntro] = useState(true);
   useEffect(() => {
-    const timer = window.setTimeout(() => setIntro(false), 900);
+    const timer = window.setTimeout(() => setIntro(false), 1700);
     return () => window.clearTimeout(timer);
   }, []);
   const virtualizer = useVirtualizer({ count: rows.length, getScrollElement: () => parent.current, estimateSize: () => ROW, overscan: 12 });
@@ -101,6 +101,7 @@ export function Waterfall({ rows, selected, onSelect, highlight }: { rows: Entry
                     : highlight.has(r.number)
                       ? "border-l-medium bg-medium/10 hover:bg-medium/20"
                       : "border-l-transparent hover:bg-paper-2",
+                  pulse?.has(r.number) && "pulse-row",
                 )}
                 style={{ top: 0, height: ROW, transform: `translateY(${item.start}px)` }}
               >
@@ -118,13 +119,15 @@ export function Waterfall({ rows, selected, onSelect, highlight }: { rows: Entry
                 <span className="relative h-3 w-full max-md:hidden" aria-hidden="true">
                   <span
                     className={cx("absolute top-0 flex h-3 overflow-hidden rounded-[2px]", intro && "animate-grow-x")}
-                    style={{ left: `${left}%`, width: `${width}%`, animationDelay: intro ? `${Math.min(item.index, 20) * 15}ms` : undefined }}
+                    // Each bar starts growing when the playhead reaches its real start time.
+                    style={{ left: `${left}%`, width: `${width}%`, animationDelay: intro ? `${Math.round(left * 12)}ms` : undefined }}
                   >
                     {PHASES.map((p) =>
                       phases[p] ? <span key={p} className={PHASE_CLASS[p]} style={{ width: `${((phases[p] ?? 0) / total) * 100}%` }} /> : null,
                     )}
                     {r.status === 0 && <span className="h-full w-full bg-critical" />}
                   </span>
+                  {intro && <span className="playhead" />}
                 </span>
               </button>
             );

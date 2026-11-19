@@ -1,12 +1,16 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
+import { Magnetic, Reveal, RollingNumber, Spotlight, Stamp } from "../components/fx";
 import { RequestDetail } from "../components/RequestDetail";
-import { Button, CopyButton, EmptyState, ErrorState, Input, LoadingState, Notice, Redacted, Select, SeverityBadge, Stat, Tag } from "../components/ui";
+import { Button, CopyButton, cx, EmptyState, ErrorState, Input, LoadingState, Notice, Redacted, Select, SeverityBadge, Tag } from "../components/ui";
 import { NO_FILTER, Waterfall, type WaterfallFilter, applyFilter, isFiltered } from "../components/Waterfall";
 import { api } from "../lib/api";
 import { bytes, dateTime, relative } from "../lib/format";
+import { EASE_OUT, POP } from "../lib/motion";
+import { caseTitle } from "../lib/transition";
 import type { Analysis, EntriesPage, EntryRow, Finding, Summary } from "../lib/types";
 import { SourceBadge } from "./HistoryPage";
 
@@ -32,6 +36,7 @@ export function kbPath(url: string): string | null {
 }
 
 const LINK = "font-bold text-signal underline-offset-2 hover:underline";
+const EMPTY = new Set<number>();
 
 export function AnalysisPage() {
   const { id = "" } = useParams();
@@ -48,7 +53,10 @@ export function AnalysisPage() {
 
   const [selected, setSelected] = useState<number | null>(null);
   const [filter, setFilter] = useState<WaterfallFilter>(NO_FILTER);
-  const [highlight, setHighlight] = useState<Set<number>>(new Set());
+  const [highlight, setHighlight] = useState<Set<number>>(EMPTY);
+  // Hovering a finding lights up its requests in the waterfall; jumping to them pulses them.
+  const [linked, setLinked] = useState<Set<number>>(EMPTY);
+  const [pulse, setPulse] = useState<Set<number>>(EMPTY);
   const [rerunning, setRerunning] = useState(false);
   const [awaitingRerun, setAwaitingRerun] = useState(false);
   const [notice, setNotice] = useState<{ text: string; tone: "ok" | "bad" } | null>(null);
@@ -74,6 +82,7 @@ export function AnalysisPage() {
     void queryClient.invalidateQueries({ queryKey: ["entries", id] });
   }, [awaitingRerun, status, queryClient, id]);
   const rows = useMemo(() => applyFilter(entries.data?.rows ?? [], filter), [entries.data, filter]);
+  const shown = useMemo(() => new Set([...highlight, ...linked]), [highlight, linked]);
 
   if (analysis.isPending) return <LoadingState />;
   if (analysis.isError) {
@@ -94,12 +103,15 @@ export function AnalysisPage() {
   function showRequests(f: Finding) {
     setFilter({ ...NO_FILTER, numbers: new Set(f.entries) });
     setHighlight(new Set(f.entries));
+    setPulse(new Set(f.entries));
+    window.setTimeout(() => setPulse(EMPTY), 1900);
+    document.getElementById("requests")?.scrollIntoView({ behavior: "smooth", block: "start" });
     open(f.entry);
   }
 
   function clearFilters() {
     setFilter(NO_FILTER);
-    setHighlight(new Set());
+    setHighlight(EMPTY);
   }
 
   async function rerun() {
@@ -123,7 +135,7 @@ export function AnalysisPage() {
 
   return (
     <div>
-      <header className="animate-rise flex flex-wrap items-start justify-between gap-4">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2 text-sm text-ink-3">
             <SourceBadge analysis={a} />
@@ -131,7 +143,9 @@ export function AnalysisPage() {
               analysed <span title={dateTime(a.finished_at ?? a.created_at)}>{relative(a.finished_at ?? a.created_at)}</span>
             </span>
           </div>
-          <h1 className="mt-2 font-mono text-lg font-medium break-words text-ink [overflow-wrap:anywhere]">{a.filename ?? "Analysis"}</h1>
+          <h1 className="mt-2 font-mono text-lg font-medium break-words text-ink [overflow-wrap:anywhere]" style={caseTitle(a.id)}>
+            {a.filename ?? "Analysis"}
+          </h1>
         </div>
         {done && canEdit && (
           <div className="flex flex-wrap gap-2">
@@ -144,13 +158,15 @@ export function AnalysisPage() {
           </div>
         )}
       </header>
-      {notice && (
-        <div className="mt-4">
-          <Notice tone={notice.tone} onDone={clearNotice}>
-            {notice.text}
-          </Notice>
-        </div>
-      )}
+      <AnimatePresence>
+        {notice && (
+          <div className="mt-4">
+            <Notice tone={notice.tone} onDone={clearNotice}>
+              {notice.text}
+            </Notice>
+          </div>
+        )}
+      </AnimatePresence>
 
       {a.status !== "done" ? (
         <div className="mt-8">
@@ -158,11 +174,11 @@ export function AnalysisPage() {
         </div>
       ) : (
         <>
-          {a.summary && <Answer id={id} analysis={a} summary={a.summary} />}
+          {a.summary && <Bento id={id} analysis={a} summary={a.summary} />}
 
           <nav
             aria-label="On this page"
-            className="sticky top-[57px] z-10 -mx-4 mt-10 flex gap-1 overflow-x-auto border-y border-rule bg-paper/95 px-4 py-2 text-sm backdrop-blur-sm sm:-mx-6 sm:px-6 md:top-0 md:-mx-10 md:px-10"
+            className="sticky top-[57px] z-10 -mx-4 mt-10 flex gap-1 overflow-x-auto border-y border-rule bg-paper/90 px-4 py-2 text-sm backdrop-blur-md sm:-mx-6 sm:px-6 md:top-0 md:-mx-10 md:px-10"
           >
             {[
               ["#answer", "Answer"],
@@ -170,7 +186,7 @@ export function AnalysisPage() {
               ["#findings", `Findings ${findingCount ?? ""}`],
               ["#requests", `Requests ${entries.data?.rows.length ?? ""}`],
             ].map(([href, label]) => (
-              <a key={href} href={href} className="rounded-full px-3 py-1 whitespace-nowrap text-ink-3 transition-colors duration-150 hover:bg-paper-2 hover:text-ink">
+              <a key={href} href={href} className="rounded-full px-3 py-1 whitespace-nowrap text-ink-3 transition-colors duration-150 hover:bg-raised hover:text-ink">
                 {label}
               </a>
             ))}
@@ -178,10 +194,13 @@ export function AnalysisPage() {
 
           {a.summary && <Details summary={a.summary} />}
 
-          <section id="findings" aria-labelledby="findings-heading" className="scroll-mt-28 pt-12">
-            <h2 id="findings-heading" className="mb-5 flex items-baseline gap-3 font-display text-2xl font-medium">
-              Findings <span className="font-mono text-base text-ink-3">{findingCount ?? "…"}</span>
-            </h2>
+          <section id="findings" aria-labelledby="findings-heading" className="scroll-mt-28 pt-14">
+            <Reveal>
+              <h2 id="findings-heading" className="mb-1 flex items-baseline gap-3 font-display text-3xl font-semibold tracking-[-0.01em]">
+                Findings <span className="font-mono text-lg font-normal text-ink-3">{findingCount ?? "…"}</span>
+              </h2>
+              <p className="mb-6 text-sm text-ink-3">Point at a finding to see its requests light up in the timeline below.</p>
+            </Reveal>
             {findings.isPending ? (
               <LoadingState />
             ) : findings.isError ? (
@@ -189,21 +208,29 @@ export function AnalysisPage() {
             ) : findings.data.items.length === 0 ? (
               <EmptyState title="No findings">Every request succeeded and nothing was slow. The problem may not have been recorded.</EmptyState>
             ) : (
-              <ol className="space-y-3">
+              <ol className="grid gap-3 xl:grid-cols-2">
                 {findings.data.items.map((f, i) => (
-                  <FindingItem key={f.id} finding={f} index={i} onShow={() => showRequests(f)} />
+                  <FindingItem
+                    key={f.id}
+                    finding={f}
+                    index={i}
+                    onShow={() => showRequests(f)}
+                    onHover={(on) => setLinked(on ? new Set(f.entries) : EMPTY)}
+                  />
                 ))}
               </ol>
             )}
           </section>
 
-          <section id="requests" aria-labelledby="requests-heading" className="scroll-mt-28 space-y-3 pt-12">
-            <h2 id="requests-heading" className="flex items-baseline gap-3 font-display text-2xl font-medium">
-              Requests
-              <span className="font-mono text-base text-ink-3">
-                {entries.data ? (filtered ? `${rows.length} of ${entries.data.rows.length}` : entries.data.rows.length) : "…"}
-              </span>
-            </h2>
+          <section id="requests" aria-labelledby="requests-heading" className="scroll-mt-28 space-y-3 pt-14">
+            <Reveal>
+              <h2 id="requests-heading" className="flex items-baseline gap-3 font-display text-3xl font-semibold tracking-[-0.01em]">
+                Requests
+                <span className="font-mono text-lg font-normal text-ink-3">
+                  {entries.data ? (filtered ? `${rows.length} of ${entries.data.rows.length}` : entries.data.rows.length) : "…"}
+                </span>
+              </h2>
+            </Reveal>
             <div className="flex flex-wrap items-center gap-2">
               <label className="flex h-10 cursor-pointer items-center gap-2 rounded-[5px] border border-rule-2 bg-card px-3 text-sm transition-colors hover:border-ink-3">
                 <input type="checkbox" className="h-4 w-4 accent-[var(--primary)]" checked={filter.failedOnly} onChange={(e) => setFilter({ ...filter, failedOnly: e.target.checked, numbers: null })} />
@@ -249,7 +276,7 @@ export function AnalysisPage() {
                 {filtered ? "Try a different host, a lower time, or other search text." : "The recording is empty."}
               </EmptyState>
             ) : (
-              <Waterfall rows={rows} selected={selected} onSelect={open} highlight={highlight} />
+              <Waterfall rows={rows} selected={selected} onSelect={open} highlight={shown} pulse={pulse} />
             )}
           </section>
           {drawer && selected !== null && <RequestDetail analysisId={id} number={selected} onClose={closeDetail} />}
@@ -287,73 +314,176 @@ const LABELS: Record<string, [string, string]> = {
   private_keys: ["private key", "private keys"],
 };
 
-/** The hero: the likely cause, highlighted, and what to do about it. */
-function Answer({ id, analysis: a, summary }: { id: string; analysis: Analysis; summary: Summary }) {
+/** "Copy for ticket": the label morphs into a check, and a small "copied" token flies off. */
+function CopyForTicket({ id }: { id: string }) {
+  const reduce = useReducedMotion();
+  const [state, setState] = useState<"idle" | "busy" | "done" | "failed">("idle");
+  const [flights, setFlights] = useState<number[]>([]);
+  async function copy() {
+    setState("busy");
+    try {
+      await navigator.clipboard.writeText(await api<string>(`/v1/analyses/${id}/export`, { query: { format: "md" }, text: true }));
+      setState("done");
+      const key = Date.now();
+      setFlights((f) => [...f, key]);
+      window.setTimeout(() => setFlights((f) => f.filter((k) => k !== key)), 900);
+    } catch {
+      setState("failed");
+    }
+    window.setTimeout(() => setState("idle"), 2200);
+  }
+  return (
+    <span className="relative inline-flex">
+      <Magnetic>
+        <motion.button
+          type="button"
+          layout
+          onClick={() => void copy()}
+          disabled={state === "busy"}
+          className="inline-flex h-12 items-center gap-2.5 rounded-[8px] bg-primary px-5 text-base font-bold text-on-primary shadow-[0_8px_24px_-12px_var(--primary)] transition-[filter] hover:brightness-110 disabled:opacity-60"
+          whileTap={reduce ? undefined : { scale: 0.96 }}
+        >
+          <AnimatePresence mode="popLayout" initial={false}>
+            {state === "done" ? (
+              <motion.span key="done" className="inline-flex items-center gap-2" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={POP}>
+                <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <motion.path d="M3 8.5l3.2 3L13 4.5" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.3 }} />
+                </svg>
+                Copied
+              </motion.span>
+            ) : (
+              <motion.span key="idle" className="inline-flex items-center gap-2" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={POP}>
+                <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <rect x="4" y="3" width="9" height="11" rx="1.5" />
+                  <path d="M6.5 3V2h4v1" />
+                </svg>
+                {state === "failed" ? "Copy failed" : "Copy for ticket"}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
+      </Magnetic>
+      {!reduce &&
+        flights.map((k) => (
+          <motion.span
+            key={k}
+            aria-hidden="true"
+            className="pointer-events-none absolute top-1 left-1/2 rounded-full bg-highlight px-2 py-0.5 font-mono text-[0.7rem] font-bold text-highlight-ink"
+            initial={{ opacity: 1, x: "-50%", y: 0, scale: 0.9 }}
+            animate={{ opacity: 0, x: "40%", y: -46, scale: 1, rotate: -6 }}
+            transition={{ duration: 0.8, ease: EASE_OUT }}
+          >
+            summary.md
+          </motion.span>
+        ))}
+    </span>
+  );
+}
+
+function Tile({ children, className, delay = 0, label }: { children: React.ReactNode; className?: string; delay?: number; label?: string }) {
+  const reduce = useReducedMotion();
+  return (
+    <motion.div
+      className={cx("rounded-[16px] border border-rule bg-card p-5", className)}
+      initial={reduce ? false : { opacity: 0, y: 18, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ type: "spring", stiffness: 260, damping: 26, delay }}
+    >
+      {label && <p className="text-sm font-bold text-ink-3">{label}</p>}
+      {children}
+    </motion.div>
+  );
+}
+
+/** The answer page, as tiles of different weight: the cause first, then the evidence. */
+function Bento({ id, analysis: a, summary }: { id: string; analysis: Analysis; summary: Summary }) {
   const r = a.redaction;
   const secrets = Object.entries(r.secrets ?? {}).filter(([, v]) => v > 0);
+  const failed = a.stats?.failed ?? 0;
   return (
-    <section id="answer" aria-labelledby="answer-heading" className="scroll-mt-28 pt-8">
-      <h2 id="answer-heading" className="animate-fade text-sm font-bold text-ink-3">
-        Likely cause
-      </h2>
-      <p className="mt-3 max-w-4xl font-display text-[1.75rem] leading-[1.22] font-medium tracking-[-0.01em] text-ink sm:text-[2.25rem]" data-testid="likely-cause">
-        <span className="highlighter">
-          <Redacted text={summary.likely_cause} />
-        </span>
-      </p>
-      <div className="animate-rise mt-6 flex max-w-3xl gap-3" style={{ animationDelay: "380ms" }}>
-        <span aria-hidden="true" className="mt-0.5 font-bold text-signal">
-          →
-        </span>
-        <p className="text-lg leading-snug text-ink">
-          <span className="sr-only">Next step: </span>
-          {summary.next_step}
-        </p>
-      </div>
-      <div className="animate-rise mt-6 flex flex-wrap gap-2" style={{ animationDelay: "440ms" }}>
-        <CopyButton variant="primary" label="Copy for ticket" getText={() => api<string>(`/v1/analyses/${id}/export`, { query: { format: "md" }, text: true })} />
-        <CopyButton label="Copy as plain text" getText={() => api<string>(`/v1/analyses/${id}/export`, { query: { format: "txt" }, text: true })} />
-        <Button variant="ghost" onClick={() => void exportJson(id)}>
-          JSON
-        </Button>
-      </div>
+    <section id="answer" aria-labelledby="answer-heading" className="mt-8 scroll-mt-28">
+      <div className="grid gap-3 lg:grid-cols-12">
+        <Tile className="relative overflow-hidden p-6 sm:p-8 lg:col-span-8 lg:row-span-2">
+          <h2 id="answer-heading" className="text-sm font-bold text-ink-3">
+            Likely cause
+          </h2>
+          <p className="mt-4 font-display text-[2rem] leading-[1.12] font-semibold tracking-[-0.015em] text-ink sm:text-[2.75rem]" data-testid="likely-cause">
+            <span className="highlighter">
+              <Redacted text={summary.likely_cause} />
+            </span>
+          </p>
+          <motion.div className="mt-7 flex max-w-3xl gap-3" initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.55, duration: 0.35, ease: EASE_OUT }}>
+            <span aria-hidden="true" className="mt-1 font-bold text-signal">
+              →
+            </span>
+            <p className="text-lg leading-snug text-ink-2">
+              <span className="sr-only">Next step: </span>
+              {summary.next_step}
+            </p>
+          </motion.div>
+          <motion.div className="mt-8 flex flex-wrap items-center gap-2" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.3, ease: EASE_OUT }}>
+            <CopyForTicket id={id} />
+            <CopyButton label="Copy as plain text" getText={() => api<string>(`/v1/analyses/${id}/export`, { query: { format: "txt" }, text: true })} />
+            <Button variant="ghost" onClick={() => void exportJson(id)}>
+              JSON
+            </Button>
+          </motion.div>
+        </Tile>
 
-      <dl className="animate-fade mt-8 flex flex-wrap gap-x-8 gap-y-3" style={{ animationDelay: "500ms" }}>
-        <Stat label="Requests">{a.entry_count}</Stat>
-        <Stat label="Failed">{a.stats?.failed ?? "—"}</Stat>
-        <Stat label="Hosts">{a.stats?.host_count ?? "—"}</Stat>
-        <Stat label="Uploaded">{bytes(a.original_size_bytes)}</Stat>
-        <Stat label="Deleted">
-          <span title={dateTime(a.expires_at)}>{relative(a.expires_at)}</span>
-        </Stat>
-        {a.engine_version && <Stat label="Engine">{a.engine_version}</Stat>}
-      </dl>
+        <Tile className="grid grid-cols-2 gap-4 lg:col-span-4" delay={0.08}>
+          {[
+            ["Requests", a.entry_count, "text-ink"],
+            ["Failed", failed, failed ? "text-critical" : "text-ink"],
+            ["Hosts", a.stats?.host_count ?? 0, "text-ink"],
+            ["Seconds", Math.round(a.stats?.duration_seconds ?? 0), "text-ink"],
+          ].map(([label, value, tone]) => (
+            <div key={String(label)}>
+              <p className="text-xs text-ink-3">{label}</p>
+              <p className={cx("mt-1 font-display text-4xl leading-none font-semibold", String(tone))}>
+                <RollingNumber value={Number(value)} />
+              </p>
+            </div>
+          ))}
+          <p className="col-span-2 border-t border-rule pt-3 text-xs text-ink-3">
+            {bytes(a.original_size_bytes)} uploaded · deleted <span title={dateTime(a.expires_at)}>{relative(a.expires_at)}</span>
+            {a.engine_version && <> · engine {a.engine_version}</>}
+          </p>
+        </Tile>
 
-      <div className="animate-fade mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[8px] bg-paper-2 px-4 py-3 text-sm" style={{ animationDelay: "560ms" }}>
-        <span aria-hidden="true" className="redaction">
-          redacted
-        </span>
-        <span className="text-ink-2" data-testid="redaction-sentence">
-          {r.sentence}
-        </span>
-        {secrets.map(([k, v]) => (
-          <span key={k} className="rounded-full bg-card px-2 py-0.5 text-xs font-bold text-ink-2">
-            {v} {LABELS[k]?.[v === 1 ? 0 : 1] ?? k}
-          </span>
-        ))}
-        <span className="basis-full text-xs text-ink-3">Secret values were never stored. The same marker in two requests means the same value was sent in both.</span>
+        <Tile className="lg:col-span-4" delay={0.16} label="Removed before storage">
+          <ul className="mt-3 space-y-2">
+            {secrets.length === 0 && <li className="text-sm text-ink-3">No credentials in this file.</li>}
+            {secrets.map(([k, v], i) => (
+              <li key={k} className="flex items-center justify-between gap-3">
+                <span className="font-mono text-sm">
+                  <Stamp marker={LABELS[k]?.[v === 1 ? 0 : 1] ?? k} delay={300 + i * 250} length={8} />
+                </span>
+                <span className="font-display text-2xl font-semibold">
+                  <RollingNumber value={v} />
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4 text-xs leading-relaxed text-ink-3" data-testid="redaction-sentence">
+            {r.sentence}
+          </p>
+        </Tile>
+
+        <Tile className="lg:col-span-12" delay={0.24} label="First failure">
+          <p className="mt-2 font-mono text-sm text-ink-2" data-testid="first-failure">
+            <Redacted text={summary.first_failure} />
+          </p>
+        </Tile>
       </div>
     </section>
   );
 }
 
-function Row({ label, children, testId }: { label: string; children: React.ReactNode; testId?: string }) {
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="grid gap-1 border-t border-rule py-4 first:border-t-0 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-6">
       <dt className="text-sm font-bold text-ink-3">{label}</dt>
-      <dd className="min-w-0 text-base text-ink" data-testid={testId}>
-        {children}
-      </dd>
+      <dd className="min-w-0 text-base text-ink">{children}</dd>
     </div>
   );
 }
@@ -361,44 +491,43 @@ function Row({ label, children, testId }: { label: string; children: React.React
 function Details({ summary }: { summary: Summary }) {
   const internal = kbPath(summary.kb_url);
   return (
-    <section id="details" aria-labelledby="details-heading" className="scroll-mt-28 pt-12">
-      <h2 id="details-heading" className="mb-2 font-display text-2xl font-medium">
-        Details
-      </h2>
-      <dl className="max-w-4xl">
-        <Row label="First failure" testId="first-failure">
-          <span className="font-mono text-sm">
-            <Redacted text={summary.first_failure} />
-          </span>
-        </Row>
-        <Row label="Evidence">
-          <ul className="space-y-1.5 font-mono text-sm text-ink-2">
-            {summary.evidence.map((line) => (
-              <li key={line}>
-                <Redacted text={line} />
-              </li>
-            ))}
-          </ul>
-        </Row>
-        <Row label="Customer was">
-          <ul className="space-y-0.5">
-            {summary.activity.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-        </Row>
-        <Row label="KB article">
-          {internal ? (
-            <Link className={LINK} to={internal}>
-              {summary.kb_title}
-            </Link>
-          ) : (
-            <a className={LINK} href={summary.kb_url} target="_blank" rel="noreferrer noopener">
-              {summary.kb_title} ↗
-            </a>
-          )}
-        </Row>
-      </dl>
+    <section id="details" aria-labelledby="details-heading" className="scroll-mt-28 pt-14">
+      <Reveal>
+        <h2 id="details-heading" className="mb-2 font-display text-3xl font-semibold tracking-[-0.01em]">
+          Details
+        </h2>
+      </Reveal>
+      <Reveal delay={0.08}>
+        <dl className="max-w-4xl">
+          <Row label="Evidence">
+            <ul className="space-y-1.5 font-mono text-sm text-ink-2">
+              {summary.evidence.map((line) => (
+                <li key={line}>
+                  <Redacted text={line} />
+                </li>
+              ))}
+            </ul>
+          </Row>
+          <Row label="Customer was">
+            <ul className="space-y-0.5">
+              {summary.activity.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </Row>
+          <Row label="KB article">
+            {internal ? (
+              <Link className={LINK} to={internal}>
+                {summary.kb_title}
+              </Link>
+            ) : (
+              <a className={LINK} href={summary.kb_url} target="_blank" rel="noreferrer noopener">
+                {summary.kb_title} ↗
+              </a>
+            )}
+          </Row>
+        </dl>
+      </Reveal>
       {summary.notes.map((n) => (
         <p key={n} className="mt-3 max-w-4xl rounded-[6px] bg-medium/15 px-4 py-2.5 text-sm">
           {n}
@@ -415,45 +544,59 @@ const SEVERITY_EDGE: Record<Finding["severity"], string> = {
   info: "before:bg-info",
 };
 
-function FindingItem({ finding, index, onShow }: { finding: Finding; index: number; onShow: () => void }) {
+function FindingItem({ finding, index, onShow, onHover }: { finding: Finding; index: number; onShow: () => void; onHover: (on: boolean) => void }) {
+  const reduce = useReducedMotion();
   return (
-    <li
-      className={`animate-rise relative overflow-hidden rounded-[8px] border border-rule bg-card p-5 pl-6 transition-shadow duration-150 before:absolute before:inset-y-0 before:left-0 before:w-1 hover:shadow-[0_2px_10px_rgb(0_0_0/0.06)] ${SEVERITY_EDGE[finding.severity]}`}
-      style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
+    <motion.li
+      initial={reduce ? false : { opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ type: "spring", stiffness: 300, damping: 30, delay: Math.min(index, 6) * 0.05 }}
+      onPointerEnter={() => onHover(true)}
+      onPointerLeave={() => onHover(false)}
+      onFocus={() => onHover(true)}
+      onBlur={() => onHover(false)}
       data-testid="finding"
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <SeverityBadge severity={finding.severity} />
-        <span className="font-mono text-xs text-ink-3">{finding.rule_id}</span>
-        {finding.confidence === "likely" && <Tag tone="warn">likely</Tag>}
-      </div>
-      <p className="mt-2.5 font-display text-xl leading-snug font-medium">{finding.title}</p>
-      <p className="mt-1.5 text-base text-ink-2">
-        <Redacted text={finding.cause} />
-      </p>
-      {finding.evidence_lines && finding.evidence_lines.length > 0 && (
-        <ul className="mt-3 space-y-1 rounded-[6px] bg-paper-2 px-3 py-2.5 font-mono text-xs text-ink-2">
-          {finding.evidence_lines.map((line) => (
-            <li key={line}>
-              <Redacted text={line} />
-            </li>
-          ))}
-        </ul>
-      )}
-      <p className="mt-3 text-base">
-        <span className="font-bold text-ink-3">Next step: </span>
-        {finding.next_step}
-      </p>
-      <div className="mt-4 flex flex-wrap items-center gap-4">
-        {finding.entries.length > 0 && (
-          <Button size="sm" onClick={onShow}>
-            Show {finding.entries.length} request{finding.entries.length === 1 ? "" : "s"}
-          </Button>
+      <Spotlight
+        className={`relative h-full overflow-hidden rounded-[14px] border border-rule bg-card p-5 pl-6 transition-[border-color,transform] duration-200 before:absolute before:inset-y-0 before:left-0 before:w-1 hover:-translate-y-0.5 hover:border-rule-2 ${SEVERITY_EDGE[finding.severity]}`}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <motion.span initial={reduce ? false : { scale: 0.4, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} viewport={{ once: true }} transition={{ ...POP, delay: Math.min(index, 6) * 0.05 + 0.1 }}>
+            <SeverityBadge severity={finding.severity} />
+          </motion.span>
+          <span className="font-mono text-xs text-ink-3">{finding.rule_id}</span>
+          {finding.confidence === "likely" && <Tag tone="warn">likely</Tag>}
+          {finding.entries.length > 0 && <span className="ml-auto font-mono text-xs text-ink-4">{finding.entries.map((n) => `#${n}`).slice(0, 6).join(" ")}</span>}
+        </div>
+        <p className="mt-3 font-display text-[1.375rem] leading-snug font-semibold">{finding.title}</p>
+        <p className="mt-1.5 text-base text-ink-2">
+          <Redacted text={finding.cause} />
+        </p>
+        {finding.evidence_lines && finding.evidence_lines.length > 0 && (
+          <ul className="mt-3 space-y-1 rounded-[8px] bg-paper-2 px-3 py-2.5 font-mono text-xs text-ink-2">
+            {finding.evidence_lines.map((line) => (
+              <li key={line}>
+                <Redacted text={line} />
+              </li>
+            ))}
+          </ul>
         )}
-        <Link to={`/kb/${finding.kb}`} className={`text-sm ${LINK}`}>
-          KB article →
-        </Link>
-      </div>
-    </li>
+        <p className="mt-3 text-base">
+          <span className="font-bold text-ink-3">Next step: </span>
+          {finding.next_step}
+        </p>
+        <div className="mt-4 flex flex-wrap items-center gap-4">
+          {finding.entries.length > 0 && (
+            <Button size="sm" onClick={onShow}>
+              Show {finding.entries.length} request{finding.entries.length === 1 ? "" : "s"}
+            </Button>
+          )}
+          <Link to={`/kb/${finding.kb}`} className={`text-sm ${LINK}`}>
+            KB article →
+          </Link>
+        </div>
+      </Spotlight>
+    </motion.li>
   );
 }

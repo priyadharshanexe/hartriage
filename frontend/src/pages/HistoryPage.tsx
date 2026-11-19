@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button, EmptyState, ErrorState, Input, LoadingState, PageHeader, Redacted, Tag } from "../components/ui";
 import { api } from "../lib/api";
+import { caseTitle, useTransitionNavigate } from "../lib/transition";
 import { bytes, dateTime, relative } from "../lib/format";
 import type { Analysis } from "../lib/types";
 
@@ -33,9 +34,17 @@ function requests(n: number): string {
 }
 
 function FileLink({ analysis: a }: { analysis: Analysis }) {
+  const go = useTransitionNavigate();
   return (
     <Link
       to={`/analyses/${a.id}`}
+      // The file name morphs into the analysis page's header (View Transitions).
+      onClick={(e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+        e.preventDefault();
+        go(`/analyses/${a.id}`);
+      }}
+      style={caseTitle(a.id)}
       className="block font-mono text-sm font-medium break-words text-ink [overflow-wrap:anywhere] hover:text-signal hover:underline"
     >
       {a.filename ?? "file.har"}

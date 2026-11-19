@@ -3,6 +3,7 @@ import { type FormEvent, type ReactNode, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { Logo, ThemeToggle } from "../components/Layout";
+import { RedactionField } from "../components/RedactionField";
 import { Button, ErrorState, Field, Input, LoadingState } from "../components/ui";
 import { api, fieldErrors } from "../lib/api";
 import { dateTime } from "../lib/format";
@@ -10,29 +11,30 @@ import type { Role, Session } from "../lib/types";
 
 function Shell({ title, lede, children, footer }: { title: string; lede?: ReactNode; children: ReactNode; footer?: ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col px-5 py-8 sm:px-8">
-      <div className="flex items-center justify-between">
+    <div className="relative flex min-h-screen flex-col overflow-hidden px-5 py-8 sm:px-10">
+      <RedactionField />
+      <div className="relative flex items-center justify-between">
         <Logo />
         <ThemeToggle />
       </div>
-      <main className="mx-auto flex w-full max-w-[26rem] flex-1 flex-col justify-center py-12">
+      <main className="relative flex w-full max-w-[30rem] flex-1 flex-col justify-center py-12 lg:ml-[6vw]">
         {/* The product in one line: a secret, removed before anything is stored. */}
-        <p className="animate-rise font-display text-[1.75rem] leading-[1.18] font-medium tracking-[-0.01em] text-ink sm:text-[2.1rem]">
+        <p className="animate-rise font-display text-[2.1rem] leading-[1.08] font-semibold tracking-[-0.02em] text-ink sm:text-[2.9rem]">
           Every HAR file carries someone&rsquo;s <span className="redact-word">session</span>. We take it out first.
         </p>
-        <div className="animate-rise mt-10 rounded-[10px] border border-rule bg-card p-6 shadow-[0_1px_2px_rgb(0_0_0/0.04)] sm:p-7" style={{ animationDelay: "120ms" }}>
-          <h1 className="font-display text-2xl font-medium">{title}</h1>
+        <div className="animate-rise mt-10 rounded-[16px] border border-rule bg-card/95 p-6 shadow-[0_24px_60px_-30px_rgb(0_0_0/0.6)] backdrop-blur-sm sm:p-8" style={{ animationDelay: "120ms" }}>
+          <h1 className="font-display text-3xl font-semibold">{title}</h1>
           {lede && <div className="mt-1.5 text-sm text-ink-3">{lede}</div>}
           <div className="mt-6">{children}</div>
         </div>
         {footer && (
-          <p className="animate-fade mt-5 text-center text-sm text-ink-3" style={{ animationDelay: "240ms" }}>
+          <p className="animate-fade mt-5 text-sm text-ink-3" style={{ animationDelay: "240ms" }}>
             {footer}
           </p>
         )}
       </main>
-      <p className="mx-auto max-w-[26rem] text-center text-xs text-ink-4">
-        Cookies, tokens and passwords are replaced with markers while the file uploads. Only the redacted copy is kept.
+      <p className="relative max-w-[30rem] text-xs text-ink-4 lg:ml-[6vw]">
+        Behind this form: sample request lines, with their secrets replaced the way your files are. Only the redacted copy of a file is ever kept.
       </p>
     </div>
   );

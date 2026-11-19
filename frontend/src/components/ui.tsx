@@ -1,4 +1,5 @@
 import { type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, useEffect, useId, useState } from "react";
+import { motion } from "motion/react";
 import { ApiError, errorMessage } from "../lib/api";
 import { splitMarkers } from "../lib/format";
 import type { Severity } from "../lib/types";
@@ -199,10 +200,14 @@ export function Notice({ children, onDone, tone = "ok" }: { children: ReactNode;
     return () => window.clearTimeout(timer);
   }, [onDone]);
   return (
-    <div
+    <motion.div
       role="status"
+      initial={{ opacity: 0, y: -14, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ type: "spring", stiffness: 420, damping: 28 }}
       className={cx(
-        "animate-slide-down flex items-center gap-2 rounded-[6px] px-4 py-2.5 text-sm",
+        "flex items-center gap-2 rounded-[8px] px-4 py-2.5 text-sm",
         tone === "ok" ? "bg-ok/10 text-ink" : "border border-critical/30 bg-critical/8 text-ink",
       )}
     >
@@ -212,7 +217,7 @@ export function Notice({ children, onDone, tone = "ok" }: { children: ReactNode;
         </span>
       )}
       {children}
-    </div>
+    </motion.div>
   );
 }
 

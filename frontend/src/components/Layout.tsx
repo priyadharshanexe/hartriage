@@ -1,4 +1,6 @@
+import { motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { SPRING } from "../lib/motion";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { cx } from "./ui";
@@ -14,22 +16,20 @@ export function Logo() {
 
 // ------------------------------------------------------------------ theme
 
-type Theme = "system" | "light" | "dark";
+type Theme = "dark" | "light" | "system";
 const THEME_KEY = "hartriage.theme";
 
-function readTheme(): Theme {
+export function readTheme(): Theme {
   try {
     const value = localStorage.getItem(THEME_KEY);
-    return value === "light" || value === "dark" ? value : "system";
+    return value === "light" || value === "system" ? value : "dark";
   } catch {
-    return "system";
+    return "dark";
   }
 }
 
-function applyTheme(theme: Theme) {
-  const root = document.documentElement;
-  if (theme === "system") root.removeAttribute("data-theme");
-  else root.setAttribute("data-theme", theme);
+export function applyTheme(theme: Theme) {
+  document.documentElement.setAttribute("data-theme", theme);
 }
 
 export function useTheme(): [Theme, (t: Theme) => void] {
@@ -37,8 +37,7 @@ export function useTheme(): [Theme, (t: Theme) => void] {
   useEffect(() => {
     applyTheme(theme);
     try {
-      if (theme === "system") localStorage.removeItem(THEME_KEY);
-      else localStorage.setItem(THEME_KEY, theme);
+      localStorage.setItem(THEME_KEY, theme);
     } catch {
       // Private mode: the choice lasts for this page only.
     }
@@ -49,12 +48,12 @@ export function useTheme(): [Theme, (t: Theme) => void] {
 export function ThemeToggle() {
   const [theme, setTheme] = useTheme();
   const options: { value: Theme; label: string; icon: string }[] = [
-    { value: "system", label: "Use system theme", icon: "◐" },
-    { value: "light", label: "Light theme", icon: "☀" },
     { value: "dark", label: "Dark theme", icon: "☾" },
+    { value: "light", label: "Light theme", icon: "☀" },
+    { value: "system", label: "Use system theme", icon: "◐" },
   ];
   return (
-    <div role="radiogroup" aria-label="Theme" className="inline-flex rounded-full border border-rule p-0.5">
+    <div role="radiogroup" aria-label="Theme" className="relative inline-flex rounded-full border border-rule bg-paper p-0.5">
       {options.map((o) => (
         <button
           key={o.value}
@@ -64,12 +63,12 @@ export function ThemeToggle() {
           aria-label={o.label}
           title={o.label}
           onClick={() => setTheme(o.value)}
-          className={cx(
-            "h-7 w-8 rounded-full text-sm transition-colors duration-150",
-            theme === o.value ? "bg-paper-2 text-ink" : "text-ink-4 hover:text-ink",
-          )}
+          className={cx("relative h-7 w-8 rounded-full text-sm transition-colors duration-150", theme === o.value ? "text-ink" : "text-ink-4 hover:text-ink")}
         >
-          <span aria-hidden="true">{o.icon}</span>
+          {theme === o.value && <motion.span layoutId="theme-pill" className="absolute inset-0 rounded-full bg-raised" transition={SPRING} />}
+          <span aria-hidden="true" className="relative">
+            {o.icon}
+          </span>
         </button>
       ))}
     </div>
@@ -112,11 +111,21 @@ export function Layout() {
       className={({ isActive }) =>
         cx(
           "relative flex items-center rounded-[6px] px-3 py-2 text-[0.9375rem] transition-colors duration-150",
-          isActive ? "bg-signal-soft font-bold text-signal" : "text-ink-2 hover:bg-paper-2 hover:text-ink",
+          isActive ? "font-bold text-ink" : "text-ink-3 hover:text-ink",
         )
       }
     >
-      {item.label}
+      {({ isActive }) => (
+        <>
+          {/* One indicator that springs from item to item (shared layout). */}
+          {isActive && (
+            <motion.span layoutId="nav-indicator" className="absolute inset-0 rounded-[6px] bg-raised" transition={SPRING}>
+              <span className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-primary" />
+            </motion.span>
+          )}
+          <span className="relative">{item.label}</span>
+        </>
+      )}
     </NavLink>
   );
 
