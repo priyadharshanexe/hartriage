@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import html
 import json
+import re
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
@@ -269,9 +270,19 @@ def to_json(s: Summary, findings: list[Finding], extra: dict[str, Any] | None = 
     return json.dumps(payload, indent=2, ensure_ascii=False, default=str) + "\n"
 
 
+_REQUEST_NUMBER = re.compile(r"#(\d+)")
+
+
 def to_html(s: Summary, title: str = "HAR Triage summary", marker: str = "") -> str:
-    """HTML for helpdesk private notes. Every value is escaped: HAR content is untrusted."""
-    e = html.escape
+    """HTML for helpdesk private notes. Every value is escaped: HAR content is untrusted.
+
+    Found live: Zendesk turns "#3" in a comment into a link to ticket 3, so "Request #3"
+    pointed agents at another customer's ticket. "#<span>3</span>" reads the same and is
+    not linked.
+    """
+
+    def e(value: str) -> str:
+        return _REQUEST_NUMBER.sub(r"#<span>\1</span>", html.escape(value))
 
     def items(values: list[str]) -> str:
         return "<ul>" + "".join(f"<li>{e(v)}</li>" for v in values) + "</ul>"
@@ -285,7 +296,8 @@ def to_html(s: Summary, title: str = "HAR Triage summary", marker: str = "") -> 
         "<p><strong>Evidence</strong></p>",
         items(s.evidence),
         f"<p><strong>Suggested next step:</strong> {e(s.next_step)}</p>",
-        f'<p><strong>KB article:</strong> <a href="{e(s.kb_url, quote=True)}">{e(s.kb_title)}</a></p>',
+        f'<p><strong>KB article:</strong> <a href="{html.escape(s.kb_url, quote=True)}">'
+        f"{e(s.kb_title)}</a></p>",
     ]
     if s.other_findings:
         parts += ["<p><strong>Other findings</strong></p>", items(s.other_findings)]

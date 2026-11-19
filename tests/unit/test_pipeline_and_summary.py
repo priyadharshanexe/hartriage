@@ -110,3 +110,27 @@ def test_cli_analyze_and_redact(tmp_path) -> None:  # type: ignore[no-untyped-de
 def test_summary_does_not_claim_success_when_r001_was_skipped() -> None:
     result = process(as_stream(har(entry(status=500))), rules=["R011"])
     assert summarise(result).first_failure.startswith("Not checked: 1 request(s) failed")
+
+
+def test_html_note_request_numbers_are_not_ticket_links() -> None:
+    """Found live: Zendesk auto-links "#3" to ticket 3 in comments."""
+    from hartriage.summary.builder import Summary, to_html
+
+    summary = Summary(
+        activity=["Pages: Checkout"],
+        first_failure="Request #3: GET https://app.test/api/me → 401",
+        likely_cause="The token expired.",
+        evidence=["Requests #3, #4, #5"],
+        next_step="Sign in again.",
+        kb_title="R002",
+        kb_url="https://example.com/kb/R002-auth.md#causes",
+        redaction="Removed 1 token.",
+        other_findings=[],
+        notes=[],
+        lead_rule="R002",
+        engine_version="1.0.0",
+    )
+    out = to_html(summary)
+    assert "Request #<span>3</span>" in out
+    assert "Requests #<span>3</span>, #<span>4</span>, #<span>5</span>" in out
+    assert 'href="https://example.com/kb/R002-auth.md#causes"' in out
