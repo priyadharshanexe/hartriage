@@ -22,7 +22,10 @@ class HarWriter:
         self.position = 0
         self.count = 0
         self.offsets: list[tuple[int, int]] = []
-        self._write(b'{"log":{"entries":[\n')
+        # A line break after the opening brace: found live, Zendesk's upload check
+        # refuses a .har that starts '{"log":{"entries":[' ("The file type and file
+        # extension do not match"), but accepts the same JSON laid out like this.
+        self._write(b'{\n"log":{"entries":[\n')
 
     def _write(self, data: bytes) -> None:
         self._out.write(data)
