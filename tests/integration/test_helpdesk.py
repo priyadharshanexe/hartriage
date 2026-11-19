@@ -420,3 +420,25 @@ def test_zendesk_can_connect_before_the_webhook_exists(client: Any, admin: Any) 
     assert patched.json()["needs_signing_secret"] is False
     assert zendesk_hook(client, conn, tid).status_code == 202
     assert len(private_notes("zendesk", tid)) == 1
+
+
+def test_redacted_copies_in_the_old_layout_are_accepted_by_zendesk() -> None:
+    """Found live: Zendesk refused .har uploads starting '{"log":{"entries":[' as a
+    file-type mismatch. Copies stored before the HarWriter fix are re-laid-out."""
+    seen: list[bytes] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.content)
+        return httpx.Response(201, json={"upload": {"token": "t"}})
+
+    client = ZendeskClient.build(
+        "acme",
+        {"email": "a@b.c", "api_token": "x"},
+        5,
+        "https://acme.zendesk.com",
+        httpx.MockTransport(handler),
+    )
+    old = b'{"log":{"entries":[\n{"request":{}}\n]}}'
+    assert client._upload("file.redacted.har", old) == "t"
+    assert seen[0].startswith(b'{\n"log":')
+    assert json.loads(seen[0]) == json.loads(old)

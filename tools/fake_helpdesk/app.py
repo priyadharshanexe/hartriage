@@ -185,23 +185,60 @@ async def zd_update(account: str, ticket_id: int, request: Request) -> Response:
         )
         t.comments.append(comment)
         events.append({"id": comment.id, "type": "Comment", "public": comment.public})
-    for tag in data.get("remove_tags", []):
-        if tag in t.tags:
-            t.tags.remove(tag)
-    for tag in data.get("additional_tags", []):
-        if tag not in t.tags:
-            t.tags.append(tag)
+    # Like the real API (checked on a live account): a single-ticket update silently
+    # ignores additional_tags/remove_tags, which only work in update_many. "tags"
+    # replaces the whole list.
+    if "tags" in data:
+        t.tags = list(data["tags"])
     return JSONResponse(
         {"ticket": {"id": t.id, "tags": t.tags}, "audit": {"id": next(_ids), "events": events}}
     )
+
+
+@app.put("/zendesk/{account}/api/v2/tickets/{ticket_id}/tags.json")
+async def zd_add_tags(account: str, ticket_id: int, request: Request) -> Response:
+    if (gate := _gate("zendesk", request)) is not None:
+        return gate
+    t = _ticket("zendesk", account, ticket_id)
+    if t is None:
+        return _not_found()
+    for tag in (await request.json()).get("tags", []):
+        if tag not in t.tags:
+            t.tags.append(tag)
+    return JSONResponse({"tags": t.tags})
+
+
+@app.delete("/zendesk/{account}/api/v2/tickets/{ticket_id}/tags.json")
+async def zd_remove_tags(account: str, ticket_id: int, request: Request) -> Response:
+    if (gate := _gate("zendesk", request)) is not None:
+        return gate
+    t = _ticket("zendesk", account, ticket_id)
+    if t is None:
+        return _not_found()
+    for tag in (await request.json()).get("tags", []):
+        if tag in t.tags:
+            t.tags.remove(tag)
+    return JSONResponse({"tags": t.tags})
 
 
 @app.post("/zendesk/{account}/api/v2/uploads.json")
 async def zd_upload(account: str, filename: str, request: Request) -> Response:
     if (gate := _gate("zendesk", request)) is not None:
         return gate
+    body = await request.body()
+    if filename.endswith(".har") and body.startswith(b'{"log":{"entries":['):
+        # Measured on a live account: Zendesk's file-type check refuses exactly this.
+        return JSONResponse(
+            {
+                "error": "RecordInvalid",
+                "details": {
+                    "base": [{"description": "The file type and file extension do not match."}]
+                },
+            },
+            422,
+        )
     token = uuid.uuid4().hex
-    UPLOADS[token] = FakeAttachment(next(_ids), filename, await request.body())
+    UPLOADS[token] = FakeAttachment(next(_ids), filename, body)
     return JSONResponse({"upload": {"token": token}}, 201)
 
 

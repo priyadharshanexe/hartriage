@@ -197,6 +197,10 @@ class ZendeskClient(HelpdeskClient):
         return ticket
 
     def _upload(self, filename: str, content: bytes) -> str:
+        if filename.endswith(".har") and content.startswith(b'{"log":'):
+            # Redacted copies written before the HarWriter fix: same JSON, in the layout
+            # Zendesk's file-type check accepts (see HarWriter).
+            content = b"{\n" + content[1:]
         response = self.request(
             "POST",
             "/api/v2/uploads.json",
@@ -233,12 +237,13 @@ class ZendeskClient(HelpdeskClient):
         return None
 
     def swap_tags(self, ticket: Ticket, remove: str, add: str) -> None:
-        # additional_tags/remove_tags change only these two tags, so concurrent edits survive.
-        self.request(
-            "PUT",
-            f"/api/v2/tickets/{ticket.id}.json",
-            json={"ticket": {"additional_tags": [add], "remove_tags": [remove]}},
-        )
+        # Found live: a single-ticket update silently ignores additional_tags and
+        # remove_tags (they only work in update_many), so the trigger tag was never
+        # cleared. The Tags API adds and removes just these tags, so concurrent edits
+        # to other tags survive. Add first: the ticket is never left with neither.
+        path = f"/api/v2/tickets/{ticket.id}/tags.json"
+        self.request("PUT", path, json={"tags": [add]})
+        self.request("DELETE", path, json={"tags": [remove]})
 
     def remove_attachment(self, ticket: Ticket, attachment: Attachment) -> None:
         self.request(
