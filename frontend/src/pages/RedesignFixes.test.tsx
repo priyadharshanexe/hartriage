@@ -61,7 +61,8 @@ describe("HistoryPage", () => {
       },
     });
     renderApp(<HistoryPage />);
-    expect((await screen.findByText("abcdef12")).tagName).toBe("MARK");
+    const marks = await screen.findAllByText("abcdef12");
+    expect(marks.every((m) => m.tagName === "MARK")).toBe(true);
     expect(screen.queryByText(/REDACTED:/)).toBeNull();
   });
 });
