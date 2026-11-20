@@ -9,7 +9,7 @@
 
 Use it as a CLI, in the web app, or from Zendesk and Freshdesk: tag a ticket and the analysis comes back as a private note.
 
-**Contents:** [Why this exists](#why-this-exists) · [What it looks like](#what-it-looks-like) · [Features](#features) · [How it works](#how-it-works) · [Architecture](#architecture) · [The rules](#the-rules) · [Security and redaction](#security-and-redaction) · [Quick start](#quick-start) · [Tested against real helpdesks](#tested-against-real-helpdesks) · [Tests and CI](#tests-and-ci) · [Decision records](#decision-records) · [Casebook](#casebook) · [Project layout](#project-layout) · [What I'd do next](#what-id-do-next)
+**Contents:** [Why this exists](#why-this-exists) · [What it looks like](#what-it-looks-like) · [Features](#features) · [How it works](#how-it-works) · [Architecture](#architecture) · [The rules](#the-rules) · [Security and redaction](#security-and-redaction) · [Quick start](#quick-start) · [Tested against real helpdesks](#tested-against-real-helpdesks) · [Tests and CI](#tests-and-ci) · [Decision records](#decision-records) · [Casebook](#casebook) · [Project layout](#project-layout)
 
 ## Why this exists
 
@@ -239,14 +239,6 @@ tools/        fault server and HAR recorder, fake helpdesk (test double), screen
               live/ scripts for testing against real helpdesk trials
 docs/         decision records, redaction policy, OpenAPI, screenshots
 ```
-
-## What I'd do next
-
-- Zendesk's authorization-code OAuth flow (a "Connect with Zendesk" button) alongside the confidential client.
-- Plain-text log files: the redactor already handles free text, but there are no log rules yet.
-- A public demo mode that analyses sample files in memory and stores nothing.
-- A customer-facing "send us a HAR" link that redacts in the browser before upload.
-- Sharing a file with a named colleague, now that agents see only their own.
 
 ## Licence
 
