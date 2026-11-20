@@ -87,7 +87,8 @@ async def upload(
     ):
         UPLOADS.labels("daily_limit").inc()
         raise TooManyRequests(
-            f"You have reached your organisation's limit of {limits.daily_uploads} uploads a day. "
+            "You have reached your organisation's limit of "
+            f"{limits.daily_uploads} upload{'' if limits.daily_uploads == 1 else 's'} a day. "
             "Ask an admin to raise it, or try again tomorrow.",
             code="daily_upload_limit",
         )

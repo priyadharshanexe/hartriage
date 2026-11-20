@@ -371,6 +371,10 @@ export function UploadPage() {
   const [progress, setProgress] = useState<number | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<unknown>(null);
+  // The organisation's size limit (an admin may set one below the server's).
+  const limits = useQuery({ queryKey: ["org-settings"], queryFn: () => api<{ effective_max_file_mb: number }>("/v1/org/settings"), staleTime: 60_000 });
+  const maxMb = limits.data?.effective_max_file_mb ?? MAX_BYTES / (1024 * 1024);
+  const maxBytes = maxMb * 1024 * 1024;
   const [analysisId, setAnalysisId] = useState<string | null>(null);
 
   const status = useQuery({
@@ -401,9 +405,9 @@ export function UploadPage() {
     setFile(chosen);
     setError(null);
     setAnalysisId(null);
-    if (chosen.size > MAX_BYTES) {
+    if (chosen.size > maxBytes) {
       // Checked here first: there is no point uploading 100 MB only to be refused.
-      setError(new Error(`${chosen.name} is ${bytes(chosen.size)}; the limit is 100 MB. Ask the customer to record a shorter session, or use the CLI.`));
+      setError(new Error(`${chosen.name} is ${bytes(chosen.size)}; the limit is ${maxMb} MB. Ask the customer to record a shorter session, or use the CLI.`));
       return;
     }
     setProgress(0);
@@ -446,6 +450,11 @@ export function UploadPage() {
                   Drop the file a customer sent. The secrets come out while it uploads; you get the failing request, the likely cause and a summary for the ticket.
                 </p>
                 {!canEdit && <div className="animate-slide-down mt-5 rounded-[8px] bg-medium/15 px-4 py-3 text-sm">Viewers can read analyses but not upload files.</div>}
+                {error !== null && (
+                  <div className="mt-5">
+                    <ErrorState error={error} />
+                  </div>
+                )}
                 <div
                   onDragOver={(e) => {
                     e.preventDefault();
@@ -460,7 +469,7 @@ export function UploadPage() {
                 >
                   <motion.div animate={{ scale: dragging ? 1.02 : 1 }} transition={POP} className="origin-left">
                     <p className="font-display text-3xl font-medium">{dragging ? "Let go to start." : "Drop it here."}</p>
-                    <p className="mt-2 text-sm text-ink-3">.har, .har.gz, or a zip with one HAR inside · up to 100 MB and 50,000 requests</p>
+                    <p className="mt-2 text-sm text-ink-3">.har, .har.gz, or a zip with one HAR inside · up to {maxMb} MB and 50,000 requests</p>
                   </motion.div>
                   <div className="mt-10 flex flex-wrap items-center gap-4">
                     <Magnetic>
@@ -501,11 +510,6 @@ export function UploadPage() {
           </motion.div>
         )}
       </AnimatePresence>
-      {error !== null && (
-        <div className="mt-4">
-          <ErrorState error={error} />
-        </div>
-      )}
       {failed && (
         <div className="mt-4">
           <ErrorState error={new Error(status.data?.error ?? "The analysis failed.")} />
