@@ -147,6 +147,7 @@ export function Layout() {
 
   return (
     <div className="min-h-screen md:flex">
+      <div aria-hidden="true" className="ambient" />
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded focus:bg-card focus:px-3 focus:py-2 focus:text-sm">
         Skip to content
       </a>
@@ -223,7 +224,7 @@ export function Layout() {
           </button>
         </div>
       </aside>
-      <main id="main" className="min-w-0 flex-1 px-4 py-6 sm:px-6 md:px-10 md:py-10">
+      <main id="main" className="relative z-[1] min-w-0 flex-1 px-4 py-6 sm:px-6 md:px-10 md:py-10">
         {/* Keyed by path: every page change gets a short fade-and-rise. */}
         <div key={location.pathname} className="animate-page mx-auto max-w-6xl">
           <Outlet />

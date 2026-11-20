@@ -107,11 +107,15 @@ export function RedactionField() {
 
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden select-none">
-      <div className="absolute inset-y-0 right-0 w-full font-mono text-[0.8125rem] leading-6 text-ink-4 opacity-20 lg:opacity-60 [mask-image:linear-gradient(to_right,transparent,transparent_38%,black_72%)] lg:w-[62%]">
-        <div className={cx("px-8", !reduce && "animate-drift")}>
-          {column}
-          {column}
-        </div>
+      {/* Columns across the whole width, so the field shows at any size; a soft mask
+          keeps it quiet behind the headline and the form. */}
+      <div className="absolute inset-0 flex gap-10 overflow-hidden px-6 font-mono text-[0.8125rem] leading-6 text-ink-3 opacity-[var(--field-opacity)] [mask-image:linear-gradient(to_right,rgb(0_0_0/0.25),black_70%)]">
+        {[0, 1, 2, 3].map((c) => (
+          <div key={c} className={cx("min-w-[26rem] flex-1", c > 1 && "max-lg:hidden", !reduce && "animate-drift")} style={{ animationDuration: `${70 + c * 14}s`, animationDelay: `${-c * 9}s` }}>
+            {column}
+            {column}
+          </div>
+        ))}
       </div>
     </div>
   );
