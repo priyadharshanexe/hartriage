@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "../components/ui";
 import { api } from "../lib/api";
@@ -27,7 +28,16 @@ const ACTIONS: Record<string, string> = {
 };
 
 export function AuditPage() {
-  const log = useQuery({ queryKey: ["audit"], queryFn: () => api<{ items: AuditEntry[] }>("/v1/audit", { query: { limit: 200 } }) });
+  const log = useQuery({ queryKey: ["audit"], queryFn: () => api<{ items: AuditEntry[] }>("/v1/audit", { query: { limit: 200 } }), refetchInterval: 15000 });
+  const seen = useRef<Set<string> | null>(null);
+  const keyOf = (a: AuditEntry) => `${a.at}|${a.action}|${a.target_id ?? ""}|${a.actor ?? ""}`;
+  const fresh = new Set<string>();
+  if (log.data) {
+    if (seen.current) for (const a of log.data.items) if (!seen.current.has(keyOf(a))) fresh.add(keyOf(a));
+  }
+  useEffect(() => {
+    if (log.data) seen.current = new Set(log.data.items.map(keyOf));
+  }, [log.data]);
   return (
     <div className="max-w-5xl">
       <PageHeader title="Audit log" description="Who viewed, exported, downloaded or changed what, and when. Newest first." />
@@ -40,7 +50,7 @@ export function AuditPage() {
       ) : (
         <ol className="text-sm">
           {log.data.items.map((a, i) => (
-            <li key={`${a.at}-${i}`} style={{ animationDelay: `${Math.min(i, 15) * 25}ms` }} className="animate-rise grid gap-x-4 gap-y-0.5 border-b border-rule py-2.5 sm:grid-cols-[11rem_minmax(0,1fr)]">
+            <li key={keyOf(a) + i} style={{ animationDelay: `${Math.min(i, 15) * 25}ms` }} className={`animate-rise ${fresh.has(keyOf(a)) ? "flash-new" : ""} grid gap-x-4 gap-y-0.5 border-b border-rule py-2.5 sm:grid-cols-[11rem_minmax(0,1fr)]`}>
               <span className="font-mono text-xs text-ink-3 sm:pt-0.5">{dateTime(a.at)}</span>
               <span className="min-w-0">
                 <span className="font-medium">{a.actor ?? "HAR Triage"}</span> <span className="text-ink-2">{ACTIONS[a.action] ?? a.action}</span>

@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { api } from "../lib/api";
 import { PHASE_LABEL, PHASES, bytes, epoch, ms } from "../lib/format";
 import type { EntryDetail, NameValue } from "../lib/types";
+import { Scramble } from "./fx";
 import { ErrorState, LoadingState, Redacted, Tag } from "./ui";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -21,7 +22,7 @@ function Pairs({ items, empty = "None" }: { items: NameValue[] | undefined; empt
     <dl className="grid grid-cols-[minmax(7rem,32%)_1fr] gap-x-3 gap-y-1.5 font-mono text-xs">
       {items.map((h, i) => (
         <div key={`${h.name}-${i}`} className="contents">
-          <dt className="min-w-0 break-words text-ink-3 [overflow-wrap:anywhere]">{h.name}</dt>
+          <dt className="min-w-0 break-words text-ink-3 [overflow-wrap:anywhere]"><Scramble text={h.name} delay={Math.min(i, 12) * 30} duration={360} /></dt>
           <dd className="min-w-0 text-ink">
             <Redacted text={String(h.value)} />
           </dd>

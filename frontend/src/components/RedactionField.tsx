@@ -107,7 +107,7 @@ export function RedactionField() {
 
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden select-none">
-      <div className="absolute inset-y-0 right-0 w-full font-mono text-[0.8125rem] leading-6 text-ink-4 opacity-20 lg:opacity-60 [mask-image:linear-gradient(to_right,transparent,black_35%,black)] lg:w-[62%]">
+      <div className="absolute inset-y-0 right-0 w-full font-mono text-[0.8125rem] leading-6 text-ink-4 opacity-20 lg:opacity-60 [mask-image:linear-gradient(to_right,transparent,transparent_38%,black_72%)] lg:w-[62%]">
         <div className={cx("px-8", !reduce && "animate-drift")}>
           {column}
           {column}

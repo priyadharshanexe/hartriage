@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { MotionConfig } from "motion/react";
 import { App } from "./App";
+import { ToastProvider } from "./components/Toasts";
 import { applyTheme, readTheme } from "./components/Layout";
 import { AuthProvider } from "./auth/AuthProvider";
 import { ApiError } from "./lib/api";
@@ -40,7 +41,9 @@ createRoot(root).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <App />
+          <ToastProvider>
+            <App />
+          </ToastProvider>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

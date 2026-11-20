@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useCallback, useState } from "react";
 import { Button, Card, ConfirmButton, CopyButton, EmptyState, ErrorState, Field, Input, LoadingState, Notice, PageHeader, Select, Tag } from "../components/ui";
+import { DrawCheck } from "../components/fx";
+import { useToast } from "../components/Toasts";
 import { api, fieldErrors } from "../lib/api";
 import { dateTime, relative } from "../lib/format";
 import type { Connection } from "../lib/types";
@@ -15,9 +17,14 @@ export function ConnectionsPage() {
   const [created, setCreated] = useState<string | null>(null);
   const clearCreated = useCallback(() => setCreated(null), []);
 
+  const toast = useToast();
   const remove = useMutation({
     mutationFn: (id: string) => api<void>(`/v1/connections/${id}`, { method: "DELETE" }),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["connections"] }),
+    onSuccess: () => {
+      toast("Helpdesk disconnected.");
+      void queryClient.invalidateQueries({ queryKey: ["connections"] });
+    },
+    onError: () => toast("Could not disconnect.", "bad"),
   });
 
   return (
@@ -64,9 +71,13 @@ function ConnectionCard({ connection: c, secret, onSecret, onDelete }: { connect
   const queryClient = useQueryClient();
   const [test, setTest] = useState<{ ok: boolean; text: string } | null>(null);
   const [testing, setTesting] = useState(false);
+  const toast = useToast();
   const toggle = useMutation({
     mutationFn: (value: boolean) => api<Connection>(`/v1/connections/${c.id}`, { method: "PATCH", body: { replace_attachments: value } }),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["connections"] }),
+    onSuccess: (_, value) => {
+      toast(value ? "Originals will be replaced with the redacted copy." : "Originals will be left as they are.");
+      void queryClient.invalidateQueries({ queryKey: ["connections"] });
+    },
   });
   return (
     <Card
@@ -84,6 +95,7 @@ function ConnectionCard({ connection: c, secret, onSecret, onDelete }: { connect
             try {
               const result = await api<{ ok: boolean; account?: string; error?: string }>(`/v1/connections/${c.id}/test`, { method: "POST" });
               setTest(result.ok ? { ok: true, text: `Connected as ${result.account}` } : { ok: false, text: `Failed: ${result.error}` });
+              toast(result.ok ? `Connection works: ${result.account}` : "The helpdesk refused the credentials.", result.ok ? "ok" : "bad");
             } catch (e) {
               setTest({ ok: false, text: e instanceof Error ? e.message : "The test failed." });
             } finally {
@@ -96,7 +108,12 @@ function ConnectionCard({ connection: c, secret, onSecret, onDelete }: { connect
         </div>
       }
     >
-      {test && <p role="status" className={`animate-slide-down mb-4 rounded-[6px] px-3 py-2 text-sm ${test.ok ? "bg-ok/10" : "bg-critical/10"}`}>{test.text}</p>}
+      {test && (
+        <p role="status" className={`animate-slide-down mb-4 flex items-center gap-2 rounded-[6px] px-3 py-2 text-sm ${test.ok ? "bg-ok/10" : "bg-critical/10"}`}>
+          {test.ok && <DrawCheck className="text-ok" />}
+          {test.text}
+        </p>
+      )}
       {c.needs_signing_secret && <SigningSecretForm connection={c} />}
       {secret && (
         <div className="animate-slide-down mb-4 rounded-[6px] bg-medium/15 p-3 text-sm" role="alert">
@@ -117,7 +134,9 @@ function ConnectionCard({ connection: c, secret, onSecret, onDelete }: { connect
         <dt className="eyebrow pt-0.5">Last webhook</dt>
         <dd>
           {c.last_webhook_at ? (
-            <span title={dateTime(c.last_webhook_at)}>
+            <span title={dateTime(c.last_webhook_at)} className="inline-flex flex-wrap items-center gap-2">
+              {/* Heartbeat: green and beating while webhooks or polls succeed, red when the last one failed. */}
+              <span className={`heartbeat ${/error|rejected/.test(c.last_webhook_status ?? "") ? "heartbeat-bad" : ""}`} aria-hidden="true" />
               {relative(c.last_webhook_at)} · <span className="font-mono text-xs">{c.last_webhook_status}</span>
             </span>
           ) : (
@@ -146,6 +165,7 @@ function ConnectionCard({ connection: c, secret, onSecret, onDelete }: { connect
           <Button size="sm" className="mt-3" onClick={async () => {
             const rotated = await api<Connection>(`/v1/connections/${c.id}/rotate-secret`, { method: "POST" });
             if (rotated.webhook_secret) onSecret(rotated.webhook_secret);
+            toast("New webhook secret generated. Update the Freshdesk rule.", "info");
           }}>
             Generate a new webhook secret
           </Button>

@@ -1,4 +1,5 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button, EmptyState, ErrorState, Input, LoadingState, PageHeader, Redacted, Tag } from "../components/ui";
@@ -126,8 +127,17 @@ export function HistoryPage() {
               </tr>
             </thead>
             <tbody>
+              <AnimatePresence>
               {items.map((a, i) => (
-                <tr key={a.id} className="animate-rise border-b border-rule align-top transition-colors duration-150 hover:bg-card" style={{ animationDelay: `${Math.min(i, 12) * 30}ms` }}>
+                <motion.tr
+                  key={a.id}
+                  layout
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: -16 }}
+                  transition={{ type: "spring", stiffness: 380, damping: 32, delay: Math.min(i, 12) * 0.03 }}
+                  className="border-b border-rule align-top transition-colors duration-150 hover:bg-card"
+                >
                   <td className="px-3 py-3">
                     <FileLink analysis={a} />
                     <div className="font-mono text-xs text-ink-3">
@@ -146,13 +156,23 @@ export function HistoryPage() {
                   <td className="px-3 py-3 text-xs text-ink-3">
                     <When analysis={a} />
                   </td>
-                </tr>
+                </motion.tr>
               ))}
+              </AnimatePresence>
             </tbody>
           </table>
           <ul aria-label="Analyses" className="divide-y divide-rule border-y border-rule xl:hidden">
+            <AnimatePresence>
             {items.map((a, i) => (
-              <li key={a.id} className="animate-rise py-4" style={{ animationDelay: `${Math.min(i, 12) * 30}ms` }}>
+              <motion.li
+                key={a.id}
+                layout
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                transition={{ type: "spring", stiffness: 380, damping: 32, delay: Math.min(i, 12) * 0.03 }}
+                className="py-4"
+              >
                 <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
                   <div className="min-w-0 flex-1">
                     <FileLink analysis={a} />
@@ -173,8 +193,9 @@ export function HistoryPage() {
                   {" · "}
                   expires <span title={dateTime(a.expires_at)}>{relative(a.expires_at)}</span>
                 </p>
-              </li>
+              </motion.li>
             ))}
+            </AnimatePresence>
           </ul>
           {query.hasNextPage && (
             <div className="p-4 text-center">

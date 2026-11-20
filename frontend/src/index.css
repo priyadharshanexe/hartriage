@@ -519,3 +519,97 @@ body {
 .animate-drift {
   animation: drift 70s linear infinite;
 }
+
+/* Proof-point glyphs on the sign-in page: tiny loops in the product's own language. */
+@keyframes glyph-stamp {
+  0%,
+  20% {
+    transform: scaleX(0);
+  }
+  35%,
+  80% {
+    transform: scaleX(1);
+  }
+  100% {
+    transform: scaleX(0);
+  }
+}
+.glyph-stamp {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: glyph-stamp 3.2s var(--ease-out) infinite;
+}
+@keyframes glyph-blink {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  30%,
+  60% {
+    opacity: 1;
+  }
+}
+.glyph-blink {
+  animation: glyph-blink 2.4s ease-in-out infinite;
+}
+@keyframes glyph-grow {
+  0% {
+    transform: scaleX(0);
+  }
+  40%,
+  85% {
+    transform: scaleX(1);
+  }
+  100% {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+}
+.glyph-grow {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: glyph-grow 2.8s var(--ease-out) infinite;
+}
+.glyph-sweep {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: glyph-stamp 3s var(--ease-out) 0.6s infinite;
+}
+
+/* A live heartbeat for a helpdesk connection's webhook or poller. */
+@keyframes heartbeat {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--hb) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 8px color-mix(in oklab, var(--hb) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--hb) 0%, transparent);
+  }
+}
+.heartbeat {
+  --hb: var(--ok);
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 9999px;
+  background: var(--hb);
+  animation: heartbeat 1.8s ease-out infinite;
+}
+.heartbeat-bad {
+  --hb: var(--critical);
+}
+
+/* Audit rows that arrive while you watch flash once. */
+@keyframes flash-new {
+  0% {
+    background: color-mix(in oklab, var(--highlight) 70%, transparent);
+  }
+  100% {
+    background: transparent;
+  }
+}
+.flash-new {
+  animation: flash-new 1.6s var(--ease-out) both;
+}

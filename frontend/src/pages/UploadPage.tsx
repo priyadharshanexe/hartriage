@@ -263,7 +263,7 @@ function RedactionShow({ analysis, data, onOpen }: { analysis: Analysis; data: S
         {/* 3. The rules running */}
         <section className="rounded-[14px] border border-rule bg-card p-5" aria-label="Rules">
           <h3 className="text-sm font-bold text-ink-3">Checks</h3>
-          <ul className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+          <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
             {data.rules.map((rule, i) => {
               const hits = byRule.get(String(rule.rule_id)) ?? [];
               const delay = reduce ? 0 : t.rules + i * 0.09;
@@ -291,7 +291,7 @@ function RedactionShow({ analysis, data, onOpen }: { analysis: Analysis; data: S
                     </span>
                   )}
                   <span className="font-mono text-ink-3">{rule.rule_id}</span>
-                  <span className={cx("truncate", hits.length ? cx("font-bold", SEVERITY_TEXT[worst(hits)]) : "text-ink-3")}>{rule.title}</span>
+                  <span className={cx("leading-tight", hits.length ? cx("font-bold", SEVERITY_TEXT[worst(hits)]) : "text-ink-3")}>{rule.title}</span>
                 </motion.li>
               );
             })}

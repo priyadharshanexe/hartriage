@@ -1,5 +1,6 @@
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { flushSync } from "react-dom";
 import { SPRING } from "../lib/motion";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
@@ -62,7 +63,22 @@ export function ThemeToggle() {
           aria-checked={theme === o.value}
           aria-label={o.label}
           title={o.label}
-          onClick={() => setTheme(o.value)}
+          onClick={(e) => {
+            const start = (document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void> } }).startViewTransition;
+            if (!start || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+              setTheme(o.value);
+              return;
+            }
+            const x = e.clientX, y = e.clientY;
+            const r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+            const t = start.call(document, () => flushSync(() => setTheme(o.value)));
+            void t.ready.then(() =>
+              document.documentElement.animate(
+                { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${r}px at ${x}px ${y}px)`] },
+                { duration: 480, easing: "cubic-bezier(0.2, 0.7, 0.2, 1)", pseudoElement: "::view-transition-new(root)" },
+              ),
+            );
+          }}
           className={cx("relative h-7 w-8 rounded-full text-sm transition-colors duration-150", theme === o.value ? "text-ink" : "text-ink-4 hover:text-ink")}
         >
           {theme === o.value && <motion.span layoutId="theme-pill" className="absolute inset-0 rounded-full bg-raised" transition={SPRING} />}

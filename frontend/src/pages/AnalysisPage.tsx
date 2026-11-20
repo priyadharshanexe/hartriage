@@ -5,6 +5,7 @@ import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { Magnetic, Reveal, RollingNumber, Spotlight, Stamp } from "../components/fx";
 import { RequestDetail } from "../components/RequestDetail";
+import { useToast } from "../components/Toasts";
 import { Button, CopyButton, cx, EmptyState, ErrorState, Input, LoadingState, Notice, Redacted, Select, SeverityBadge, Tag } from "../components/ui";
 import { NO_FILTER, Waterfall, type WaterfallFilter, applyFilter, isFiltered } from "../components/Waterfall";
 import { api } from "../lib/api";
@@ -42,6 +43,7 @@ export function AnalysisPage() {
   const { id = "" } = useParams();
   const { canEdit } = useAuth();
   const queryClient = useQueryClient();
+  const toast = useToast();
   const analysis = useQuery({
     queryKey: ["analysis", id],
     queryFn: () => api<Analysis>(`/v1/analyses/${id}`),
@@ -122,6 +124,7 @@ export function AnalysisPage() {
       clearFilters();
       setNotice(null);
       await queryClient.invalidateQueries({ queryKey: ["analysis", id] });
+      toast("Re-running with the current rules…", "info");
       setAwaitingRerun(true);
     } catch (e) {
       setNotice({ text: e instanceof Error ? e.message : "The re-run failed.", tone: "bad" });
@@ -149,7 +152,7 @@ export function AnalysisPage() {
         </div>
         {done && canEdit && (
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" onClick={() => void downloadRedacted(id, a.filename)}>
+            <Button size="sm" onClick={() => void downloadRedacted(id, a.filename).then(() => toast("Redacted HAR downloaded. Its secrets are markers."), () => toast("The download failed.", "bad"))}>
               Download redacted HAR
             </Button>
             <Button size="sm" busy={rerunning || awaitingRerun} onClick={() => void rerun()}>

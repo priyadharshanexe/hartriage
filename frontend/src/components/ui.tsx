@@ -227,7 +227,15 @@ export function PageHeader({ eyebrow, title, description, action }: { eyebrow?: 
     <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0 max-w-3xl">
         {eyebrow && <div className="eyebrow mb-1">{eyebrow}</div>}
-        <h1 className="font-display text-3xl font-medium tracking-[-0.01em] break-words">{title}</h1>
+        {/* Page titles are wiped into view from the left (a mask reveal). */}
+        <motion.h1
+          className="font-display text-[2.5rem] leading-[1.08] font-semibold tracking-[-0.02em] break-words"
+          initial={{ clipPath: "inset(0 100% 0 0)", x: -6 }}
+          animate={{ clipPath: "inset(0 0% 0 0)", x: 0 }}
+          transition={{ duration: 0.55, ease: [0.2, 0.7, 0.2, 1] }}
+        >
+          {title}
+        </motion.h1>
         {description && <div className="mt-2 text-base text-ink-3">{description}</div>}
       </div>
       {action && <div className="flex flex-wrap gap-2">{action}</div>}
