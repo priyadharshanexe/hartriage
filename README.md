@@ -1,4 +1,4 @@
-# HAR Triage
+# <img src="frontend/public/favicon.svg" width="36" height="36" alt="" align="top"> HAR Triage
 
 Support diagnostics for HAR files: removes session tokens **before anything is stored**, finds the failing request and its likely cause, and writes a summary an agent can paste into the ticket. Use it as a CLI, in the web app, or straight from Zendesk and Freshdesk: tag a ticket and the analysis comes back as a private note.
 
@@ -12,12 +12,13 @@ HAR Triage treats every HAR file as a credential dump: secrets are replaced whil
 
 ## What it looks like
 
-![Upload, summary, findings, waterfall and a helpdesk note](docs/screenshots/demo.gif)
+![Sign in, upload, the redaction, findings, waterfall, a helpdesk note, Files and Settings](docs/screenshots/demo.gif)
 
 | | |
 |---|---|
 | ![Ticket summary](docs/screenshots/analysis-summary.png) | ![Waterfall and request detail](docs/screenshots/waterfall-and-request.png) |
 | ![Private note in the helpdesk](docs/screenshots/helpdesk-private-note.png) | ![Helpdesk connection](docs/screenshots/connections.png) |
+| ![Files: every file, who uploaded it, delete](docs/screenshots/files.png) | ![Settings: retention, size, quota and daily limits](docs/screenshots/settings.png) |
 
 A ticket summary, exactly as copied:
 
