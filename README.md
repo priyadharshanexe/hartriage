@@ -1,6 +1,15 @@
 # <img src="frontend/public/favicon.svg" width="36" height="36" alt="" align="top"> HAR Triage
 
-Support diagnostics for HAR files: removes session tokens **before anything is stored**, finds the failing request and its likely cause, and writes a summary an agent can paste into the ticket. Use it as a CLI, in the web app, or straight from Zendesk and Freshdesk: tag a ticket and the analysis comes back as a private note.
+**Removes the session tokens from a customer's HAR file before it is stored, then finds the failing request and writes the answer for the support ticket.**
+
+[![CI](https://github.com/priyadharshanexe/hartriage/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/priyadharshanexe/hartriage/actions/workflows/ci.yml)
+[![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+![Python 3.13](https://img.shields.io/badge/python-3.13-3776ab.svg)
+![React 19](https://img.shields.io/badge/react-19-149eca.svg)
+
+Use it as a CLI, in the web app, or from Zendesk and Freshdesk: tag a ticket and the analysis comes back as a private note.
+
+**Contents:** [Why this exists](#why-this-exists) · [What it looks like](#what-it-looks-like) · [Features](#features) · [How it works](#how-it-works) · [Architecture](#architecture) · [The rules](#the-rules) · [Security and redaction](#security-and-redaction) · [Quick start](#quick-start) · [Tested against real helpdesks](#tested-against-real-helpdesks) · [Tests and CI](#tests-and-ci) · [Decision records](#decision-records) · [Casebook](#casebook) · [Project layout](#project-layout) · [What I'd do next](#what-id-do-next)
 
 ## Why this exists
 
@@ -9,18 +18,20 @@ When a customer reports "the page is broken", support asks for a HAR file: the b
 HAR Triage treats every HAR file as a credential dump: secrets are replaced while the file is read, the original is never written anywhere, and only the redacted copy is kept, encrypted and deleted on a schedule.
 
 ![The same request before and after redaction](docs/screenshots/before-after-redaction.png)
+<sub>One request from a sample file: what the browser recorded (left) and what HAR Triage stores (right).</sub>
 
 ## What it looks like
 
-![Sign in, upload, the redaction, findings, waterfall, a helpdesk note, Files and Settings](docs/screenshots/demo.gif)
+![Sign in, upload, the redaction, findings, waterfall, KB, a helpdesk connection, Files and Settings](docs/screenshots/demo.gif)
+<sub>Sign in, upload a sample HAR, watch the secrets come out, read the answer, open a request, then a helpdesk connection, Files and Settings.</sub>
 
 | | |
 |---|---|
-| ![Ticket summary](docs/screenshots/analysis-summary.png) | ![Waterfall and request detail](docs/screenshots/waterfall-and-request.png) |
-| ![Private note in the helpdesk](docs/screenshots/helpdesk-private-note.png) | ![Helpdesk connection](docs/screenshots/connections.png) |
-| ![Files: every file, who uploaded it, delete](docs/screenshots/files.png) | ![Settings: retention, size, quota and daily limits](docs/screenshots/settings.png) |
+| ![The answer for the ticket](docs/screenshots/analysis-summary.png)<br><sub>The likely cause, evidence and redaction summary for one file.</sub> | ![Waterfall and request detail](docs/screenshots/waterfall-and-request.png)<br><sub>Every request in a waterfall; one opened with its redacted headers.</sub> |
+| ![Findings](docs/screenshots/findings.png)<br><sub>Findings by severity, each linked to its requests and KB article.</sub> | ![Helpdesk connection](docs/screenshots/connections.png)<br><sub>A Zendesk connection (demo account) after a tagged ticket was analysed.</sub> |
+| ![Files](docs/screenshots/files.png)<br><sub>Files: who uploaded each file, filters, download and delete.</sub> | ![Settings](docs/screenshots/settings.png)<br><sub>Settings: retention, size, quota and daily limits; storage per member.</sub> |
 
-A ticket summary, exactly as copied:
+The private note posted to a ticket is this summary, exactly as **Copy for ticket** produces it:
 
 ```markdown
 **First failure:** Request #3: GET http://app.test:8471/api/me → 401 Unauthorized
@@ -38,6 +49,26 @@ the app is not refreshing tokens before they expire: escalate with these request
 
 **KB article:** [R002: 401 Unauthorized](kb/R002-auth.md)
 ```
+
+## Features
+
+- **Redaction while the file streams in.** Tokens, cookies, keys and passwords become `[REDACTED:<8 hex>]` markers; the original is never written to disk or storage.
+- **Eleven diagnostic rules** (R001–R011): first failure, expired or missing credentials, CORS, redirect loops, DNS and TLS, slow phases, rate limits, oversized requests, API error bodies, mixed content and 5xx by endpoint.
+- **An answer for the ticket**: the likely cause, the evidence, a next step and a KB link, copied as Markdown or posted as a private note.
+- **A waterfall of every request** (up to 50,000), each opening its redacted headers and body.
+- **Zendesk and Freshdesk**: tag a ticket with `har_analyze` and get one private note per HAR file; optionally replace the original attachment with the redacted copy.
+- **Files**: agents see and delete their own uploads; admins see every file, filter by owner, source, status and date, and bulk delete. Deletes take effect at once and are audited.
+- **Settings** (admins): retention of 7, 30 or 90 days, a maximum file size, a storage quota and a daily upload limit per member, with storage used per member.
+- **Organisations and roles** (admin, agent, viewer), invitations and an audit log.
+- **A CLI** that runs the same analysis offline.
+
+## How it works
+
+1. **Upload.** A file arrives from the web app, the CLI, or a tagged helpdesk ticket.
+2. **Redaction.** The HAR is parsed one request at a time. Facts the rules need (was a credential sent, when did the JWT expire) are read first; then every secret is replaced and the request is written to encrypted storage.
+3. **Rules.** Eleven rules run over the redacted requests and produce findings with a severity and request numbers.
+4. **Answer.** The findings become a summary: what the customer was doing, the first failure, the likely cause, the evidence and a next step.
+5. **Helpdesk note.** For a ticket, the summary is posted once as a private note with the redacted copy attached, and the tag becomes `har_analyzed`.
 
 ## Architecture
 
@@ -66,7 +97,7 @@ flowchart LR
 - **Exactly one note per analysis**, even when a helpdesk sends the webhook twice or a worker dies after posting.
 - **Agents see their own files; admins see all** ([decision 0013](docs/decisions/0013-own-files-only.md)). The Files page lists, filters, downloads and deletes files; deleting purges the redacted copy at once and is audited. Admins set retention (7/30/90 days), a maximum file size, a storage quota and a daily upload limit per member in Settings, and see storage used per member.
 
-Why each of these: [decision records](docs/decisions/).
+Why each of these: [decision records](#decision-records).
 
 ## The rules
 
@@ -86,11 +117,16 @@ Why each of these: [decision records](docs/decisions/).
 
 Each rule has a [KB article](kb/) written for the agent working the ticket.
 
-## Redaction
+## Security and redaction
 
 Header, cookie, query, form and JSON values with sensitive names; JWTs, bearer and basic credentials, AWS keys, private keys and common API-key formats anywhere in text; response bodies dropped except small JSON error messages. Every secret becomes `[REDACTED:<8 hex>]`, an HMAC with a salt that exists only while one file is processed: the same token gets the same marker within a file, and markers can't be matched across files.
 
 What is removed, what is kept and why: [docs/redaction-policy.md](docs/redaction-policy.md).
+
+- Stored copies are encrypted and deleted when they expire (30 days by default; admins choose 7, 30 or 90).
+- Another organisation's file, or another agent's, is "not found" on every route.
+- Nothing is sent to an AI service ([decision 0009](docs/decisions/0009-no-llm-in-the-analysis.md)).
+- Zendesk webhooks must carry a valid signature; Freshdesk tickets are re-read from the API rather than trusted from a webhook.
 
 ## Quick start
 
@@ -104,12 +140,14 @@ docker compose up --build
 |---|---|
 | Web app | http://localhost:8280 (create an organisation, then drop a HAR file) |
 | API | http://localhost:8200, interactive docs at `/docs` ([OpenAPI](docs/openapi.json)) |
-| Fake helpdesk | http://localhost:8290 (a Zendesk/Freshdesk stand-in for trying the ticket flow) |
+| Fake helpdesk | http://localhost:8290 (a local test double of the Zendesk and Freshdesk APIs, for trying the ticket flow without an account) |
 | Object storage | http://localhost:9200 (RustFS, S3-compatible) |
 
 Sample files: [tools/fixtures/samples](tools/fixtures/samples/).
 
 ### CLI
+
+Requirements: Python 3.13 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
 uv sync
@@ -128,9 +166,19 @@ Admins add Zendesk (a confidential OAuth client, or agent email + API token on o
 
 Agents then tag a ticket that has a `.har` attachment with `har_analyze`. A private note arrives for each HAR file on the ticket (never twice for the same file, [why one per file](docs/decisions/0010-one-note-per-har-file.md)), and the tag becomes `har_analyzed`. An admin can also have the original attachment replaced with the redacted copy.
 
-Both helpdesks were tested end to end against real trial accounts: see [live helpdesk testing](docs/live-helpdesk-testing.md) for the scenarios, ticket ids and the seven bugs it found.
+## Tested against real helpdesks
 
-## Tests
+Both integrations were tested end to end against a real Freshdesk trial and a real Zendesk Suite trial: duplicate and forged webhooks, several HARs on one ticket, an 18 MB and a 45 MB file, a real 429 with `Retry-After`, and replacing the original attachment. Seven bugs were found and fixed, among them:
+
+- pre-signed attachment URLs written to the logs, which would have let anyone with log access download an unredacted HAR;
+- Freshdesk automations never firing on a tag change, so tagged tickets are now found by polling;
+- new Zendesk accounts unable to create API tokens, so connections now use a confidential OAuth client;
+- Zendesk rejecting the redacted copy because of how its JSON began;
+- request numbers such as "#3" auto-linked by Zendesk to other customers' tickets.
+
+Scenarios, ticket numbers and fixes: [docs/live-helpdesk-testing.md](docs/live-helpdesk-testing.md). The recorded traffic is replayed in CI.
+
+## Tests and CI
 
 ```bash
 docker compose up -d postgres redis s3
@@ -147,7 +195,25 @@ cd frontend && npm test && npm run e2e
 - **Recorded traffic** ([cassettes](tests/cassettes)): the real Zendesk and Freshdesk clients replayed against traffic recorded from live trial accounts, scrubbed of credentials, tokens, signed links, emails and subdomains ([how](docs/live-helpdesk-testing.md#recorded-traffic-in-ci)).
 - **Frontend**: Vitest for the API client, helpers and pages; Playwright for upload → findings → copy for ticket → request detail, and for agents seeing and deleting only their own files while the admin sees everyone's.
 
-CI ([workflow](.github/workflows/ci.yml)) also runs gitleaks over the whole history and builds both images.
+CI ([workflow](.github/workflows/ci.yml)) runs on every push: backend lint, types and tests; frontend types, tests and build; the Playwright flow against the whole stack in Docker; gitleaks over the whole history; and both image builds.
+
+## Decision records
+
+| # | Decision |
+|---|---|
+| [0001](docs/decisions/0001-redact-in-the-stream.md) | Redact in the upload stream; never store the raw file |
+| [0002](docs/decisions/0002-celery-for-background-jobs.md) | Celery and Redis for background jobs |
+| [0003](docs/decisions/0003-waterfall-index-and-range-reads.md) | A waterfall index in PostgreSQL; request detail by byte-range read |
+| [0004](docs/decisions/0004-rules-see-redacted-data-only.md) | Rules run on redacted data; facts are read before redaction |
+| [0005](docs/decisions/0005-salted-hmac-markers.md) | Replace secrets with salted HMAC markers |
+| [0006](docs/decisions/0006-exactly-once-private-notes.md) | Exactly one private note per analysis |
+| [0007](docs/decisions/0007-unsigned-webhooks-are-rechecked.md) | Signed Zendesk webhooks; Freshdesk webhooks re-checked against the API |
+| [0008](docs/decisions/0008-rustfs-for-local-object-storage.md) | RustFS for local S3-compatible storage |
+| [0009](docs/decisions/0009-no-llm-in-the-analysis.md) | No LLM in the analysis |
+| [0010](docs/decisions/0010-one-note-per-har-file.md) | One private note per HAR file, not per tag action |
+| [0011](docs/decisions/0011-poll-freshdesk-for-tagged-tickets.md) | Find tagged Freshdesk tickets by polling |
+| [0012](docs/decisions/0012-zendesk-oauth-client-credentials.md) | Connect Zendesk with a confidential OAuth client |
+| [0013](docs/decisions/0013-own-files-only.md) | Agents see their own files; admins see all |
 
 ## Casebook
 
@@ -160,8 +226,8 @@ hartriage/
   har/        stream_reader (ijson), redactor, metadata, model, writer
   rules/      R001–R011, one small class each
   summary/    ticket summary → Markdown, text, JSON, HTML
-  api/        auth, members, uploads, analyses, connections, webhooks, health, KB, audit
-  services/   intake (stream → redact → store), analysis, retention, audit
+  api/        auth, members, uploads, analyses, org settings, connections, webhooks, health, KB, audit
+  services/   intake (stream → redact → store), analysis, retention, limits, audit
   helpdesk/   Zendesk and Freshdesk clients, exactly-once note task
   worker/     Celery app and tasks
   storage/    S3 multipart writer and range reads; in-memory store for tests
@@ -169,7 +235,7 @@ hartriage/
 frontend/     React, TypeScript, TanStack Query and Virtual, Tailwind
 kb/           one article per rule
 casebook/     eight reproducible support cases against Relay
-tools/        fault server and HAR recorder, fake helpdesk, screenshot script,
+tools/        fault server and HAR recorder, fake helpdesk (test double), screenshot script,
               live/ scripts for testing against real helpdesk trials
 docs/         decision records, redaction policy, OpenAPI, screenshots
 ```
@@ -179,7 +245,8 @@ docs/         decision records, redaction policy, OpenAPI, screenshots
 - Zendesk's authorization-code OAuth flow (a "Connect with Zendesk" button) alongside the confidential client.
 - Plain-text log files: the redactor already handles free text, but there are no log rules yet.
 - A public demo mode that analyses sample files in memory and stores nothing.
-- Per-organisation retention and a customer-facing "send us a HAR" upload link that redacts in the browser before upload.
+- A customer-facing "send us a HAR" link that redacts in the browser before upload.
+- Sharing a file with a named colleague, now that agents see only their own.
 
 ## Licence
 

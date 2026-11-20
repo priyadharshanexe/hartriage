@@ -3,8 +3,9 @@
     uv run --with pillow python -m tools.screenshots
 
 Registers a throwaway account, uploads the sample HAR, connects the fake helpdesk
-(the made-up "acme" account, never a real one), tags a ticket, and saves PNGs and
-the demo GIF to docs/screenshots/.
+(the made-up "acme" account, never a real one) and tags a ticket so the connection
+shows a real delivery, then saves PNGs and the demo GIF to docs/screenshots/. Only
+HAR Triage's own pages are captured, never the fake helpdesk's.
 """
 
 from __future__ import annotations
@@ -146,6 +147,7 @@ def main() -> None:
             "heading", name="R002 — Authentication and permission errors (401 / 403)"
         ).wait_for()
         shot(page, "kb-article")
+        frame(page, 1600)
 
         # Helpdesk: connect the fake Zendesk, tag a ticket, read the note.
         page.goto(f"{WEB}/connections")
@@ -179,10 +181,7 @@ def main() -> None:
         page.reload()
         page.get_by_text("Setup steps").click()
         shot(page, "connections")
-        page.goto(FAKE)
-        page.locator("details").last.click()
-        shot(page, "helpdesk-private-note", full=True)
-        frame(page, 2600)
+        frame(page, 2200)
 
         page.goto(f"{WEB}/analyses")
         page.get_by_role("heading", name="Files").wait_for()
