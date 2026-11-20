@@ -37,6 +37,7 @@ from hartriage.helpdesk.base import HelpdeskError, RateLimited
 from hartriage.services import audit
 from hartriage.services.analysis import run_analysis
 from hartriage.services.intake import intake
+from hartriage.services.limits import limits_for
 from hartriage.storage.s3 import get_storage
 from hartriage.summary.builder import Summary, to_html
 from hartriage.worker.celery_app import app
@@ -109,6 +110,7 @@ def ingest_ticket(self: Task, receipt_id: str) -> None:
             and a.comment_id not in own_notes
             and not a.filename.lower().endswith((".redacted.har", ".redacted.har.gz"))
         ]
+        org_limits = limits_for(db, settings, conn.org_id)
         new = 0
         queued: list[uuid.UUID] = []
         for attachment in hars:
@@ -120,7 +122,7 @@ def ingest_ticket(self: Task, receipt_id: str) -> None:
             if seen is not None:
                 continue
             try:
-                with client.open_attachment(attachment, settings.max_upload_bytes) as stream:
+                with client.open_attachment(attachment, org_limits.max_bytes) as stream:
                     analysis = intake(
                         db,
                         storage,
@@ -131,6 +133,8 @@ def ingest_ticket(self: Task, receipt_id: str) -> None:
                         filename=attachment.filename,
                         case_id=case.id,
                         external_attachment_id=attachment.id,
+                        max_bytes=org_limits.max_bytes,
+                        retention_days=org_limits.retention_days,
                     )
                 db.commit()
             except RateLimited as exc:

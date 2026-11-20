@@ -93,12 +93,14 @@ def intake(
     created_by: uuid.UUID | None = None,
     case_id: uuid.UUID | None = None,
     external_attachment_id: str | None = None,
+    max_bytes: int | None = None,
+    retention_days: int | None = None,
 ) -> Analysis:
     artifact_id = uuid.uuid4()
     key = artifact_key(org_id, artifact_id)
     counted = _Counting(source)
     limits = Limits(
-        max_bytes=settings.max_upload_bytes,
+        max_bytes=max_bytes or settings.max_upload_bytes,
         max_decompressed_bytes=settings.max_decompressed_bytes,
         max_entries=settings.max_entries,
     )
@@ -135,7 +137,7 @@ def intake(
         entry_count=result.stats.entries,
         redaction_summary=redaction,
         created_by=created_by,
-        expires_at=now + timedelta(days=settings.retention_days),
+        expires_at=now + timedelta(days=retention_days or settings.retention_days),
     )
     analysis = Analysis(
         org_id=org_id, artifact_id=artifact_id, status="queued", created_by=created_by

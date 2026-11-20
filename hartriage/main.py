@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from hartriage import __version__
-from hartriage.api import analyses, auth, connections, members, misc, uploads, webhooks
+from hartriage.api import analyses, auth, connections, members, misc, org, uploads, webhooks
 from hartriage.core import errors
 from hartriage.core.config import get_settings
 from hartriage.core.logging import configure, request_id_middleware
@@ -54,6 +54,6 @@ def create_app() -> FastAPI:
     )
     errors.install(app)
     app.include_router(misc.health)
-    for module in (auth, members, uploads, analyses, connections, webhooks, misc):
+    for module in (auth, members, uploads, analyses, connections, webhooks, misc, org):
         app.include_router(module.router, prefix="/v1")
     return app
