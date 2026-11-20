@@ -1,29 +1,43 @@
 /**
  * Behind the sign-in form: sample HAR lines drift past and their secrets are blacked
- * out one by one, in real time. Clearly sample data (made-up hosts and values), drawn
- * from the product's own action. Static, fully redacted, under reduced motion.
+ * out, in real time. Clearly sample data (made-up hosts and values). Each column has
+ * its own lines (a seeded shuffle of a large pool), its own speed, starting offset,
+ * opacity and stamping rhythm, so no two columns ever line up. Static and fully
+ * redacted under reduced motion.
  */
 import { useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { cx } from "./ui";
 
-const HEADERS = [
+const HOSTS = ["app.example.test", "api.example.test", "cdn.example.test", "auth.example.test", "billing.example.test", "ws.example.test", "img.example.test"];
+const PATHS = ["/api/me", "/v2/orders", "/v2/cart", "/login", "/oauth/token", "/static/app.js", "/graphql", "/v1/invoices/7731", "/health", "/socket", "/v2/search?q=shoes", "/avatar/42.png", "/v1/session/refresh", "/export.csv"];
+const METHODS = ["GET", "GET", "GET", "POST", "PUT", "OPTIONS", "DELETE", "PATCH"];
+const STATUSES = ["200", "200", "201", "204", "301", "304", "400", "401", "403", "404", "413", "429", "500", "502", "503"];
+const PLAIN_HEADERS = [
+  "accept: application/json",
+  "accept-encoding: gzip, br",
+  "content-type: application/json; charset=utf-8",
+  "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+  "user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6)",
+  "cache-control: no-store",
+  "origin: https://app.example.test",
+  "retry-after: 30",
+  "access-control-allow-origin: *",
+  "x-ratelimit-remaining: 0",
+  "sec-fetch-mode: cors",
+  "referer: https://app.example.test/checkout",
+];
+const SECRET_HEADERS = [
   ["authorization", "Bearer "],
   ["cookie", "session="],
   ["x-api-key", ""],
   ["set-cookie", "refresh="],
   ["x-csrf-token", ""],
   ["proxy-authorization", "Basic "],
-] as const;
-const PLAIN = [
-  "GET https://app.example.test/api/me 401",
-  "POST https://api.example.test/v2/orders 201",
-  "accept: application/json",
-  "x-request-id: req_8c1d42e9",
-  "GET https://cdn.example.test/app.css 200",
-  "user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6)",
-  "OPTIONS https://api.example.test/v2/cart 204",
-  "content-type: application/json; charset=utf-8",
+  ["x-amz-security-token", ""],
+  ["cookie", "_ga=GA1.2.88; sid="],
+  ["x-auth-token", ""],
+  ["query.access_token", ""],
 ] as const;
 
 function seeded(n: number): () => number {
@@ -39,23 +53,33 @@ interface Line {
   secret?: { prefix: string; value: string; marker: string };
 }
 
-function makeLines(count: number): Line[] {
-  const rnd = seeded(7);
+function makeLines(seed: number, count: number): Line[] {
+  const rnd = seeded(seed);
+  const pick = <T,>(xs: readonly T[]) => xs[Math.floor(rnd() * xs.length)]!;
   const hex = () => Math.floor(rnd() * 0xffffffff).toString(16).padStart(8, "0");
-  const blob = (len: number) =>
-    Array.from({ length: len }, () => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(rnd() * 62)]).join("");
-  return Array.from({ length: count }, (_, i) => {
-    if (i % 3 === 1) {
-      const [name, prefix] = HEADERS[Math.floor(rnd() * HEADERS.length)]!;
-      return { text: `${name}: `, secret: { prefix, value: `eyJ${blob(18)}`, marker: hex() } };
+  const blob = (len: number) => Array.from({ length: len }, () => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(rnd() * 62)]).join("");
+  return Array.from({ length: count }, () => {
+    const kind = rnd();
+    if (kind < 0.32) {
+      const [name, prefix] = pick(SECRET_HEADERS);
+      return { text: `${name}: `, secret: { prefix, value: `eyJ${blob(10 + Math.floor(rnd() * 12))}`, marker: hex() } };
     }
-    return { text: PLAIN[Math.floor(rnd() * PLAIN.length)]! };
+    if (kind < 0.62) return { text: `${pick(METHODS)} https://${pick(HOSTS)}${pick(PATHS)} ${pick(STATUSES)}` };
+    if (kind < 0.78) return { text: `${pick(METHODS)} ${pick(PATHS)} · ${Math.round(rnd() * 3200)} ms · ${Math.round(rnd() * 90)} kB` };
+    return { text: pick(PLAIN_HEADERS) };
   });
 }
 
-export function RedactionField() {
+const COLUMNS = [
+  { seed: 11, duration: 38, delay: -7, opacity: 1, every: 620 },
+  { seed: 29, duration: 52, delay: -31, opacity: 0.8, every: 910 },
+  { seed: 47, duration: 45, delay: -18, opacity: 0.9, every: 760 },
+  { seed: 83, duration: 60, delay: -44, opacity: 0.75, every: 1130 },
+];
+
+function Column({ seed, duration, delay, opacity, every, index }: (typeof COLUMNS)[number] & { index: number }) {
   const reduce = useReducedMotion();
-  const lines = useMemo(() => makeLines(36), []);
+  const lines = useMemo(() => makeLines(seed, 30), [seed]);
   const secretIdx = useMemo(() => lines.flatMap((l, i) => (l.secret ? [i] : [])), [lines]);
   const [stamped, setStamped] = useState<Set<number>>(() => new Set(reduce ? secretIdx : []));
 
@@ -64,20 +88,27 @@ export function RedactionField() {
       setStamped(new Set(secretIdx));
       return;
     }
-    // Black out one secret every ~0.7 s; when all are out, start over.
-    const timer = window.setInterval(() => {
-      setStamped((prev) => {
-        const left = secretIdx.filter((i) => !prev.has(i));
-        if (left.length === 0) return new Set();
-        const next = new Set(prev);
-        next.add(left[Math.floor(Math.random() * left.length)]!);
-        return next;
-      });
-    }, 700);
-    return () => window.clearInterval(timer);
-  }, [reduce, secretIdx]);
+    // Each column stamps on its own rhythm, starting at its own moment.
+    const rnd = seeded(seed * 7);
+    let timer = 0;
+    const start = window.setTimeout(() => {
+      timer = window.setInterval(() => {
+        setStamped((prev) => {
+          const left = secretIdx.filter((i) => !prev.has(i));
+          if (left.length === 0) return new Set();
+          const next = new Set(prev);
+          next.add(left[Math.floor(rnd() * left.length)]!);
+          return next;
+        });
+      }, every);
+    }, index * 230);
+    return () => {
+      window.clearTimeout(start);
+      window.clearInterval(timer);
+    };
+  }, [reduce, secretIdx, seed, every, index]);
 
-  const column = (
+  const block = (
     <div className="space-y-3 py-3">
       {lines.map((l, i) => (
         <div key={i} className="truncate">
@@ -106,15 +137,19 @@ export function RedactionField() {
   );
 
   return (
+    <div className={cx("min-w-[24rem] flex-1", index > 1 && "max-lg:hidden", !reduce && "animate-drift")} style={{ opacity, animationDuration: `${duration}s`, animationDelay: `${delay}s` }}>
+      {block}
+      {block}
+    </div>
+  );
+}
+
+export function RedactionField() {
+  return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden select-none">
-      {/* Columns across the whole width, so the field shows at any size; a soft mask
-          keeps it quiet behind the headline and the form. */}
       <div className="absolute inset-0 flex gap-10 overflow-hidden px-6 font-mono text-[0.8125rem] leading-6 text-ink-3 opacity-[var(--field-opacity)] [mask-image:linear-gradient(to_right,rgb(0_0_0/0.25),black_70%)]">
-        {[0, 1, 2, 3].map((c) => (
-          <div key={c} className={cx("min-w-[26rem] flex-1", c > 1 && "max-lg:hidden", !reduce && "animate-drift")} style={{ animationDuration: `${70 + c * 14}s`, animationDelay: `${-c * 9}s` }}>
-            {column}
-            {column}
-          </div>
+        {COLUMNS.map((c, i) => (
+          <Column key={c.seed} {...c} index={i} />
         ))}
       </div>
     </div>
