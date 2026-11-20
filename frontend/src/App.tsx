@@ -12,6 +12,7 @@ const AnalysisPage = lazy(() => import("./pages/AnalysisPage").then((m) => ({ de
 const ConnectionsPage = lazy(() => import("./pages/ConnectionsPage").then((m) => ({ default: m.ConnectionsPage })));
 const TeamPage = lazy(() => import("./pages/TeamPage").then((m) => ({ default: m.TeamPage })));
 const AuditPage = lazy(() => import("./pages/AuditPage").then((m) => ({ default: m.AuditPage })));
+const SettingsPage = lazy(() => import("./pages/SettingsPage").then((m) => ({ default: m.SettingsPage })));
 const KbIndexPage = lazy(() => import("./pages/KbPage").then((m) => ({ default: m.KbIndexPage })));
 const KbPage = lazy(() => import("./pages/KbPage").then((m) => ({ default: m.KbPage })));
 
@@ -48,6 +49,7 @@ export function App() {
         <Route path="connections" element={<AdminOnly><Suspense fallback={<LoadingState />}><ConnectionsPage /></Suspense></AdminOnly>} />
         <Route path="team" element={<AdminOnly><Suspense fallback={<LoadingState />}><TeamPage /></Suspense></AdminOnly>} />
         <Route path="audit" element={<AdminOnly><Suspense fallback={<LoadingState />}><AuditPage /></Suspense></AdminOnly>} />
+        <Route path="settings" element={<AdminOnly><Suspense fallback={<LoadingState />}><SettingsPage /></Suspense></AdminOnly>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

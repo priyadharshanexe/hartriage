@@ -34,6 +34,6 @@ test("upload a HAR, read the findings, copy the summary, inspect a redacted requ
 
   await page.keyboard.press("Escape");
   await expect(detail).toBeHidden();
-  await page.getByRole("link", { name: "History" }).click();
+  await page.getByRole("link", { name: "Files" }).click();
   await expect(page.getByRole("link", { name: "checkout-broken.har" })).toBeVisible();
 });

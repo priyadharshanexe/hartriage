@@ -107,7 +107,7 @@ export function Layout() {
 
   const work: NavItem[] = [
     { to: "/", label: "Analyse a file", end: true },
-    { to: "/analyses", label: "History" },
+    { to: "/analyses", label: "Files" },
     { to: "/kb", label: "Knowledge base" },
   ];
   const admin: NavItem[] = isAdmin
@@ -115,6 +115,7 @@ export function Layout() {
         { to: "/connections", label: "Helpdesk connections" },
         { to: "/team", label: "Team" },
         { to: "/audit", label: "Audit log" },
+        { to: "/settings", label: "Settings" },
       ]
     : [];
   const orgName = session?.orgs.find((o) => o.id === session.org_id)?.name;

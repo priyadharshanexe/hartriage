@@ -1,19 +1,19 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { Magnetic, Reveal, RollingNumber, Spotlight, Stamp } from "../components/fx";
 import { RequestDetail } from "../components/RequestDetail";
 import { useToast } from "../components/Toasts";
-import { Button, CopyButton, cx, EmptyState, ErrorState, Input, LoadingState, Notice, Redacted, Select, SeverityBadge, Tag } from "../components/ui";
+import { Button, ConfirmButton, CopyButton, cx, EmptyState, ErrorState, Input, LoadingState, Notice, Redacted, Select, SeverityBadge, Tag } from "../components/ui";
 import { NO_FILTER, Waterfall, type WaterfallFilter, applyFilter, isFiltered } from "../components/Waterfall";
 import { api } from "../lib/api";
 import { bytes, dateTime, relative } from "../lib/format";
 import { EASE_OUT, POP } from "../lib/motion";
 import { caseTitle } from "../lib/transition";
 import type { Analysis, EntriesPage, EntryRow, Finding, Summary } from "../lib/types";
-import { SourceBadge } from "./HistoryPage";
+import { canDelete, SourceBadge } from "./HistoryPage";
 
 async function allEntries(id: string): Promise<{ rows: EntryRow[]; hosts: EntriesPage["hosts"] }> {
   const rows: EntryRow[] = [];
@@ -41,9 +41,31 @@ const EMPTY = new Set<number>();
 
 export function AnalysisPage() {
   const { id = "" } = useParams();
-  const { canEdit } = useAuth();
+  const { canEdit, session, role } = useAuth();
+  const navigate = useNavigate();
+  const [deleting, setDeleting] = useState(false);
   const queryClient = useQueryClient();
   const toast = useToast();
+  const DeleteFile = () => (
+    <ConfirmButton
+      label="Delete"
+      question={`Delete ${analysis.data?.filename ?? "this file"}? The redacted copy and its analysis are removed now.`}
+      confirmLabel="Delete"
+      busy={deleting}
+      onConfirm={async () => {
+        setDeleting(true);
+        try {
+          await api(`/v1/analyses/${id}`, { method: "DELETE" });
+          void queryClient.invalidateQueries({ queryKey: ["analyses"] });
+          toast(`Deleted ${analysis.data?.filename ?? "the file"}.`);
+          navigate("/analyses");
+        } catch {
+          toast("Could not delete the file.", "bad");
+          setDeleting(false);
+        }
+      }}
+    />
+  );
   const analysis = useQuery({
     queryKey: ["analysis", id],
     queryFn: () => api<Analysis>(`/v1/analyses/${id}`),
@@ -158,8 +180,10 @@ export function AnalysisPage() {
             <Button size="sm" busy={rerunning || awaitingRerun} onClick={() => void rerun()}>
               {rerunning ? "Re-running…" : "Re-run analysis"}
             </Button>
+            {canDelete(a, session?.user.id, role) && <DeleteFile />}
           </div>
         )}
+        {!done && canDelete(a, session?.user.id, role) && <DeleteFile />}
       </header>
       <AnimatePresence>
         {notice && (
