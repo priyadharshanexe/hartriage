@@ -119,7 +119,7 @@ class HelpdeskConnection(Base):
     webhook_secret_encrypted: Mapped[str] = mapped_column(Text)
     replace_attachments: Mapped[bool] = mapped_column(Boolean, default=False)
     last_webhook_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    last_webhook_status: Mapped[str | None] = mapped_column(String(40))
+    last_webhook_status: Mapped[str | None] = mapped_column(String(300))
     created_by: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL")
     )

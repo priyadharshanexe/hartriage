@@ -125,6 +125,9 @@ services:
   # demonstrated and tested without a trial account. See tools/fake_helpdesk.
   fake-helpdesk:
     build: .
+    # Like every other service: back after a reboot, or every poll of a demo
+    # connection fails.
+    restart: unless-stopped
     command: ["uvicorn", "tools.fake_helpdesk.app:app", "--host", "0.0.0.0", "--port", "8290"]
     working_dir: /app
     environment:

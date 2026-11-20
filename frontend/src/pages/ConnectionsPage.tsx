@@ -137,7 +137,7 @@ function ConnectionCard({ connection: c, secret, onSecret, onDelete }: { connect
             <span title={dateTime(c.last_webhook_at)} className="inline-flex flex-wrap items-center gap-2">
               {/* Heartbeat: green and beating while webhooks or polls succeed, red when the last one failed. */}
               <span className={`heartbeat ${/error|rejected/.test(c.last_webhook_status ?? "") ? "heartbeat-bad" : ""}`} aria-hidden="true" />
-              {relative(c.last_webhook_at)} · <span className="font-mono text-xs">{c.last_webhook_status}</span>
+              {relative(c.last_webhook_at)} · <span className="font-mono text-xs break-words [overflow-wrap:anywhere]" title={c.last_webhook_status ?? undefined}>{c.last_webhook_status}</span>
             </span>
           ) : (
             <span className="text-ink-3">None received yet</span>

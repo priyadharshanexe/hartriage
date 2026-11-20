@@ -46,6 +46,13 @@ log = structlog.get_logger()
 ATTACHMENT_LIMITS = {"zendesk": 50 * 1024 * 1024, "freshdesk": 20 * 1024 * 1024}
 
 
+def status_text(text: str, limit: int = 300) -> str:
+    """A connection status for admins: never cut mid-word."""
+    if len(text) <= limit:
+        return text
+    return text[: limit - 1].rsplit(" ", 1)[0] + "…"
+
+
 def note_marker(analysis_id: uuid.UUID | str) -> str:
     return f"HAR Triage analysis {analysis_id}"
 
@@ -68,7 +75,7 @@ def ingest_ticket(self: Task, receipt_id: str) -> None:
             raise self.retry(countdown=exc.retry_after) from exc
         except HelpdeskError as exc:
             receipt.outcome = "ticket_unreadable"
-            conn.last_webhook_status = f"error: {exc}"[:40]
+            conn.last_webhook_status = status_text(f"error: {exc}")
             log.warning("ticket_unreadable", connection=str(conn.id), error=str(exc))
             return
         if settings.trigger_tag not in ticket.tags:
@@ -324,11 +331,16 @@ def poll_tagged_tickets() -> int:
                 tagged = client.tagged_tickets(settings.trigger_tag)
             except HelpdeskError as exc:
                 log.warning("poll_failed", connection=str(conn.id), error=str(exc))
-                conn.last_webhook_status = f"poll error: {exc}"[:40]
+                conn.last_webhook_status = status_text(f"poll error: {exc}")
                 db.commit()
                 continue
             finally:
                 client.close()
+            if (conn.last_webhook_status or "").startswith("poll error"):
+                # Recovered: the heartbeat should say so, not keep the old error.
+                conn.last_webhook_at = datetime.now(UTC)
+                conn.last_webhook_status = "polled: helpdesk reachable again"
+                db.commit()
             for ticket_id, updated_at in tagged:
                 receipt = WebhookReceipt(
                     connection_id=conn.id,
