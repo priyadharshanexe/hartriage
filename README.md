@@ -63,6 +63,7 @@ flowchart LR
 - **Rules run on redacted data only**, so no finding, summary or note can contain a secret.
 - **The waterfall is an index** in PostgreSQL; opening one request is a byte-range read of the stored file.
 - **Exactly one note per analysis**, even when a helpdesk sends the webhook twice or a worker dies after posting.
+- **Agents see their own files; admins see all** ([decision 0013](docs/decisions/0013-own-files-only.md)). The Files page lists, filters, downloads and deletes files; deleting purges the redacted copy at once and is audited. Admins set retention (7/30/90 days), a maximum file size, a storage quota and a daily upload limit per member in Settings, and see storage used per member.
 
 Why each of these: [decision records](docs/decisions/).
 
@@ -140,10 +141,10 @@ cd frontend && npm test && npm run e2e
 - **The headline test** ([property test](tests/property/test_redaction_never_leaks.py)): Hypothesis builds HAR files with random secrets planted in 25 kinds of places, from headers and nested JSON to WebSocket messages and URL user-info, and checks that none appears in the redacted file, the findings, the summary or the waterfall, raw, URL-encoded or JSON-escaped. CI runs 3,000 generated files on every push.
 - **Golden files**: HARs recorded with Playwright in Chromium *and* Firefox against a [fault server](tools/fixtures/fault_server.py) (401, 403, 413, 429, 431, 5xx, slow, broken CORS, redirect loops, mixed content) and `expired.badssl.com`; each must produce exactly the expected findings.
 - **Memory ceiling**: a generated 54 MB HAR is processed under a fixed memory limit (measured peak: about 1 MB).
-- **Integration**: the API and tasks against real PostgreSQL and Redis: upload to findings, the raw upload never reaching storage, tenancy (another organisation gets 404), roles, retention really deleting from the database and storage.
+- **Integration**: the API and tasks against real PostgreSQL and Redis: upload to findings, the raw upload never reaching storage, tenancy (another organisation gets 404, and so does another agent's file), roles, deletes and upload limits, retention really deleting from the database and storage.
 - **Helpdesk**: Zendesk signatures (valid, tampered, stale), duplicate webhooks giving one note, a 429 retried, a crash after posting not posting twice, attachment replacement, credentials never sent to a download host, Freshdesk polling, the Zendesk OAuth client renewing its token. The [fake helpdesk](tools/fake_helpdesk/app.py) copies every real-API quirk found in live testing.
 - **Recorded traffic** ([cassettes](tests/cassettes)): the real Zendesk and Freshdesk clients replayed against traffic recorded from live trial accounts, scrubbed of credentials, tokens, signed links, emails and subdomains ([how](docs/live-helpdesk-testing.md#recorded-traffic-in-ci)).
-- **Frontend**: Vitest for the API client, helpers and pages; Playwright for upload → findings → copy for ticket → request detail.
+- **Frontend**: Vitest for the API client, helpers and pages; Playwright for upload → findings → copy for ticket → request detail, and for agents seeing and deleting only their own files while the admin sees everyone's.
 
 CI ([workflow](.github/workflows/ci.yml)) also runs gitleaks over the whole history and builds both images.
 

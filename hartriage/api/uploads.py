@@ -20,10 +20,11 @@ from fastapi.responses import JSONResponse
 from starlette.requests import ClientDisconnect
 
 from hartriage.api.deps import AgentDep, DbDep, SettingsDep, StorageDep
-from hartriage.core.errors import TooLarge
+from hartriage.core.errors import TooLarge, TooManyRequests
 from hartriage.core.metrics import UPLOADS
 from hartriage.services import audit
 from hartriage.services.intake import intake
+from hartriage.services.limits import MB, limits_for, storage_used, uploads_today
 from hartriage.worker.dispatch import enqueue_analysis
 
 router = APIRouter(tags=["uploads"])
@@ -73,11 +74,33 @@ async def upload(
     storage: StorageDep,
     filename: str = "upload.har",
 ) -> JSONResponse:
+    # The organisation's own limits, set by its admins (Settings), capped by the server.
+    limits = limits_for(db, settings, principal.org_id)
     declared = request.headers.get("content-length")
-    if declared and declared.isdigit() and int(declared) > settings.max_upload_bytes:
+    size = int(declared) if declared and declared.isdigit() else 0
+    if size > limits.max_bytes:
         UPLOADS.labels("too_large").inc()
+        raise TooLarge(f"The file is too large: the limit is {limits.max_bytes // MB} MB.")
+    if (
+        limits.daily_uploads is not None
+        and uploads_today(db, principal.org_id, principal.user_id) >= limits.daily_uploads
+    ):
+        UPLOADS.labels("daily_limit").inc()
+        raise TooManyRequests(
+            "You have reached your organisation's limit of "
+            f"{limits.daily_uploads} upload{'' if limits.daily_uploads == 1 else 's'} a day. "
+            "Ask an admin to raise it, or try again tomorrow.",
+            code="daily_upload_limit",
+        )
+    if (
+        limits.quota_bytes is not None
+        and storage_used(db, principal.org_id) + size > limits.quota_bytes
+    ):
+        UPLOADS.labels("quota").inc()
         raise TooLarge(
-            f"The file is too large: the limit is {settings.max_upload_bytes // (1024 * 1024)} MB."
+            f"Your organisation's storage quota ({limits.quota_bytes // MB} MB) is full. "
+            "Delete files you no longer need, or ask an admin to raise the quota.",
+            code="storage_quota_exceeded",
         )
 
     stream: AsyncIterator[bytes] = request.stream().__aiter__()
@@ -104,6 +127,8 @@ async def upload(
             source_kind="upload",
             filename=filename,
             created_by=principal.user_id,
+            max_bytes=limits.max_bytes,
+            retention_days=limits.retention_days,
         )
         audit.record(
             db,

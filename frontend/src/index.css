@@ -1,97 +1,657 @@
 @import "tailwindcss";
 
 /*
- * HAR Triage design system
+ * HAR Triage design system: an evidence report.
  *
- * A case file, not a dashboard: warm paper, near-black ink, hairline rules and
- * square corners. Secrets appear as black redaction bars. Severity uses triage
- * tags. Data is always set in Plex Mono.
+ * Two motifs, both things the product really does: the black redaction bar (a secret
+ * removed) and the yellow highlighter (the answer). Headings in Newsreader, reading
+ * text in Atkinson Hyperlegible Next, data (URLs, headers, markers, status codes,
+ * request numbers) in JetBrains Mono, and nothing else in mono.
+ *
+ * Colours are variables so the same classes work in light and dark. Every text pair
+ * passes WCAG AA (measured). Severity and HTTP status each have their own colour and
+ * also a word or shape, so colour is never the only signal.
  */
-@theme {
-  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "IBM Plex Sans Condensed", "IBM Plex Sans", ui-sans-serif, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
 
-  --color-paper: #f2eee5;
-  --color-paper-2: #e9e3d6;
-  --color-card: #fbf9f4;
-  --color-ink: #1b1a17;
-  --color-ink-2: #3b3832;
-  --color-ink-3: #6e695d;
-  --color-ink-4: #9a9486;
-  --color-rule: #d9d2c3;
-  --color-rule-2: #c3baa6;
-  --color-signal: #c2410c;
-  --color-signal-soft: #f6dccc;
+/*
+ * Dark is the default and the showpiece: support engineers read HAR files next to
+ * ticket queues all day, and on a near-black canvas the two motifs (the black
+ * redaction bar, outlined, and the amber highlighter) and the severity colours have
+ * the most contrast. Light is one click away, and "system" follows the OS.
+ */
+:root {
+  color-scheme: dark;
+  --canvas: #090b0f;
+  --surface: #11141a;
+  --raised: #181c24;
+  --subtle: #1c212a;
+  --ink: #f4f6f8;
+  --ink-2: #d3d8df;
+  --ink-3: #9ba4b1;
+  --ink-4: #7d8693;
+  --rule: #222833;
+  --rule-2: #313846;
+  --primary: #86aeff;
+  --primary-soft: #16243d;
+  --on-primary: #090b0f;
+  --highlight: #7a5c0a;
+  --highlight-ink: #ffe58a;
+  --redaction-ring: 0 0 0 1px #8a93a0;
+  --field-opacity: 0.4;
+  --ambient-opacity: 0.05;
 
-  /* Triage */
-  --color-critical: #7f1d1d;
-  --color-high: #c8352a;
-  --color-medium: #d99a06;
-  --color-info: #5f7a62;
-  --color-ok: #2f6b3a;
+  --critical: #ff5a4e;
+  --high: #ff8a3d;
+  --medium: #ffc53d;
+  --medium-ink: #ffc53d;
+  --info: #8fb2d6;
+  --ok: #3ddc84;
+
+  --s2xx: #3ddc84;
+  --s3xx: #a5b4fc;
+  --s4xx: #ffc53d;
+  --s5xx: #ff5a4e;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --canvas: #f3f3ee;
+  --surface: #ffffff;
+  --raised: #ffffff;
+  --subtle: #e9e9e3;
+  --ink: #0b0d10;
+  --ink-2: #262a31;
+  --ink-3: #4f5661;
+  --ink-4: #676e79;
+  --rule: #d9d9d2;
+  --rule-2: #c2c3bc;
+  --primary: #1e4b8f;
+  --primary-soft: #e1eaf7;
+  --on-primary: #ffffff;
+  --highlight: #ffe066;
+  --highlight-ink: #6b5200;
+  --redaction-ring: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+  --field-opacity: 0.15;
+  --ambient-opacity: 0.06;
+
+  --critical: #b42318;
+  --high: #c4410c;
+  --medium: #f5b92e;
+  --medium-ink: #8a5a00;
+  --info: #3f5a73;
+  --ok: #0b7a43;
+
+  --s2xx: #0b7a43;
+  --s3xx: #4b5ba6;
+  --s4xx: #9a5b00;
+  --s5xx: #b42318;
+}
+
+@media (prefers-color-scheme: light) {
+  :root[data-theme="system"] {
+    color-scheme: light;
+    --canvas: #f3f3ee;
+    --surface: #ffffff;
+    --raised: #ffffff;
+    --subtle: #e9e9e3;
+    --ink: #0b0d10;
+    --ink-2: #262a31;
+    --ink-3: #4f5661;
+    --ink-4: #676e79;
+    --rule: #d9d9d2;
+    --rule-2: #c2c3bc;
+    --primary: #1e4b8f;
+    --primary-soft: #e1eaf7;
+    --on-primary: #ffffff;
+    --highlight: #ffe066;
+    --highlight-ink: #6b5200;
+    --redaction-ring: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+  --field-opacity: 0.15;
+  --ambient-opacity: 0.06;
+
+    --critical: #b42318;
+    --high: #c4410c;
+    --medium: #f5b92e;
+    --medium-ink: #8a5a00;
+    --info: #3f5a73;
+    --ok: #0b7a43;
+
+    --s2xx: #0b7a43;
+    --s3xx: #4b5ba6;
+    --s4xx: #9a5b00;
+    --s5xx: #b42318;
+  }
+}
+
+@theme inline {
+  --font-sans: "Atkinson Hyperlegible Next", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+
+  /* Type scale, ratio 1.25: 12 / 14 / 16 / 20 / 25 / 31 / 39 / 49 px */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.45;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.5;
+  --text-base: 1rem;
+  --text-base--line-height: 1.55;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.4;
+  --text-xl: 1.5625rem;
+  --text-xl--line-height: 1.3;
+  --text-2xl: 1.9375rem;
+  --text-2xl--line-height: 1.2;
+  --text-3xl: 2.4375rem;
+  --text-3xl--line-height: 1.12;
+  --text-4xl: 3.0625rem;
+  --text-4xl--line-height: 1.05;
+
+  /* The existing names map onto the new roles. */
+  --color-paper: var(--canvas);
+  --color-paper-2: var(--subtle);
+  --color-card: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+  --color-rule: var(--rule);
+  --color-rule-2: var(--rule-2);
+  --color-signal: var(--primary);
+  --color-signal-soft: var(--primary-soft);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-highlight: var(--highlight);
+  --color-highlight-ink: var(--highlight-ink);
+  --color-raised: var(--raised);
+
+  --color-critical: var(--critical);
+  --color-high: var(--high);
+  --color-medium: var(--medium);
+  --color-medium-ink: var(--medium-ink);
+  --color-info: var(--info);
+  --color-ok: var(--ok);
+  --color-s2xx: var(--s2xx);
+  --color-s3xx: var(--s3xx);
+  --color-s4xx: var(--s4xx);
+  --color-s5xx: var(--s5xx);
 
   /* Request phases, as in browser DevTools */
-  --color-phase-blocked: #c9c2b2;
+  --color-phase-blocked: #a8acb3;
   --color-phase-dns: #0e86b7;
   --color-phase-connect: #e0711b;
   --color-phase-ssl: #8b4fc4;
-  --color-phase-send: #6e695d;
+  --color-phase-send: #6b717c;
   --color-phase-wait: #2f8f4e;
-  --color-phase-receive: #2f62c4;
+  --color-phase-receive: #3b6fd4;
 
-  --radius-xs: 2px;
+  --radius-xs: 3px;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 html {
-  font-feature-settings: "ss02";
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  @apply bg-paper font-sans text-ink antialiased;
+  @apply bg-paper font-sans text-base text-ink antialiased;
+  transition:
+    background-color 200ms var(--ease-out),
+    color 200ms var(--ease-out);
 }
 
 ::selection {
-  background: var(--color-signal-soft);
+  background: var(--highlight);
+  color: var(--ink);
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-signal);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
+  border-radius: 2px;
 }
 
-/* Small uppercase labels: section names, column heads, field captions. */
+/* A quiet label: sentence case, never letter-spaced capitals. */
 .eyebrow {
-  @apply font-display text-[0.7rem] font-semibold tracking-[0.12em] text-ink-3 uppercase;
+  @apply font-sans text-[0.8125rem] font-medium text-ink-3;
 }
 
-/* A secret that was removed: a redaction bar carrying its marker id. */
+/* Column heads in data tables are the one place for small capitals. */
+.colhead {
+  @apply font-sans text-xs font-bold tracking-[0.06em] text-ink-3 uppercase;
+}
+
+/* A secret that was removed: the redaction bar, carrying its marker id. */
 .redaction {
-  @apply mx-px inline-flex items-center gap-1 rounded-[1px] bg-ink px-1.5 py-px align-baseline font-mono text-[0.78em] leading-tight text-[#b8b19f];
+  @apply mx-px inline-flex items-center gap-1 rounded-[2px] bg-[#111318] px-1.5 py-px align-baseline font-mono text-[0.78em] leading-tight font-normal text-[#e6e1d3];
   white-space: nowrap;
+  /* Dark mode: a muted outline, so the bar still reads on a dark highlight. */
+  box-shadow: var(--redaction-ring);
 }
 .redaction::before {
   content: "";
   display: inline-block;
-  width: 1.4em;
-  height: 0.55em;
+  width: 1.25em;
+  height: 0.5em;
+  border-radius: 1px;
   background: #000;
-  box-shadow: inset 0 0 0 1px #3b3832;
+  box-shadow: inset 0 0 0 1px #3a3f48;
+}
+
+/* The answer: a highlighter stroke behind the text, drawn left to right. */
+.highlighter {
+  background-image: linear-gradient(transparent 12%, var(--highlight) 12%, var(--highlight) 92%, transparent 92%);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0 0.12em;
+  margin: 0 -0.12em;
+  animation: highlighter 380ms var(--ease-out) 120ms both;
+}
+
+/* ------------------------------------------------------------------ motion */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes slide-in-right {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes highlighter {
+  from {
+    background-size: 0% 100%;
+  }
+  to {
+    background-size: 100% 100%;
+  }
+}
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes redact {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes tick {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.animate-rise {
+  animation: rise 220ms var(--ease-out) both;
+}
+.animate-fade {
+  animation: fade 200ms var(--ease-out) both;
+}
+.animate-slide-in-right {
+  animation: slide-in-right 220ms var(--ease-out) both;
+}
+.animate-slide-down {
+  animation: slide-down 180ms var(--ease-out) both;
+}
+.animate-tick {
+  animation: tick 180ms var(--ease-out) both;
+}
+.animate-grow-x {
+  transform-origin: left center;
+  animation: grow-x 300ms var(--ease-out) both;
+}
+.animate-page {
+  animation: rise 180ms var(--ease-out) both;
+}
+
+/* Loading placeholders instead of spinners. */
+.skeleton {
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--subtle) 25%, var(--rule) 50%, var(--subtle) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+/* The login headline's word, covered by a redaction bar once on load. */
+.redact-word {
+  position: relative;
+  display: inline-block;
+}
+.redact-word::after {
+  content: "";
+  position: absolute;
+  /* Full glyph box plus bleed: the i's dot and any ascender stay covered. */
+  inset: -0.06em -0.1em 0.02em;
+  border-radius: 3px;
+  background: #111318;
+  box-shadow: var(--redaction-ring);
+  transform-origin: left center;
+  animation: redact 420ms var(--ease-out) 650ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Knowledge-base articles */
-.prose-kb { @apply text-[0.95rem] leading-relaxed text-ink-2; }
-.prose-kb h1 { @apply mb-4 font-display text-3xl font-semibold tracking-tight text-ink; }
-.prose-kb h2 { @apply mt-8 mb-3 border-t border-rule pt-5 font-display text-xl font-semibold text-ink; }
-.prose-kb h3 { @apply mt-5 mb-2 font-semibold text-ink; }
-.prose-kb p { @apply my-3; }
-.prose-kb ul { @apply my-3 list-disc space-y-1.5 pl-5 marker:text-ink-4; }
-.prose-kb ol { @apply my-3 list-decimal space-y-1.5 pl-5 marker:font-mono marker:text-ink-3; }
-.prose-kb code { @apply rounded-[2px] bg-paper-2 px-1 py-px font-mono text-[0.85em] text-ink; }
-.prose-kb blockquote { @apply my-5 border-l-4 border-ink bg-paper-2/60 px-4 py-2 text-ink-2; }
-.prose-kb table { @apply my-5 w-full border-collapse text-sm; }
-.prose-kb th { @apply border-b-2 border-ink px-2 py-2 text-left font-display text-xs font-semibold tracking-wider uppercase; }
-.prose-kb td { @apply border-b border-rule px-2 py-2 align-top; }
-.prose-kb a { @apply text-ink underline decoration-signal decoration-2 underline-offset-2 hover:text-signal; }
-.prose-kb strong { @apply font-semibold text-ink; }
-.prose-kb table { display: block; overflow-x: auto; }
+.prose-kb {
+  @apply text-base leading-relaxed text-ink-2;
+}
+.prose-kb h1 {
+  @apply mb-4 font-display text-3xl font-medium tracking-tight text-ink;
+}
+.prose-kb h2 {
+  @apply mt-10 mb-3 font-display text-2xl font-medium text-ink;
+}
+.prose-kb h3 {
+  @apply mt-6 mb-2 text-lg font-bold text-ink;
+}
+.prose-kb p {
+  @apply my-3;
+}
+.prose-kb ul {
+  @apply my-3 list-disc space-y-1.5 pl-5 marker:text-ink-4;
+}
+.prose-kb ol {
+  @apply my-3 list-decimal space-y-1.5 pl-5 marker:text-ink-3;
+}
+.prose-kb code {
+  @apply rounded-[3px] bg-paper-2 px-1 py-px font-mono text-[0.85em] text-ink;
+}
+.prose-kb blockquote {
+  @apply my-5 border-l-4 border-signal bg-signal-soft/50 px-4 py-2 text-ink-2;
+}
+.prose-kb table {
+  @apply my-5 block w-full overflow-x-auto text-sm;
+  border-collapse: collapse;
+}
+.prose-kb th {
+  @apply border-b border-rule-2 px-2 py-2 text-left font-sans text-xs font-bold tracking-[0.06em] text-ink-3 uppercase;
+}
+.prose-kb td {
+  @apply border-b border-rule px-2 py-2 align-top;
+}
+.prose-kb a {
+  @apply text-signal underline decoration-1 underline-offset-2 hover:decoration-2;
+}
+.prose-kb strong {
+  @apply font-bold text-ink;
+}
+
+/* A soft light that follows the pointer over evidence (see Spotlight). */
+.spotlight {
+  position: relative;
+  isolation: isolate;
+}
+.spotlight::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 200ms var(--ease-out);
+  background: radial-gradient(260px circle at var(--x, 50%) var(--y, 50%), color-mix(in oklab, var(--primary) 14%, transparent), transparent 70%);
+  pointer-events: none;
+}
+.spotlight:hover::after {
+  opacity: 1;
+}
+
+/* Requests a hovered finding points at, and the pulse when you jump to them. */
+@keyframes pulse-row {
+  0% {
+    box-shadow: inset 0 0 0 9999px color-mix(in oklab, var(--medium) 0%, transparent);
+  }
+  30% {
+    box-shadow: inset 0 0 0 9999px color-mix(in oklab, var(--medium) 32%, transparent);
+  }
+  100% {
+    box-shadow: inset 0 0 0 9999px color-mix(in oklab, var(--medium) 0%, transparent);
+  }
+}
+.pulse-row {
+  animation: pulse-row 900ms var(--ease-out) 2;
+}
+
+/* View Transitions: a case card's file name morphs into the analysis header. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+}
+::view-transition-group(case-title) {
+  animation-duration: 380ms;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* The timeline's playhead: one sweep across every row as the waterfall first draws. */
+@keyframes sweep {
+  from {
+    left: 0%;
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  to {
+    left: 100%;
+    opacity: 0;
+  }
+}
+.playhead {
+  position: absolute;
+  top: -9px;
+  bottom: -9px;
+  width: 2px;
+  background: var(--primary);
+  box-shadow: 0 0 8px var(--primary);
+  animation: sweep 1200ms linear both;
+}
+
+/* The sign-in field of sample HAR lines drifts upward (two copies, seamless loop). */
+@keyframes drift {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+.animate-drift {
+  animation: drift 70s linear infinite;
+}
+
+/* Proof-point glyphs on the sign-in page: tiny loops in the product's own language. */
+@keyframes glyph-stamp {
+  0%,
+  20% {
+    transform: scaleX(0);
+  }
+  35%,
+  80% {
+    transform: scaleX(1);
+  }
+  100% {
+    transform: scaleX(0);
+  }
+}
+.glyph-stamp {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: glyph-stamp 3.2s var(--ease-out) infinite;
+}
+@keyframes glyph-blink {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  30%,
+  60% {
+    opacity: 1;
+  }
+}
+.glyph-blink {
+  animation: glyph-blink 2.4s ease-in-out infinite;
+}
+@keyframes glyph-grow {
+  0% {
+    transform: scaleX(0);
+  }
+  40%,
+  85% {
+    transform: scaleX(1);
+  }
+  100% {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+}
+.glyph-grow {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: glyph-grow 2.8s var(--ease-out) infinite;
+}
+.glyph-sweep {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: glyph-stamp 3s var(--ease-out) 0.6s infinite;
+}
+
+/* A live heartbeat for a helpdesk connection's webhook or poller. */
+@keyframes heartbeat {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--hb) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 8px color-mix(in oklab, var(--hb) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--hb) 0%, transparent);
+  }
+}
+.heartbeat {
+  --hb: var(--ok);
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 9999px;
+  background: var(--hb);
+  animation: heartbeat 1.8s ease-out infinite;
+}
+.heartbeat-bad {
+  --hb: var(--critical);
+}
+
+/* Audit rows that arrive while you watch flash once. */
+@keyframes flash-new {
+  0% {
+    background: color-mix(in oklab, var(--highlight) 70%, transparent);
+  }
+  100% {
+    background: transparent;
+  }
+}
+.flash-new {
+  animation: flash-new 1.6s var(--ease-out) both;
+}
+
+/* A very faint request waterfall drifting behind the app's pages. */
+@keyframes ambient-drift {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: -480px 0;
+  }
+}
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--ambient-opacity);
+  background-image: url("/ambient.svg");
+  mask-image: linear-gradient(to bottom, transparent, black 30%, black 70%, transparent);
+  animation: ambient-drift 60s linear infinite;
+}
+
+/* A soft clearing in the sign-in field behind each content block: lines stay in the
+   margins and gaps, never under text. */
+.clearing {
+  position: relative;
+  isolation: isolate;
+}
+.clearing::before {
+  content: "";
+  position: absolute;
+  inset: -56px -64px;
+  z-index: -1;
+  background: radial-gradient(closest-side, var(--canvas) 72%, transparent);
+  pointer-events: none;
+}

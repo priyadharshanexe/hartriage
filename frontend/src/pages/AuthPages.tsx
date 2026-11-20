@@ -2,55 +2,50 @@ import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, type ReactNode, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
-import { Logo } from "../components/Layout";
+import { Logo, ThemeToggle } from "../components/Layout";
+import { ProofPoints } from "../components/ProofPoints";
+import { RedactionField } from "../components/RedactionField";
 import { Button, ErrorState, Field, Input, LoadingState } from "../components/ui";
 import { api, fieldErrors } from "../lib/api";
 import { dateTime } from "../lib/format";
 import type { Role, Session } from "../lib/types";
 
-/** A redacted line of a request, as the sign-in pages' side panel shows it. */
-function SpecimenLine({ name, value }: { name: string; value: ReactNode }) {
-  return (
-    <div className="flex gap-3 border-b border-white/10 py-2 font-mono text-xs">
-      <span className="w-28 shrink-0 text-[#8a8475]">{name}</span>
-      <span className="min-w-0 break-words text-[#e6e0d2]">{value}</span>
-    </div>
-  );
-}
-
 function Shell({ title, lede, children, footer }: { title: string; lede?: ReactNode; children: ReactNode; footer?: ReactNode }) {
+  // One screen, no page scroll on a laptop: the explanation and the form sit side by
+  // side from 1100 px, and the headline scales with the viewport. On a phone the form
+  // comes first and the explanation follows.
   return (
-    <div className="grid min-h-screen lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-      <div className="flex flex-col px-6 py-8 sm:px-12">
+    <div className="relative flex min-h-dvh flex-col overflow-hidden px-5 py-5 sm:px-10">
+      <RedactionField />
+      <div className="relative flex items-center justify-between">
         <Logo />
-        <div className="flex flex-1 items-center">
-          <div className="w-full max-w-sm py-12">
-            <h1 className="font-display text-4xl font-semibold tracking-tight">{title}</h1>
-            {lede && <div className="mt-2 text-sm text-ink-2">{lede}</div>}
-            <div className="mt-8">{children}</div>
-            {footer && <p className="mt-6 border-t border-rule pt-4 text-sm text-ink-2">{footer}</p>}
-          </div>
-        </div>
-        <p className="max-w-sm text-xs text-ink-3">HAR files carry session cookies and tokens. HAR Triage removes them before anything is stored.</p>
+        <ThemeToggle />
       </div>
-      <aside aria-hidden="true" className="hidden flex-col justify-center bg-ink px-12 py-10 text-paper lg:flex">
-        <div className="max-w-md">
-          <p className="eyebrow text-[#8a8475]">Request #212 · after redaction</p>
-          <p className="mt-3 font-mono text-sm text-paper">
-            <span className="mr-2 bg-high px-1.5 py-px text-white">401</span>GET api.example.com/v1/me
+      <main className="relative mx-auto grid w-full max-w-6xl flex-1 content-center gap-8 py-6 min-[1100px]:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] min-[1100px]:items-center min-[1100px]:gap-14">
+        <section className="clearing order-2 min-[1100px]:order-1">
+          <p className="animate-rise font-display leading-[1.06] font-semibold tracking-[-0.02em] text-ink" style={{ fontSize: "clamp(1.85rem, 1.1rem + 2.6vw, 3.25rem)" }}>
+            Every HAR file carries someone&rsquo;s <span className="redact-word">session</span>. We take it out first.
           </p>
-          <div className="mt-5">
-            <SpecimenLine name="authorization" value={<>Bearer <span className="redaction">3f9a01c2</span></>} />
-            <SpecimenLine name="cookie" value={<>session=<span className="redaction">b71e04aa</span></>} />
-            <SpecimenLine name="x-request-id" value="req_8c1d42" />
-            <SpecimenLine name="www-authenticate" value='Bearer error="invalid_token"' />
+          <p className="animate-rise mt-4 max-w-xl text-base leading-relaxed text-ink-2" style={{ animationDelay: "160ms" }}>
+            Support engineers drop a customer&rsquo;s HAR file; HAR Triage strips the secrets, finds the failing request and writes the answer for the ticket.
+          </p>
+          <div className="mt-6">
+            <ProofPoints />
           </div>
-          <p className="mt-8 font-display text-2xl leading-snug font-medium">
-            The token <span className="redaction">3f9a01c2</span> expired 4 minutes before this request.
-          </p>
-          <p className="mt-3 text-sm text-[#b8b19f]">Find the failing request, see why it failed, and paste the answer into the ticket.</p>
-        </div>
-      </aside>
+        </section>
+        <section className="clearing order-1 min-[1100px]:order-2">
+          <div className="animate-rise rounded-[16px] border border-rule bg-card/95 p-6 shadow-[0_24px_60px_-30px_rgb(0_0_0/0.6)] backdrop-blur-sm sm:p-7" style={{ animationDelay: "120ms" }}>
+            <h1 className="font-display text-3xl font-semibold">{title}</h1>
+            {lede && <div className="mt-1 text-sm text-ink-3">{lede}</div>}
+            <div className="mt-5">{children}</div>
+          </div>
+          {footer && (
+            <p className="animate-fade mt-4 text-sm text-ink-3" style={{ animationDelay: "240ms" }}>
+              {footer}
+            </p>
+          )}
+        </section>
+      </main>
     </div>
   );
 }
@@ -76,7 +71,7 @@ function useSubmit(path: string, after: string) {
   return { submit, error, busy, clearError: () => setError(null) };
 }
 
-const LINK = "font-medium text-ink underline decoration-signal decoration-2 underline-offset-2 hover:text-signal";
+const LINK = "font-bold text-signal underline-offset-2 hover:underline";
 
 export function LoginPage() {
   const { session } = useAuth();
@@ -86,7 +81,7 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   if (session) return <Navigate to={from} replace />;
   return (
-    <Shell title="Sign in" lede="Open the case files for your team." footer={<>New here? <Link className={LINK} to="/register">Create an organisation</Link></>}>
+    <Shell title="Sign in" lede="Welcome back." footer={<>New here? <Link className={LINK} to="/register">Create an organisation</Link></>}>
       <form
         className="space-y-5"
         onSubmit={(e: FormEvent) => {
@@ -190,7 +185,7 @@ export function InvitePage() {
       }
     >
       {session && session.user.email.toLowerCase() !== invite.email.toLowerCase() && (
-        <div role="alert" className="mb-6 border-l-4 border-medium bg-medium/15 px-4 py-3 text-sm">
+        <div role="alert" className="animate-slide-down mb-6 rounded-[6px] bg-medium/15 px-4 py-3 text-sm">
           You are signed in as <span className="font-mono">{session.user.email}</span>, but this invitation is for <span className="font-mono">{invite.email}</span>.
           <div className="mt-2">
             <Button size="sm" onClick={() => void logout()}>

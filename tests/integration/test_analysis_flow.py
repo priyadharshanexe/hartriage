@@ -149,10 +149,11 @@ def test_tenancy(client: Any, admin: Any) -> None:
     assert other.get("/v1/analyses").json()["items"] == []
 
 
-def test_viewer_can_read_but_not_download_or_delete(client: Any, admin: Any) -> None:
+def test_viewer_cannot_see_download_or_delete_others_files(client: Any, admin: Any) -> None:
+    """Own files only (decision 0013): a viewer uploads nothing, so sees nothing."""
     analysis_id = admin.upload(checkout()).json()["analysis_id"]
     viewer = member(client, admin, "viewer@example.com", "viewer")
-    assert viewer.get(f"/v1/analyses/{analysis_id}").status_code == 200
+    assert viewer.get(f"/v1/analyses/{analysis_id}").status_code == 404
     assert viewer.get(f"/v1/analyses/{analysis_id}/redacted.har").status_code == 403
     assert viewer.delete(f"/v1/analyses/{analysis_id}").status_code == 403
 

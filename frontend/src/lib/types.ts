@@ -80,6 +80,7 @@ export interface Analysis {
   redaction: Redaction;
   stats: Stats | null;
   lead: string | null;
+  uploaded_by?: { id: string; name: string; email: string } | null;
   summary?: Summary | null;
   summary_md?: string | null;
 }

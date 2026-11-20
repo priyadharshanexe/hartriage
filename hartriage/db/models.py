@@ -45,6 +45,20 @@ class Organization(Base):
     created_at: Mapped[datetime] = _created()
 
 
+class OrgSettings(Base):
+    """Limits an admin sets for their organisation. Empty values fall back to the server's."""
+
+    __tablename__ = "org_settings"
+    org_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), primary_key=True
+    )
+    retention_days: Mapped[int] = mapped_column(Integer, default=30)
+    max_file_mb: Mapped[int | None] = mapped_column(Integer)
+    storage_quota_mb: Mapped[int | None] = mapped_column(Integer)
+    daily_uploads_per_member: Mapped[int | None] = mapped_column(Integer)
+    updated_at: Mapped[datetime] = _created()
+
+
 class User(Base):
     __tablename__ = "users"
     id: Mapped[uuid.UUID] = _id()
@@ -119,7 +133,7 @@ class HelpdeskConnection(Base):
     webhook_secret_encrypted: Mapped[str] = mapped_column(Text)
     replace_attachments: Mapped[bool] = mapped_column(Boolean, default=False)
     last_webhook_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    last_webhook_status: Mapped[str | None] = mapped_column(String(40))
+    last_webhook_status: Mapped[str | None] = mapped_column(String(300))
     created_by: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL")
     )
@@ -182,6 +196,7 @@ class Analysis(Base):
     __table_args__ = (
         CheckConstraint("status IN ('queued','running','done','failed')", name="status_valid"),
         Index("ix_analyses_org_created", "org_id", "created_at"),
+        Index("ix_analyses_org_creator_created", "org_id", "created_by", "created_at"),
     )
     id: Mapped[uuid.UUID] = _id()
     org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"))

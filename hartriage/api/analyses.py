@@ -11,6 +11,7 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, Query, Response
 from fastapi.responses import PlainTextResponse, StreamingResponse
+from pydantic import BaseModel, Field
 from sqlalchemy import func, or_, select
 
 from hartriage.api.deps import AdminDep, AgentDep, DbDep, PrincipalDep, SettingsDep, StorageDep
@@ -23,6 +24,7 @@ from hartriage.db.models import (
     EntryIndex,
     FindingRow,
     HelpdeskConnection,
+    User,
 )
 from hartriage.rules.base import Finding, Severity
 from hartriage.services import audit
@@ -33,10 +35,19 @@ from hartriage.worker.dispatch import enqueue_analysis
 router = APIRouter(prefix="/analyses", tags=["analyses"])
 
 
+def visible_to(principal: PrincipalDep, analysis: Analysis) -> bool:
+    """Admins see every analysis in their organisation. Agents and viewers see only the
+    files they uploaded; a file that came from a helpdesk ticket has no uploader, so it
+    is visible to admins only (see docs/decisions/0013-own-files-only.md)."""
+    if analysis.org_id != principal.org_id:
+        return False
+    return principal.role == "admin" or analysis.created_by == principal.user_id
+
+
 def get_owned(db: DbDep, principal: PrincipalDep, analysis_id: uuid.UUID) -> Analysis:
     analysis = db.get(Analysis, analysis_id)
-    # Another organisation's analysis is "not found", never "forbidden": ids leak nothing.
-    if analysis is None or analysis.org_id != principal.org_id:
+    # Someone else's analysis is "not found", never "forbidden": ids leak nothing.
+    if analysis is None or not visible_to(principal, analysis):
         raise NotFound("Analysis not found.")
     return analysis
 
@@ -62,6 +73,17 @@ def ticket_url(conn: HelpdeskConnection, ticket_id: str) -> str:
     return f"https://{conn.subdomain}.freshdesk.com/a/tickets/{ticket_id}"
 
 
+def _uploader(db: DbDep, a: Analysis) -> dict[str, str] | None:
+    if a.created_by is None:
+        return None
+    user = db.get(User, a.created_by)
+    return {
+        "id": str(a.created_by),
+        "name": user.name if user else "",
+        "email": user.email if user else "",
+    }
+
+
 def serialize(db: DbDep, a: Analysis, *, full: bool = False) -> dict[str, Any]:
     art = a.artifact
     data: dict[str, Any] = {
@@ -80,6 +102,7 @@ def serialize(db: DbDep, a: Analysis, *, full: bool = False) -> dict[str, Any]:
         "redaction": art.redaction_summary,
         "stats": a.stats,
         "lead": (a.summary or {}).get("likely_cause"),
+        "uploaded_by": _uploader(db, a),
     }
     if full:
         data["summary"] = a.summary
@@ -95,6 +118,11 @@ def list_analyses(
     limit: int = Query(25, ge=1, le=100),
     cursor: str | None = None,
     q: str | None = Query(None, max_length=100),
+    scope: Literal["mine", "all"] = "all",
+    source: Literal["upload", "cli", "ticket"] | None = None,
+    status: Literal["queued", "running", "done", "failed"] | None = None,
+    since: datetime | None = None,
+    until: datetime | None = None,
 ) -> dict[str, Any]:
     stmt = (
         select(Analysis)
@@ -102,6 +130,17 @@ def list_analyses(
         .where(Analysis.org_id == principal.org_id)
         .order_by(Analysis.created_at.desc(), Analysis.id.desc())
     )
+    # Agents and viewers only ever list their own files; admins can narrow to theirs.
+    if principal.role != "admin" or scope == "mine":
+        stmt = stmt.where(Analysis.created_by == principal.user_id)
+    if source:
+        stmt = stmt.where(Artifact.source == source)
+    if status:
+        stmt = stmt.where(Analysis.status == status)
+    if since:
+        stmt = stmt.where(Analysis.created_at >= since)
+    if until:
+        stmt = stmt.where(Analysis.created_at < until)
     if q:
         stmt = stmt.where(Artifact.original_filename.ilike(f"%{q}%"))
     if cursor:
@@ -109,7 +148,7 @@ def list_analyses(
             anchor = db.get(Analysis, uuid.UUID(cursor))
         except ValueError as exc:
             raise AppError("Invalid cursor.", code="invalid_cursor") from exc
-        if anchor is not None and anchor.org_id == principal.org_id:
+        if anchor is not None and visible_to(principal, anchor):
             stmt = stmt.where(
                 or_(
                     Analysis.created_at < anchor.created_at,
@@ -387,12 +426,38 @@ def rerun(analysis_id: uuid.UUID, principal: AgentDep, db: DbDep) -> dict[str, s
 @router.delete("/{analysis_id}", status_code=204)
 def delete_analysis(
     analysis_id: uuid.UUID,
-    principal: AdminDep,
+    principal: AgentDep,
     db: DbDep,
     storage: StorageDep,
     settings: SettingsDep,
 ) -> Response:
+    """Agents delete their own uploads; admins delete any file, including ticket files.
+    The redacted copy is purged from storage at once and the deletion is audited."""
     analysis = get_owned(db, principal, analysis_id)
     purge(db, storage, analysis.artifact, reason="deleted", actor=principal.user_id)
     db.commit()
     return Response(status_code=204)
+
+
+class BulkDelete(BaseModel):
+    ids: list[uuid.UUID] = Field(min_length=1, max_length=200)
+
+
+@router.post("/bulk-delete")
+def bulk_delete(
+    body: BulkDelete, principal: AdminDep, db: DbDep, storage: StorageDep
+) -> dict[str, int]:
+    """Admins: delete several files at once. Ids that aren't visible are skipped."""
+    deleted = 0
+    for analysis_id in dict.fromkeys(body.ids):
+        analysis = db.get(Analysis, analysis_id)
+        if (
+            analysis is None
+            or not visible_to(principal, analysis)
+            or analysis.artifact.deleted_at is not None
+        ):
+            continue
+        purge(db, storage, analysis.artifact, reason="deleted", actor=principal.user_id)
+        deleted += 1
+    db.commit()
+    return {"deleted": deleted}

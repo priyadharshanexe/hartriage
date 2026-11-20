@@ -16,3 +16,4 @@ One file per significant decision, copied from [0000-template.md](0000-template.
 | [0010](0010-one-note-per-har-file.md) | One private note per HAR file, not per tag action | accepted |
 | [0011](0011-poll-freshdesk-for-tagged-tickets.md) | Find tagged Freshdesk tickets by polling | accepted |
 | [0012](0012-zendesk-oauth-client-credentials.md) | Connect Zendesk with a confidential OAuth client | accepted |
+| [0013](0013-own-files-only.md) | Agents see their own files; admins see all | accepted |

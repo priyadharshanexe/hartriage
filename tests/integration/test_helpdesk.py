@@ -471,3 +471,32 @@ def test_tag_changes_only_after_the_last_note(client: Any, admin: Any) -> None:
     # Before the second note the ticket still said "to analyse"; only then "analysed".
     assert tags_when_posting == [["har_analyze"], ["har_analyze"]]
     assert t.tags == ["har_analyzed"]
+
+
+def test_connection_status_is_never_cut_mid_word() -> None:
+    """Found in review: errors were cut to 40 characters ("could not be reach")."""
+    from hartriage.helpdesk.tasks import status_text
+
+    short = "poll error: freshdesk could not be reached (ConnectError)"
+    assert status_text(short) == short
+    long = "poll error: " + " ".join(["word"] * 100)
+    cut = status_text(long)
+    assert len(cut) <= 300 and cut.endswith("word…")
+
+
+def test_a_successful_poll_clears_an_old_poll_error(client: Any, admin: Any) -> None:
+    from hartriage.helpdesk.tasks import poll_tagged_tickets
+
+    connect_freshdesk(admin)
+    fake.FAIL_NEXT["freshdesk"] = (500, 0)
+    poll_tagged_tickets()
+    assert (
+        admin.get("/v1/connections")
+        .json()["items"][0]["last_webhook_status"]
+        .startswith("poll error")
+    )
+    poll_tagged_tickets()
+    assert (
+        admin.get("/v1/connections").json()["items"][0]["last_webhook_status"]
+        == "polled: helpdesk reachable again"
+    )
