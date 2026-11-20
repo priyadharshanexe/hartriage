@@ -22,7 +22,7 @@ function Shell({ title, lede, children, footer }: { title: string; lede?: ReactN
         <ThemeToggle />
       </div>
       <main className="relative mx-auto grid w-full max-w-6xl flex-1 content-center gap-8 py-6 min-[1100px]:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] min-[1100px]:items-center min-[1100px]:gap-14">
-        <section className="order-2 min-[1100px]:order-1">
+        <section className="clearing order-2 min-[1100px]:order-1">
           <p className="animate-rise font-display leading-[1.06] font-semibold tracking-[-0.02em] text-ink" style={{ fontSize: "clamp(1.85rem, 1.1rem + 2.6vw, 3.25rem)" }}>
             Every HAR file carries someone&rsquo;s <span className="redact-word">session</span>. We take it out first.
           </p>
@@ -33,7 +33,7 @@ function Shell({ title, lede, children, footer }: { title: string; lede?: ReactN
             <ProofPoints />
           </div>
         </section>
-        <section className="order-1 min-[1100px]:order-2">
+        <section className="clearing order-1 min-[1100px]:order-2">
           <div className="animate-rise rounded-[16px] border border-rule bg-card/95 p-6 shadow-[0_24px_60px_-30px_rgb(0_0_0/0.6)] backdrop-blur-sm sm:p-7" style={{ animationDelay: "120ms" }}>
             <h1 className="font-display text-3xl font-semibold">{title}</h1>
             {lede && <div className="mt-1 text-sm text-ink-3">{lede}</div>}

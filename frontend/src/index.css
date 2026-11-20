@@ -71,7 +71,7 @@
   --highlight: #ffe066;
   --highlight-ink: #6b5200;
   --redaction-ring: inset 0 0 0 1px rgb(255 255 255 / 0.06);
-  --field-opacity: 0.2;
+  --field-opacity: 0.15;
   --ambient-opacity: 0.06;
 
   --critical: #b42318;
@@ -106,7 +106,7 @@
     --highlight: #ffe066;
     --highlight-ink: #6b5200;
     --redaction-ring: inset 0 0 0 1px rgb(255 255 255 / 0.06);
-  --field-opacity: 0.2;
+  --field-opacity: 0.15;
   --ambient-opacity: 0.06;
 
     --critical: #b42318;
@@ -639,4 +639,19 @@ body {
   background-image: url("/ambient.svg");
   mask-image: linear-gradient(to bottom, transparent, black 30%, black 70%, transparent);
   animation: ambient-drift 60s linear infinite;
+}
+
+/* A soft clearing in the sign-in field behind each content block: lines stay in the
+   margins and gaps, never under text. */
+.clearing {
+  position: relative;
+  isolation: isolate;
+}
+.clearing::before {
+  content: "";
+  position: absolute;
+  inset: -56px -64px;
+  z-index: -1;
+  background: radial-gradient(closest-side, var(--canvas) 72%, transparent);
+  pointer-events: none;
 }
