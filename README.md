@@ -9,7 +9,7 @@
 
 Use it as a CLI, in the web app, or from Zendesk and Freshdesk: tag a ticket and the analysis comes back as a private note.
 
-**Contents:** [Why this exists](#why-this-exists) · [What it looks like](#what-it-looks-like) · [Features](#features) · [How it works](#how-it-works) · [Architecture](#architecture) · [The rules](#the-rules) · [Security and redaction](#security-and-redaction) · [Quick start](#quick-start) · [Tested against real helpdesks](#tested-against-real-helpdesks) · [Tests and CI](#tests-and-ci) · [Decision records](#decision-records) · [Casebook](#casebook) · [Project layout](#project-layout)
+**Contents:** [Why this exists](#why-this-exists) · [What it looks like](#what-it-looks-like) · [Features](#features) · [How it works](#how-it-works) · [Architecture](#architecture) · [The rules](#the-rules) · [Security and redaction](#security-and-redaction) · [Quick start](#quick-start) · [Tested against real helpdesks](#tested-against-real-helpdesks) · [Tests and CI](#tests-and-ci) · [Performance](#performance) · [Decision records](#decision-records) · [Casebook](#casebook) · [Project layout](#project-layout)
 
 ## Why this exists
 
@@ -198,6 +198,18 @@ cd frontend && npm test && npm run e2e
 - **Frontend**: Vitest for the API client, helpers and pages; Playwright for upload → findings → copy for ticket → request detail, and for agents seeing and deleting only their own files while the admin sees everyone's.
 
 CI ([workflow](.github/workflows/ci.yml)) runs on every push: backend lint, types and tests; frontend types, tests and build; the Playwright flow against the whole stack in Docker; gitleaks over the whole history; and both image builds.
+
+### Performance
+
+Measured with [`tools/bench.py`](tools/bench.py) against `docker compose up` on one laptop (Windows 11, Docker Desktop, the default single API process and a worker with two processes). Memory is the container's peak in `docker stats`; idle, the API uses about 106 MB and the worker about 182 MB.
+
+| Run | Input | Time | Memory |
+|---|---|---|---|
+| 10 uploads at once | 13 KB each | upload p50 358 ms, p95 363 ms; all analysed in 1.1 s | API peak 127 MB, worker peak 256 MB |
+| 25 uploads at once | 13 KB each | upload p50 518 ms, p95 686 ms; all analysed in 1.2 s | API peak 132 MB, worker peak 257 MB |
+| One file at the limit | 98 MB, 18,780 requests | upload and redaction 3.4 s; analysis 2.9 s | API peak 150 MB, worker peak 294 MB |
+
+A 98 MB upload adds about 44 MB to the API's memory: the file is streamed through redaction into a multipart upload, never held whole. In-process, the redaction pipeline's own peak is about 1 MB for a 54 MB file ([memory test](tests/unit/test_memory_ceiling.py)).
 
 ## Decision records
 
