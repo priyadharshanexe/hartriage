@@ -104,8 +104,10 @@ def client() -> Iterator[Any]:
 
     celery.conf.task_always_eager = True
     celery.conf.task_eager_propagates = True
-    fake = TestClient(fake_app)
-    registry.TEST_TRANSPORT = fake._transport
+    # Each helpdesk client gets its own in-process transport, as each gets its own
+    # connection pool in production. Starlette's test transport closes every open
+    # response when it is closed, so one shared by threads breaks the others.
+    registry.TEST_TRANSPORT = lambda: TestClient(fake_app)._transport
     with TestClient(create_app()) as c:
         yield c
     registry.TEST_TRANSPORT = None

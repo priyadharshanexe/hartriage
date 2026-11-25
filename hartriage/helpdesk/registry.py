@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 
 import httpx
 
@@ -13,8 +14,10 @@ from hartriage.helpdesk.base import HelpdeskClient
 from hartriage.helpdesk.freshdesk import FreshdeskClient
 from hartriage.helpdesk.zendesk import ZendeskClient
 
-# Tests swap in a transport that talks to the fake helpdesk in-process.
-TEST_TRANSPORT: httpx.BaseTransport | None = None
+# Tests swap in a factory of transports that talk to the fake helpdesk in-process.
+# A factory, not one shared transport: every client closes its transport when
+# done, and a shared one would be closed under the other threads' requests.
+TEST_TRANSPORT: Callable[[], httpx.BaseTransport] | None = None
 
 
 def cipher(settings: Settings) -> Cipher:
@@ -43,9 +46,10 @@ def client_for(
 ) -> HelpdeskClient:
     url = base_url(settings, platform, subdomain)
     timeout = settings.helpdesk_timeout_seconds
+    transport = TEST_TRANSPORT() if TEST_TRANSPORT is not None else None
     if platform == "zendesk":
-        return ZendeskClient.build(subdomain, creds, timeout, url, TEST_TRANSPORT)
-    return FreshdeskClient.build(subdomain, creds, timeout, url, TEST_TRANSPORT)
+        return ZendeskClient.build(subdomain, creds, timeout, url, transport)
+    return FreshdeskClient.build(subdomain, creds, timeout, url, transport)
 
 
 def client(settings: Settings, conn: HelpdeskConnection) -> HelpdeskClient:
