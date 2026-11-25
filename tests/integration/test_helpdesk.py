@@ -500,3 +500,73 @@ def test_a_successful_poll_clears_an_old_poll_error(client: Any, admin: Any) -> 
         admin.get("/v1/connections").json()["items"][0]["last_webhook_status"]
         == "polled: helpdesk reachable again"
     )
+
+
+def test_a_worker_dying_right_after_posting_does_not_post_twice(client: Any, admin: Any) -> None:
+    """The POST succeeds, then the process dies before its transaction commits. The
+    attempt counter was only incremented inside that transaction, so the database is
+    left saying "pending, 0 attempts" while the note is already on the ticket. The
+    redelivered task (acks_late) must find the note by its marker, not post again."""
+    from hartriage.db.models import PostedNote
+    from hartriage.db.session import session_scope
+    from hartriage.helpdesk.tasks import post_note
+
+    conn = connect_zendesk(admin)
+    tid = ticket("zendesk")
+    zendesk_hook(client, conn, tid)
+    assert len(private_notes("zendesk", tid)) == 1
+    with session_scope() as db:
+        note = db.scalars(select(PostedNote)).one()
+        # Exactly what the rollback leaves: the row committed before the POST, untouched.
+        note.status, note.attempts, note.platform_comment_id, note.posted_at = (
+            "pending",
+            0,
+            None,
+            None,
+        )
+        db.commit()
+        analysis_id = str(note.analysis_id)
+    post_note.apply(args=[analysis_id])
+    assert len(private_notes("zendesk", tid)) == 1
+    with session_scope() as db:
+        assert db.scalars(select(PostedNote)).one().status == "posted"
+
+
+def test_concurrent_deliveries_post_one_note(client: Any, admin: Any) -> None:
+    """Several workers run the note task for the same file at the same moment (duplicate
+    webhooks, a redelivery): the row lock lets one post; the others find it posted."""
+    import threading
+
+    from hartriage.db.models import PostedNote
+    from hartriage.db.session import session_scope
+    from hartriage.helpdesk.tasks import post_note
+
+    conn = connect_zendesk(admin)
+    tid = ticket("zendesk")
+    zendesk_hook(client, conn, tid)
+    with session_scope() as db:
+        note = db.scalars(select(PostedNote)).one()
+        analysis_id = str(note.analysis_id)
+        db.delete(note)  # as if no worker had got this far yet
+        db.commit()
+    fake.TICKETS[("zendesk", "acme", tid)].comments[1:] = []
+
+    start = threading.Barrier(6)
+    errors: list[BaseException] = []
+
+    def run() -> None:
+        start.wait()
+        try:
+            post_note.apply(args=[analysis_id]).get()
+        except BaseException as exc:
+            errors.append(exc)
+
+    threads = [threading.Thread(target=run) for _ in range(6)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(30)
+    assert errors == []
+    assert len(private_notes("zendesk", tid)) == 1
+    with session_scope() as db:
+        assert db.scalars(select(PostedNote)).one().status == "posted"

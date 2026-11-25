@@ -5,7 +5,10 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
+import structlog
 from celery.exceptions import Retry
+
+log = structlog.get_logger()
 
 
 def _delay(task: Any, *args: str) -> None:
@@ -28,6 +31,22 @@ def enqueue_analysis(analysis_id: uuid.UUID | str) -> None:
     from hartriage.worker.tasks import analyse
 
     _delay(analyse, str(analysis_id))
+
+
+def try_enqueue(send: Any, analysis_id: uuid.UUID | str) -> bool:
+    """Send a task after its row is committed. If the broker is unreachable the row
+    stays "queued" and the requeue sweep sends it later: the request itself succeeded,
+    so the caller must not report a failure for it."""
+    try:
+        send(analysis_id)
+    except Exception as exc:
+        from kombu.exceptions import OperationalError
+
+        if not isinstance(exc, OperationalError | ConnectionError | OSError):
+            raise
+        log.warning("enqueue_failed", analysis_id=str(analysis_id), error=type(exc).__name__)
+        return False
+    return True
 
 
 def enqueue_note(analysis_id: uuid.UUID | str) -> None:

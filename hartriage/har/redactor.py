@@ -22,6 +22,7 @@ import binascii
 import hashlib
 import hmac
 import json
+import math
 import re
 import secrets
 from collections import Counter
@@ -446,7 +447,25 @@ class Redactor:
     # -- structured values -------------------------------------------------------
 
     def url(self, url: str) -> str:
-        return self.text(url) if isinstance(url, str) else url
+        if not isinstance(url, str):
+            return url
+        url = self.text(url)
+        # A token in the path (/invite/<token>, /reset/<token>) has no name to go by.
+        # Only whole segments that look random are taken; see random_segment().
+        scheme, sep, rest = url.partition("://")
+        if not sep:
+            return url
+        host, slash, tail = rest.partition("/")
+        if not slash:
+            return url
+        path, q, query = tail.partition("?")
+        segments = path.split("/")
+        if not any(random_segment(seg) for seg in segments):
+            return url
+        path = "/".join(
+            self._secret(seg, "tokens") if random_segment(seg) else seg for seg in segments
+        )
+        return f"{scheme}://{host}/{path}{q}{query}"
 
     def json_value(self, value: Any, sensitive: bool = False, name: str = "") -> Any:
         """Walk decoded JSON. Values under a sensitive key are replaced; the rest is scanned."""
@@ -728,6 +747,39 @@ class Redactor:
     def redact_log_fields(self, fields: dict[str, Any]) -> dict[str, Any]:
         """Redact `log.pages`, `log.creator` and the other non-entry fields."""
         return {k: self._sweep(v, k) for k, v in fields.items()}
+
+
+_SEGMENT = re.compile(r"^[A-Za-z0-9_~-]{32,512}$")
+_UUID = re.compile(r"^[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$")
+_HEX = re.compile(r"^[0-9a-fA-F]+$")
+_PREFIXED_ID = re.compile(r"^[a-z]{2,8}_[A-Za-z0-9]")  # pi_3Nx…, cus_…: ids, kept
+
+
+def random_segment(segment: str) -> bool:
+    """A URL path segment that looks like a random token rather than a name or an id.
+
+    Conservative on purpose (redacting ids and hashes makes a HAR useless): at least
+    32 URL-safe characters with no dot (so no file names), lower case, upper case and
+    digits all present, at least 4.3 bits of entropy per character, and not a UUID,
+    a hex hash or a prefixed id. Measured on the golden HARs: no false positives; on
+    tokens from secrets.token_urlsafe(24..64): see tests/unit/test_entropy_detector.py.
+    """
+    if not _SEGMENT.match(segment) or _UUID.match(segment) or _HEX.match(segment):
+        return False
+    if _PREFIXED_ID.match(segment):
+        return False
+    if not (
+        any(c.islower() for c in segment)
+        and any(c.isupper() for c in segment)
+        and any(c.isdigit() for c in segment)
+    ):
+        return False
+    counts: dict[str, int] = {}
+    for c in segment:
+        counts[c] = counts.get(c, 0) + 1
+    n = len(segment)
+    entropy = -sum(k / n * math.log2(k / n) for k in counts.values())
+    return entropy >= 4.3
 
 
 def _looks_like_token(value: str) -> bool:

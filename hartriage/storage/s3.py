@@ -12,6 +12,8 @@ import io
 import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import IO, Any, Protocol
 
 import boto3
@@ -25,12 +27,28 @@ log = structlog.get_logger()
 PART_SIZE = 8 * 1024 * 1024  # S3 minimum is 5 MB for all parts but the last
 
 
+@dataclass(frozen=True)
+class StoredObject:
+    key: str
+    modified: datetime
+
+
+@dataclass(frozen=True)
+class OpenUpload:
+    key: str
+    upload_id: str
+    started: datetime
+
+
 class Storage(Protocol):
     def writer(self, key: str) -> ObjectWriter: ...
     def read_range(self, key: str, start: int, length: int) -> bytes: ...
     def reader(self, key: str) -> IO[bytes]: ...
     def delete(self, key: str) -> None: ...
     def exists(self, key: str) -> bool: ...
+    def list(self, prefix: str) -> Iterator[StoredObject]: ...
+    def open_uploads(self, prefix: str) -> Iterator[OpenUpload]: ...
+    def abort_upload(self, upload: OpenUpload) -> None: ...
     def ensure_ready(self, retention_days: int) -> None: ...
     def ping(self) -> bool: ...
 
@@ -51,6 +69,7 @@ class ObjectWriter(io.RawIOBase):
 class MemoryStorage:
     def __init__(self) -> None:
         self.objects: dict[str, bytes] = {}
+        self.modified: dict[str, datetime] = {}
         self._lock = threading.Lock()
 
     def writer(self, key: str) -> ObjectWriter:
@@ -72,6 +91,7 @@ class MemoryStorage:
                 if not self.closed and not self.aborted:
                     with store._lock:
                         store.objects[key] = self.buffer.getvalue()
+                        store.modified[key] = datetime.now(UTC)
                 super().close()
 
         return _Writer()
@@ -85,9 +105,23 @@ class MemoryStorage:
     def delete(self, key: str) -> None:
         with self._lock:
             self.objects.pop(key, None)
+            self.modified.pop(key, None)
 
     def exists(self, key: str) -> bool:
         return key in self.objects
+
+    def list(self, prefix: str) -> Iterator[StoredObject]:
+        with self._lock:
+            found = [
+                StoredObject(k, self.modified[k]) for k in self.objects if k.startswith(prefix)
+            ]
+        yield from found
+
+    def open_uploads(self, prefix: str) -> Iterator[OpenUpload]:
+        yield from ()  # memory writes are atomic: nothing is ever half-written
+
+    def abort_upload(self, upload: OpenUpload) -> None:
+        pass
 
     def ensure_ready(self, retention_days: int) -> None:
         pass
@@ -145,6 +179,27 @@ class S3Storage:
         except ClientError:
             return False
         return True
+
+    def list(self, prefix: str) -> Iterator[StoredObject]:
+        pages = self.client.get_paginator("list_objects_v2").paginate(
+            Bucket=self.bucket, Prefix=prefix
+        )
+        for page in pages:
+            for item in page.get("Contents") or []:
+                yield StoredObject(item["Key"], item["LastModified"])
+
+    def open_uploads(self, prefix: str) -> Iterator[OpenUpload]:
+        pages = self.client.get_paginator("list_multipart_uploads").paginate(
+            Bucket=self.bucket, Prefix=prefix
+        )
+        for page in pages:
+            for item in page.get("Uploads") or []:
+                yield OpenUpload(item["Key"], item["UploadId"], item["Initiated"])
+
+    def abort_upload(self, upload: OpenUpload) -> None:
+        self.client.abort_multipart_upload(
+            Bucket=self.bucket, Key=upload.key, UploadId=upload.upload_id
+        )
 
     def ping(self) -> bool:
         try:
@@ -217,9 +272,15 @@ class _MultipartWriter(ObjectWriter):
     def abort(self) -> None:
         self._aborted = True
         if self._upload_id is not None:
-            self._s.client.abort_multipart_upload(
-                Bucket=self._s.bucket, Key=self._key, UploadId=self._upload_id
-            )
+            try:
+                self._s.client.abort_multipart_upload(
+                    Bucket=self._s.bucket, Key=self._key, UploadId=self._upload_id
+                )
+            except Exception as exc:
+                # Never hide the error that made us abort. The parts stay until the
+                # bucket's AbortIncompleteMultipartUpload rule or the reconciler
+                # removes them.
+                log.warning("multipart_abort_failed", key=self._key, error=type(exc).__name__)
         self._buffer.clear()
         super().close()
 

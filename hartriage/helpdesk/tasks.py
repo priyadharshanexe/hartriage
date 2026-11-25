@@ -241,7 +241,10 @@ def post_note(self: Task, analysis_id: str) -> None:
         client = registry.client(settings, conn)
         try:
             ticket = client.get_ticket(case.external_ticket_id)
-            existing = client.find_note(ticket.id, marker) if note.attempts else None
+            # Always look first. The attempt counter can't tell us whether an earlier
+            # attempt posted: a worker that dies right after the POST rolls its
+            # increment back. The marker in the note's body can.
+            existing = client.find_note(ticket.id, marker)
             if existing is None:
                 note.attempts += 1
                 summary = Summary(**(analysis.summary or {}))

@@ -38,6 +38,11 @@ app.conf.update(
     broker_transport_options={"visibility_timeout": 3600},
     beat_schedule={
         "retention-sweep": {"task": "hartriage.retention_sweep", "schedule": crontab(minute=17)},
+        "requeue-stale": {"task": "hartriage.requeue_stale", "schedule": 300.0},
+        "reconcile-storage": {
+            "task": "hartriage.reconcile_storage",
+            "schedule": crontab(minute=43, hour="*/6"),
+        },
         **(
             {
                 "poll-tagged-tickets": {

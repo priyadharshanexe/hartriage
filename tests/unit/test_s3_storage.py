@@ -75,3 +75,36 @@ def test_lifecycle_rule_backs_up_the_retention_job(storage: S3Storage) -> None:
     rules = storage.client.get_bucket_lifecycle_configuration(Bucket=storage.bucket)["Rules"]
     rule = next(r for r in rules if r["ID"] == "expire-artifacts")
     assert rule["Expiration"]["Days"] == 31
+
+
+def test_lifecycle_rule_aborts_incomplete_multipart_uploads(storage: S3Storage) -> None:
+    rules = storage.client.get_bucket_lifecycle_configuration(Bucket=storage.bucket)["Rules"]
+    rule = next(r for r in rules if r["ID"] == "expire-artifacts")
+    assert rule["AbortIncompleteMultipartUpload"]["DaysAfterInitiation"] == 1
+
+
+def test_a_failing_abort_does_not_hide_the_original_error(
+    storage: S3Storage, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Storage went down mid-upload: the abort fails too. The caller must still see why
+    the upload failed, and the parts are left for the lifecycle rule or the reconciler."""
+
+    def unreachable(**_: object) -> None:
+        raise ConnectionError("storage unreachable")
+
+    with pytest.raises(RuntimeError, match="half-way"), writing(storage, "orgs/t/p2.bin") as w:
+        w.write(os.urandom(PART_SIZE + 1))
+        monkeypatch.setattr(storage.client, "abort_multipart_upload", unreachable)
+        raise RuntimeError("redaction failed half-way")
+    monkeypatch.undo()
+    [left] = [u for u in storage.open_uploads("orgs/t/p2") if u.key == "orgs/t/p2.bin"]
+    storage.abort_upload(left)  # what the reconciler does for one older than its cutoff
+    assert list(storage.open_uploads("orgs/t/p2")) == []
+
+
+def test_listing_objects_with_their_age(storage: S3Storage) -> None:
+    with writing(storage, "orgs/t/listed.bin") as w:
+        w.write(b"x")
+    [obj] = [o for o in storage.list("orgs/t/listed") if o.key == "orgs/t/listed.bin"]
+    assert obj.modified.tzinfo is not None
+    storage.delete("orgs/t/listed.bin")

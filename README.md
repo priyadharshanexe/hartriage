@@ -23,7 +23,7 @@ HAR Triage treats every HAR file as a credential dump: secrets are replaced whil
 ## What it looks like
 
 ![Sign in, upload, the redaction, findings, waterfall, KB, a helpdesk connection, Files and Settings](docs/screenshots/demo.gif)
-<sub>Sign in, upload a sample HAR, watch the secrets come out, read the answer, open a request, then a helpdesk connection, Files and Settings.</sub>
+<sub>Sign in, upload a sample HAR, watch the credentials come out, read the answer, open a request, then a helpdesk connection, Files and Settings.</sub>
 
 | | |
 |---|---|
@@ -52,7 +52,7 @@ the app is not refreshing tokens before they expire: escalate with these request
 
 ## Features
 
-- **Redaction while the file streams in.** Tokens, cookies, keys and passwords become `[REDACTED:<8 hex>]` markers; the original is never written to disk or storage.
+- **Redaction while the file streams in.** Tokens, cookies, keys and passwords become `[REDACTED:<8 hex>]` markers; the original is never written to disk or storage. Redaction is best-effort (see [its limits](#security-and-redaction)).
 - **Eleven diagnostic rules** (R001–R011): first failure, expired or missing credentials, CORS, redirect loops, DNS and TLS, slow phases, rate limits, oversized requests, API error bodies, mixed content and 5xx by endpoint.
 - **An answer for the ticket**: the likely cause, the evidence, a next step and a KB link, copied as Markdown or posted as a private note.
 - **A waterfall of every request** (up to 50,000), each opening its redacted headers and body.
@@ -65,7 +65,7 @@ the app is not refreshing tokens before they expire: escalate with these request
 ## How it works
 
 1. **Upload.** A file arrives from the web app, the CLI, or a tagged helpdesk ticket.
-2. **Redaction.** The HAR is parsed one request at a time. Facts the rules need (was a credential sent, when did the JWT expire) are read first; then every secret is replaced and the request is written to encrypted storage.
+2. **Redaction.** The HAR is parsed one request at a time. Facts the rules need (was a credential sent, when did the JWT expire) are read first; then every value the redactor recognises as a credential is replaced and the request is written to encrypted storage.
 3. **Rules.** Eleven rules run over the redacted requests and produce findings with a severity and request numbers.
 4. **Answer.** The findings become a summary: what the customer was doing, the first failure, the likely cause, the evidence and a next step.
 5. **Helpdesk note.** For a ticket, the summary is posted once as a private note with the redacted copy attached, and the tag becomes `har_analyzed`.
@@ -92,9 +92,9 @@ flowchart LR
 ```
 
 - **Streamed, never stored raw.** The upload is parsed with `ijson` one request at a time; each request's facts (credentials present, JWT expiry, correlation ids) are read, then it is redacted and written to a multipart upload. A 54 MB file is processed with a 1 MB memory peak.
-- **Rules run on redacted data only**, so no finding, summary or note can contain a secret.
+- **Rules run on redacted data only**, so a finding, summary or note can only contain what the redactor left in the file.
 - **The waterfall is an index** in PostgreSQL; opening one request is a byte-range read of the stored file.
-- **Exactly one note per analysis**, even when a helpdesk sends the webhook twice or a worker dies after posting.
+- **One note per analysis**: delivery is at-least-once, and before posting the task looks for its own note on the ticket, so a duplicate webhook, a redelivered task or a worker that died after posting does not post again ([the exact guarantee](docs/decisions/0006-exactly-once-private-notes.md#the-guarantee-precisely)).
 - **Agents see their own files; admins see all** ([decision 0013](docs/decisions/0013-own-files-only.md)). The Files page lists, filters, downloads and deletes files; deleting purges the redacted copy at once and is audited. Admins set retention (7/30/90 days), a maximum file size, a storage quota and a daily upload limit per member in Settings, and see storage used per member.
 
 Why each of these: [decision records](#decision-records).
@@ -119,9 +119,11 @@ Each rule has a [KB article](kb/) written for the agent working the ticket.
 
 ## Security and redaction
 
-Header, cookie, query, form and JSON values with sensitive names; JWTs, bearer and basic credentials, AWS keys, private keys and common API-key formats anywhere in text; response bodies dropped except small JSON error messages. Every secret becomes `[REDACTED:<8 hex>]`, an HMAC with a salt that exists only while one file is processed: the same token gets the same marker within a file, and markers can't be matched across files.
+Header, cookie, query, form and JSON values with sensitive names; JWTs, bearer and basic credentials, AWS keys, private keys and common API-key formats anywhere in text; random-looking URL path segments of 32+ characters; response bodies dropped except small JSON error messages. Each value removed becomes `[REDACTED:<8 hex>]`, an HMAC with a salt that exists only while one file is processed: the same token gets the same marker within a file, and markers can't be matched across files.
 
-What is removed, what is kept and why: [docs/redaction-policy.md](docs/redaction-policy.md).
+**Redaction is best-effort, not a guarantee.** It finds credentials by their name (`Authorization`, `password`, `?token=`) or their shape (JWTs, keys, long random path segments). A secret with neither, such as a short token in a URL path or a value under a key like `"x"`, can stay in the file. So redaction is one layer of several: the stored copy is also encrypted, visible only to its uploader and the organisation's admins, and deleted when it expires.
+
+What is removed, what is kept, and the known gaps: [docs/redaction-policy.md](docs/redaction-policy.md).
 
 - Stored copies are encrypted and deleted when they expire (30 days by default; admins choose 7, 30 or 90).
 - Another organisation's file, or another agent's, is "not found" on every route.
@@ -206,7 +208,7 @@ CI ([workflow](.github/workflows/ci.yml)) runs on every push: backend lint, type
 | [0003](docs/decisions/0003-waterfall-index-and-range-reads.md) | A waterfall index in PostgreSQL; request detail by byte-range read |
 | [0004](docs/decisions/0004-rules-see-redacted-data-only.md) | Rules run on redacted data; facts are read before redaction |
 | [0005](docs/decisions/0005-salted-hmac-markers.md) | Replace secrets with salted HMAC markers |
-| [0006](docs/decisions/0006-exactly-once-private-notes.md) | Exactly one private note per analysis |
+| [0006](docs/decisions/0006-exactly-once-private-notes.md) | One private note per analysis: at-least-once with deduplication |
 | [0007](docs/decisions/0007-unsigned-webhooks-are-rechecked.md) | Signed Zendesk webhooks; Freshdesk webhooks re-checked against the API |
 | [0008](docs/decisions/0008-rustfs-for-local-object-storage.md) | RustFS for local S3-compatible storage |
 | [0009](docs/decisions/0009-no-llm-in-the-analysis.md) | No LLM in the analysis |
@@ -228,7 +230,7 @@ hartriage/
   summary/    ticket summary → Markdown, text, JSON, HTML
   api/        auth, members, uploads, analyses, org settings, connections, webhooks, health, KB, audit
   services/   intake (stream → redact → store), analysis, retention, limits, audit
-  helpdesk/   Zendesk and Freshdesk clients, exactly-once note task
+  helpdesk/   Zendesk and Freshdesk clients, the note task (at-least-once, deduplicated)
   worker/     Celery app and tasks
   storage/    S3 multipart writer and range reads; in-memory store for tests
   cli/        hartriage analyze | redact | rules

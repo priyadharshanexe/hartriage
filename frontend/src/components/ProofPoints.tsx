@@ -46,7 +46,7 @@ function NoteGlyph() {
 }
 
 const POINTS = [
-  { glyph: <RedactGlyph />, title: "Secrets out before storage", body: "Cookies, tokens, keys and passwords become markers as the file streams in." },
+  { glyph: <RedactGlyph />, title: "Secrets out before storage", body: "Cookies, tokens, keys and passwords become markers as the file streams in. Best-effort, so the copy is also encrypted and expires." },
   { glyph: <RulesGlyph />, title: "11 diagnostic rules", body: "Expired tokens, CORS, redirects, timeouts, rate limits, payloads and more." },
   { glyph: <WaterfallGlyph />, title: "A waterfall of every request", body: "Up to 50,000 requests, each one a click from its redacted headers." },
   { glyph: <NoteGlyph />, title: "Answers in the ticket", body: "Tag a Zendesk or Freshdesk ticket; a private note arrives with the findings." },

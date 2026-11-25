@@ -16,10 +16,12 @@ from datetime import UTC, datetime, timedelta
 from typing import IO, Any
 
 import structlog
+from sqlalchemy import event
 from sqlalchemy.orm import Session
 
 from hartriage.core.config import Settings
 from hartriage.core.errors import AppError, TooLarge
+from hartriage.core.metrics import ORPHANS
 from hartriage.db.models import Analysis, Artifact
 from hartriage.har.stream_reader import HarFormatError, InputTooLarge, Limits
 from hartriage.pipeline import process
@@ -75,6 +77,43 @@ def index_key(storage_key: str) -> str:
     return storage_key.rsplit("/", 1)[0] + "/index.bin"
 
 
+# --------------------------------------------------------- objects without a row
+#
+# The objects are written before their rows exist (the row needs the size and hash).
+# Until the caller's transaction commits, they belong to it: if it rolls back, or
+# anything fails before then, they are deleted. A process that dies in between
+# leaves them behind; the reconciler (services/reconcile.py) deletes those later.
+
+_PENDING = "hartriage.pending_objects"
+
+
+def _discard(storage: Storage, keys: list[str], reason: str) -> None:
+    for key in keys:
+        try:
+            storage.delete(key)
+            ORPHANS.labels(reason).inc()
+        except Exception as exc:  # best effort: the reconciler is the backstop
+            log.warning("orphan_delete_failed", key=key, error=type(exc).__name__)
+
+
+def _hold_until_commit(db: Session, storage: Storage, keys: list[str]) -> None:
+    db.info.setdefault(_PENDING, []).append((storage, keys))
+
+
+@event.listens_for(Session, "after_commit")
+def _committed(session: Session) -> None:
+    session.info.pop(_PENDING, None)
+
+
+@event.listens_for(Session, "after_transaction_end")
+def _ended(session: Session, transaction: Any) -> None:
+    # The outermost transaction ended without a commit (after_commit would have
+    # cleared the list): a rollback, a failed commit, or a session simply closed.
+    if transaction.parent is None:
+        for storage, keys in session.info.pop(_PENDING, []):
+            _discard(storage, keys, "rolled_back")
+
+
 def clean_filename(name: str | None) -> str:
     base = re.split(r"[\\/]", name or "")[-1]
     base = re.sub(r"[^\w.\- ()]+", "_", base).strip()[:200]
@@ -114,38 +153,45 @@ def intake(
         message = str(exc)
         raise InvalidHar(message[:1].upper() + message[1:] + ".") from exc
 
-    offsets = array("Q")
-    for start, length in result.offsets:
-        offsets.extend((start, length))
-    with writing(storage, index_key(key)) as writer:
-        writer.write(offsets.tobytes())
+    written = [key]
+    try:
+        offsets = array("Q")
+        for start, length in result.offsets:
+            offsets.extend((start, length))
+        with writing(storage, index_key(key)) as writer:
+            writer.write(offsets.tobytes())
+        written.append(index_key(key))
 
-    now = datetime.now(UTC)
-    redaction = result.report.to_dict()
-    artifact = Artifact(
-        id=artifact_id,
-        org_id=org_id,
-        case_id=case_id,
-        kind="har",
-        source=source_kind,
-        original_filename=clean_filename(filename),
-        external_attachment_id=external_attachment_id,
-        size_bytes=hashing.size,
-        original_size_bytes=counted.count,
-        sha256_of_redacted=hashing.sha.hexdigest(),
-        storage_key=key,
-        entry_count=result.stats.entries,
-        redaction_summary=redaction,
-        created_by=created_by,
-        expires_at=now + timedelta(days=retention_days or settings.retention_days),
-    )
-    analysis = Analysis(
-        org_id=org_id, artifact_id=artifact_id, status="queued", created_by=created_by
-    )
-    db.add(artifact)
-    db.flush()
-    db.add(analysis)
-    db.flush()
+        now = datetime.now(UTC)
+        redaction = result.report.to_dict()
+        artifact = Artifact(
+            id=artifact_id,
+            org_id=org_id,
+            case_id=case_id,
+            kind="har",
+            source=source_kind,
+            original_filename=clean_filename(filename),
+            external_attachment_id=external_attachment_id,
+            size_bytes=hashing.size,
+            original_size_bytes=counted.count,
+            sha256_of_redacted=hashing.sha.hexdigest(),
+            storage_key=key,
+            entry_count=result.stats.entries,
+            redaction_summary=redaction,
+            created_by=created_by,
+            expires_at=now + timedelta(days=retention_days or settings.retention_days),
+        )
+        analysis = Analysis(
+            org_id=org_id, artifact_id=artifact_id, status="queued", created_by=created_by
+        )
+        db.add(artifact)
+        db.flush()
+        db.add(analysis)
+        db.flush()
+    except BaseException:
+        _discard(storage, written, "intake_failed")
+        raise
+    _hold_until_commit(db, storage, written)
     log.info(
         "artifact_stored",
         artifact_id=str(artifact_id),

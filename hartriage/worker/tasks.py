@@ -13,7 +13,7 @@ from hartriage.core.metrics import ANALYSES, ANALYSIS_SECONDS, FINDINGS, SECRETS
 from hartriage.db.models import Analysis, FindingRow
 from hartriage.db.session import session_scope
 from hartriage.services import analysis as analysis_service
-from hartriage.services import retention
+from hartriage.services import reconcile, requeue, retention
 from hartriage.storage.s3 import get_storage
 from hartriage.worker.celery_app import app
 
@@ -55,6 +55,30 @@ def retention_sweep() -> int:
     settings = get_settings()
     with session_scope() as db:
         return retention.sweep(db, get_storage(settings))
+
+
+@app.task(name="hartriage.reconcile_storage")
+def reconcile_storage() -> dict[str, int]:
+    settings = get_settings()
+    with session_scope() as db:
+        return reconcile.reconcile(db, get_storage(settings))
+
+
+@app.task(name="hartriage.requeue_stale")
+def requeue_stale() -> int:
+    """Send again analyses and notes whose task was lost (see services/requeue.py)."""
+    from hartriage.worker.dispatch import enqueue_analysis, enqueue_note
+
+    with session_scope() as db:
+        analyses = requeue.stale_analyses(db)
+        notes = requeue.notes_never_sent(db)
+    for analysis_id in analyses:
+        log.info("requeued", task="analyse", analysis_id=str(analysis_id))
+        enqueue_analysis(analysis_id)
+    for analysis_id in notes:
+        log.info("requeued", task="post_note", analysis_id=str(analysis_id))
+        enqueue_note(analysis_id)
+    return len(analyses) + len(notes)
 
 
 # Helpdesk tasks are defined next to the clients they drive.

@@ -30,7 +30,7 @@ from hartriage.rules.base import Finding, Severity
 from hartriage.services import audit
 from hartriage.services.retention import purge
 from hartriage.summary.builder import Summary, evidence_lines, to_html, to_markdown, to_text
-from hartriage.worker.dispatch import enqueue_analysis
+from hartriage.worker.dispatch import enqueue_analysis, try_enqueue
 
 router = APIRouter(prefix="/analyses", tags=["analyses"])
 
@@ -419,7 +419,7 @@ def rerun(analysis_id: uuid.UUID, principal: AgentDep, db: DbDep) -> dict[str, s
         target_id=analysis.id,
     )
     db.commit()
-    enqueue_analysis(analysis.id)
+    try_enqueue(enqueue_analysis, analysis.id)
     return {"analysis_id": str(analysis.id), "status": "queued"}
 
 

@@ -9,7 +9,7 @@ One file per significant decision, copied from [0000-template.md](0000-template.
 | [0003](0003-waterfall-index-and-range-reads.md) | A waterfall index in PostgreSQL; request detail by byte-range read | accepted |
 | [0004](0004-rules-see-redacted-data-only.md) | Rules run on redacted data; facts are read before redaction | accepted |
 | [0005](0005-salted-hmac-markers.md) | Replace secrets with salted HMAC markers | accepted |
-| [0006](0006-exactly-once-private-notes.md) | Exactly one private note per analysis | accepted |
+| [0006](0006-exactly-once-private-notes.md) | One private note per analysis: at-least-once with deduplication | accepted |
 | [0007](0007-unsigned-webhooks-are-rechecked.md) | Signed Zendesk webhooks; Freshdesk webhooks re-checked against the API | accepted |
 | [0008](0008-rustfs-for-local-object-storage.md) | RustFS for local S3-compatible storage | accepted |
 | [0009](0009-no-llm-in-the-analysis.md) | No LLM in the analysis | accepted |

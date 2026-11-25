@@ -20,3 +20,8 @@ NOTES = Counter(
 HELPDESK_CALLS = Counter(
     "hartriage_helpdesk_requests_total", "Calls to helpdesk APIs", ["platform", "status"]
 )
+ORPHANS = Counter(
+    "hartriage_orphan_objects_deleted_total",
+    "Stored objects deleted because no row came to own them",
+    ["reason"],
+)

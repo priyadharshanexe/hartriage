@@ -25,6 +25,7 @@ from hartriage.core.metrics import UPLOADS
 from hartriage.services import audit
 from hartriage.services.intake import intake
 from hartriage.services.limits import MB, limits_for, storage_used, uploads_today
+from hartriage.worker import dispatch
 from hartriage.worker.dispatch import enqueue_analysis
 
 router = APIRouter(tags=["uploads"])
@@ -155,7 +156,7 @@ async def upload(
         UPLOADS.labels("rejected").inc()
         raise
     UPLOADS.labels("accepted").inc()
-    await anyio.to_thread.run_sync(enqueue_analysis, analysis.id)
+    await anyio.to_thread.run_sync(dispatch.try_enqueue, enqueue_analysis, analysis.id)
     return JSONResponse(
         {
             "analysis_id": str(analysis.id),

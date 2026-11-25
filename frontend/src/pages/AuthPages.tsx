@@ -27,7 +27,7 @@ function Shell({ title, lede, children, footer }: { title: string; lede?: ReactN
             Every HAR file carries someone&rsquo;s <span className="redact-word">session</span>. We take it out first.
           </p>
           <p className="animate-rise mt-4 max-w-xl text-base leading-relaxed text-ink-2" style={{ animationDelay: "160ms" }}>
-            Support engineers drop a customer&rsquo;s HAR file; HAR Triage strips the secrets, finds the failing request and writes the answer for the ticket.
+            Support engineers drop a customer&rsquo;s HAR file; HAR Triage takes out the tokens, cookies and keys, finds the failing request and writes the answer for the ticket.
           </p>
           <div className="mt-6">
             <ProofPoints />

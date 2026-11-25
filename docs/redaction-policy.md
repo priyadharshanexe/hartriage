@@ -59,7 +59,8 @@ These facts are stored on each redacted entry as `_hartriage`, so a stored file 
 
 ## Known limits
 
-- **Secrets with no recognisable name or shape** are not found: a random token in a URL path (`/invite/9f8a7b…`) or under an innocent key (`"x": "…"`). Redacting every long random string would also remove content hashes and ids that make a HAR useful. This is the main reason the stored copy is still encrypted, access-controlled and deleted on a schedule.
+- **Secrets with no recognisable name or shape** are not found: a token under an innocent key (`"x": "…"`), or a short one in a URL path. Redacting every random-looking string would also remove the ids and hashes that make a HAR useful. This is the main reason the stored copy is still encrypted, access-controlled and deleted on a schedule.
+- **Random URL path segments** are replaced when they look like a token: at least 32 URL-safe characters with no dot, lower case, upper case and digits all present, at least 4.3 bits of entropy per character, and not a UUID, a hex hash or a prefixed id such as Stripe's `pi_…`. Measured ([test](../tests/unit/test_entropy_detector.py)): no false positives in the 517 path segments of the golden HARs or in a list of real-world ids, hashes and file names; 99.4% of tokens from `secrets.token_urlsafe(24…64)` caught; tokens shorter than 32 characters are not caught.
 - **Personal data** (names, emails, addresses) in request bodies and URLs is not removed. Response bodies, where most of it lives, are dropped; request bodies over 64 KB are dropped.
 - **The original attachment on a helpdesk ticket** still contains everything until an admin enables *replace the original* on the connection.
 

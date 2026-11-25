@@ -73,7 +73,7 @@ function SampleLoop() {
         ))}
       </div>
       <p className="mt-5 border-t border-rule pt-4 text-sm text-ink-3">
-        Every secret is replaced as the file streams in. The same value always gets the same marker, so you can still follow it.
+        Credentials are replaced as the file streams in. The same value always gets the same marker, so you can still follow it.
       </p>
     </figure>
   );
@@ -447,7 +447,7 @@ export function UploadPage() {
               <div className="flex flex-col lg:col-span-7">
                 <h1 className="font-display text-[2.6rem] leading-[1.05] font-semibold tracking-[-0.02em] sm:text-[3.4rem]">Analyse a HAR file</h1>
                 <p className="mt-4 max-w-xl text-lg text-ink-2">
-                  Drop the file a customer sent. The secrets come out while it uploads; you get the failing request, the likely cause and a summary for the ticket.
+                  Drop the file a customer sent. Tokens, cookies and keys come out while it uploads; you get the failing request, the likely cause and a summary for the ticket.
                 </p>
                 {!canEdit && <div className="animate-slide-down mt-5 rounded-[8px] bg-medium/15 px-4 py-3 text-sm">Viewers can read analyses but not upload files.</div>}
                 {error !== null && (
