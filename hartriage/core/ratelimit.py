@@ -25,8 +25,13 @@ def limit(settings: Settings, key: str, max_calls: int, window_seconds: int) -> 
         count = int(client.incr(name))
         if count == 1:
             client.expire(name, window_seconds)
+        remaining = int(client.ttl(name)) if count > max_calls else 0
     except redis.RedisError:
         log.warning("rate_limit_unavailable")  # fail open: Redis down must not lock everyone out
         return
     if count > max_calls:
-        raise TooManyRequests("Too many attempts. Wait a minute and try again.")
+        # Say how long, from the window's own expiry: sign-up counts per hour, so "a minute" was wrong there.
+        minutes = max(1, -(-remaining // 60)) if remaining > 0 else max(1, window_seconds // 60)
+        raise TooManyRequests(
+            f"Too many attempts. Try again in {minutes} minute{'s' if minutes != 1 else ''}."
+        )

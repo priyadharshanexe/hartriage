@@ -235,7 +235,7 @@ export function AnalysisPage() {
             ) : findings.data.items.length === 0 ? (
               <EmptyState title="No findings">Every request succeeded and nothing was slow. The problem may not have been recorded.</EmptyState>
             ) : (
-              <ol className="grid gap-3 xl:grid-cols-2">
+              <ol className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-[repeat(2,minmax(0,1fr))]">
                 {findings.data.items.map((f, i) => (
                   <FindingItem
                     key={f.id}
@@ -596,12 +596,12 @@ function FindingItem({ finding, index, onShow, onHover }: { finding: Finding; in
           {finding.confidence === "likely" && <Tag tone="warn">likely</Tag>}
           {finding.entries.length > 0 && <span className="ml-auto font-mono text-xs text-ink-4">{finding.entries.map((n) => `#${n}`).slice(0, 6).join(" ")}</span>}
         </div>
-        <p className="mt-3 font-display text-[1.375rem] leading-snug font-semibold">{finding.title}</p>
-        <p className="mt-1.5 text-base text-ink-2">
+        <p className="mt-3 font-display text-[1.375rem] leading-snug font-semibold [overflow-wrap:anywhere]">{finding.title}</p>
+        <p className="mt-1.5 text-base text-ink-2 [overflow-wrap:anywhere]">
           <Redacted text={finding.cause} />
         </p>
         {finding.evidence_lines && finding.evidence_lines.length > 0 && (
-          <ul className="mt-3 space-y-1 rounded-[8px] bg-paper-2 px-3 py-2.5 font-mono text-xs text-ink-2">
+          <ul className="mt-3 space-y-1 rounded-[8px] bg-paper-2 px-3 py-2.5 font-mono text-xs text-ink-2 [overflow-wrap:anywhere]">
             {finding.evidence_lines.map((line) => (
               <li key={line}>
                 <Redacted text={line} />
