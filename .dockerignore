@@ -11,7 +11,13 @@
 !.env.example
 tests
 docs
-frontend
+# The Render image builds the web app; leave out only local build output.
+frontend/node_modules
+frontend/dist
+frontend/test-results
+frontend/e2e
+frontend/review
+frontend/stills
 casebook
 *.md
 !README.md
