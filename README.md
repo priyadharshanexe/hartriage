@@ -20,6 +20,12 @@ HAR Triage treats every HAR file as a credential dump: secrets are replaced whil
 ![The same request before and after redaction](docs/screenshots/before-after-redaction.png)
 <sub>One request from a sample file: what the browser recorded (left) and what HAR Triage stores (right).</sub>
 
+**Live demo:** [hartriage.onrender.com](https://hartriage.onrender.com)
+
+## Watch the 3-minute demo
+
+<!-- Drag hartriage-demo.mp4 here in GitHub's editor -->
+
 ## What it looks like
 
 ![Sign in, upload, the redaction, findings, waterfall, KB, a helpdesk connection, Files and Settings](docs/screenshots/demo.gif)
