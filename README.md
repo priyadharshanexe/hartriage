@@ -24,7 +24,11 @@ HAR Triage treats every HAR file as a credential dump: secrets are replaced whil
 
 ## Watch the 3-minute demo
 
-<!-- Drag hartriage-demo.mp4 here in GitHub's editor -->
+
+
+https://github.com/user-attachments/assets/3afe0423-7018-4f74-ac70-2f88d0b8d1b5
+
+
 
 ## What it looks like
 
