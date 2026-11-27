@@ -2,6 +2,8 @@
 
 **Removes the session tokens from a customer's HAR file before it is stored, then finds the failing request and writes the answer for the support ticket.**
 
+**Live demo:** [hartriage.onrender.com](https://hartriage.onrender.com)
+
 [![CI](https://github.com/priyadharshanexe/hartriage/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/priyadharshanexe/hartriage/actions/workflows/ci.yml)
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 ![Python 3.13](https://img.shields.io/badge/python-3.13-3776ab.svg)
@@ -9,7 +11,7 @@
 
 Use it as a CLI, in the web app, or from Zendesk and Freshdesk: tag a ticket and the analysis comes back as a private note.
 
-**Contents:** [Why this exists](#why-this-exists) · [What it looks like](#what-it-looks-like) · [Features](#features) · [How it works](#how-it-works) · [Architecture](#architecture) · [The rules](#the-rules) · [Security and redaction](#security-and-redaction) · [Quick start](#quick-start) · [Tested against real helpdesks](#tested-against-real-helpdesks) · [Tests and CI](#tests-and-ci) · [Performance](#performance) · [Decision records](#decision-records) · [Casebook](#casebook) · [Project layout](#project-layout)
+**Contents:** [Why this exists](#why-this-exists) · [Watch the demo](#watch-the-demo) · [What it looks like](#what-it-looks-like) · [Features](#features) · [How it works](#how-it-works) · [Architecture](#architecture) · [The rules](#the-rules) · [Security and redaction](#security-and-redaction) · [Quick start](#quick-start) · [Tested against real helpdesks](#tested-against-real-helpdesks) · [Tests and CI](#tests-and-ci) · [Performance](#performance) · [Decision records](#decision-records) · [Casebook](#casebook) · [Project layout](#project-layout)
 
 ## Why this exists
 
@@ -20,15 +22,9 @@ HAR Triage treats every HAR file as a credential dump: secrets are replaced whil
 ![The same request before and after redaction](docs/screenshots/before-after-redaction.png)
 <sub>One request from a sample file: what the browser recorded (left) and what HAR Triage stores (right).</sub>
 
-**Live demo:** [hartriage.onrender.com](https://hartriage.onrender.com)
-
-## Watch the 3-minute demo
-
-
+## Watch the demo
 
 https://github.com/user-attachments/assets/3afe0423-7018-4f74-ac70-2f88d0b8d1b5
-
-
 
 ## What it looks like
 
@@ -241,7 +237,7 @@ A 98 MB upload adds about 44 MB to the API's memory: the file is streamed throug
 
 ## Casebook
 
-[Eight support cases](casebook/) against Relay (Project 1), each reproducible with one script: an expired certificate, clock drift breaking signatures, a retry flood after an outage, an SSRF-blocked endpoint, a 413 whose HAR carried a live API key, a secret rotation that was never deployed, a lock that emptied the connection pool, and a duplicate webhook after a worker crash. Each has the evidence, root cause, fix, verification and the reply to the customer.
+[Eight support cases](casebook/) against [Relay](https://github.com/priyadharshanexe/relay), my webhook delivery project, each reproducible with one script: an expired certificate, clock drift breaking signatures, a retry flood after an outage, an SSRF-blocked endpoint, a 413 whose HAR carried a live API key, a secret rotation that was never deployed, a lock that emptied the connection pool, and a duplicate webhook after a worker crash. Each has the evidence, root cause, fix, verification and the reply to the customer.
 
 ## Project layout
 
